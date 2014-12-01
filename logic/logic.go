@@ -1,9 +1,9 @@
-package game
+package logic
 
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/simple-2d-playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 	"golang.org/x/net/context"
 )
 

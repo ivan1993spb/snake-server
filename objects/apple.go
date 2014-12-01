@@ -6,7 +6,7 @@ import (
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
-const _LOC_APPLE_RETRIES_NUMBER = 10
+const _APPLE_LOC_RETRIES_NUMBER = 10
 
 type Apple struct {
 	pg  *playground.Playground
@@ -17,7 +17,7 @@ type Apple struct {
 func NewApple(pg *playground.Playground) (*Apple, error) {
 	if pg != nil {
 		// Try to locate apple for X times
-		for i := 0; i < _LOC_APPLE_RETRIES_NUMBER; i++ {
+		for i := 0; i < _APPLE_LOC_RETRIES_NUMBER; i++ {
 			apple := &Apple{pg, pg.RandomDot()}
 			if err := pg.Locate(apple); err == nil {
 				return apple, nil
