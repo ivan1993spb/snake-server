@@ -23,10 +23,8 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 // Implementing PoolFactory interface
 func (f *PGPoolFactory) NewPool() (Pool, error) {
 	var (
-		pg     *playground.Playground
-		cxt    context.Context
-		cancel context.CancelFunc
-		err    error
+		pg  *playground.Playground
+		err error
 	)
 
 	if pg, err = playground.NewPlayground(f.pgW, f.pgH); err != nil {
@@ -34,7 +32,7 @@ func (f *PGPoolFactory) NewPool() (Pool, error) {
 	}
 
 	// Create context for each pool
-	cxt, cancel = context.WithCancel(f.rootCxt)
+	cxt, cancel := context.WithCancel(f.rootCxt)
 
 	return NewGamePool(cxt, cancel, f.connLimit, pg), nil
 }
@@ -60,17 +58,17 @@ func NewGamePool(cxt context.Context, cancel context.CancelFunc,
 		cancel, pg}
 }
 
-// IsFull returns true if pool is full
+// Implementing Pool interface
 func (p *GamePool) IsFull() bool {
 	return len(p.conns) == cap(p.conns)
 }
 
-// IsEmpty returns true if pool is empty
+// Implementing Pool interface
 func (p *GamePool) IsEmpty() bool {
 	return len(p.conns) == 0
 }
 
-// AddConn creates connection in the pool
+// Implementing Pool interface
 func (p *GamePool) AddConn(conn *websocket.Conn) (
 	pwshandler.Environment, error) {
 
@@ -89,13 +87,13 @@ func (p *GamePool) AddConn(conn *websocket.Conn) (
 	return &GameData{cxt, p.pg}, nil
 }
 
-// DelConn removes connection from pool and stops all pool goroutines
+// Implementing Pool interface
 func (p *GamePool) DelConn(conn *websocket.Conn) {
 	if p.HasConn(conn) {
 		for i := range p.conns {
 			// Find connection
 			if p.conns[i] == conn {
-				// Delete
+				// Delete connection
 				p.conns = append(p.conns[:i], p.conns[i+1:]...)
 				// Stop all child goroutines if empty pool
 				if p.IsEmpty() && p.cancel != nil {
@@ -108,12 +106,13 @@ func (p *GamePool) DelConn(conn *websocket.Conn) {
 	}
 }
 
-// HasConn returns true if passed connection belongs to the pool
+// Implementing Pool interface
 func (p *GamePool) HasConn(conn *websocket.Conn) bool {
 	for i := range p.conns {
 		if p.conns[i] == conn {
 			return true
 		}
 	}
+
 	return false
 }

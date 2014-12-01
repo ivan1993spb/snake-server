@@ -9,15 +9,22 @@ import (
 
 // Pool represents pool with connections
 type Pool interface {
+	// IsFull returns true if pool is full
 	IsFull() bool
+	// IsEmpty returns true if pool is empty
 	IsEmpty() bool
+	// AddConn creates connection in the pool
 	AddConn(*websocket.Conn) (pwshandler.Environment, error)
+	// DelConn removes connection from pool and stops all pool
+	// goroutines
 	DelConn(*websocket.Conn)
+	// HasConn returns true if passed connection belongs to the pool
 	HasConn(*websocket.Conn) bool
 }
 
 // PoolFactory represents pool factory
 type PoolFactory interface {
+	// NewPool creates new Pool
 	NewPool() (Pool, error)
 }
 

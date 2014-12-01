@@ -16,13 +16,13 @@ type GameData struct {
 	Playground *playground.Playground
 }
 
-// Implementing pwshandler.ConnManager interface
 type ConnManager struct{}
 
 func NewConnManager() pwshandler.ConnManager {
 	return &ConnManager{}
 }
 
+// Implementing pwshandler.ConnManager interface
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
 
@@ -38,6 +38,7 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 	return errors.New("Game data was not received")
 }
 
+// Implementing pwshandler.ConnManager interface
 func (m *ConnManager) HandleError(_ http.ResponseWriter,
 	_ *http.Request, err error) {
 	// Write error message to log

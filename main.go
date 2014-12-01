@@ -22,7 +22,8 @@ func main() {
 		glog.Exitln("Cannot create working listener", err)
 	}
 
-	// Shutdown listener is used only for shutdown command
+	// Shutdown listener is used only for shutdown command. Listening
+	// only for local requests
 	shutdownListener, err :=
 		net.Listen("tcp", "127.0.0.1:"+Config.ShutdownPort)
 	if err != nil {
@@ -42,23 +43,24 @@ func main() {
 	// Init connection manager
 	connManager := NewConnManager()
 
-	// Init verifier
+	// Init request verifier
 	verifier := NewVerifier(Config.HashSalt)
 
 	// Configure websocket upgrader
 	upgrader := &websocket.Upgrader{
 		ReadBufferSize:  Config.WsReadBufferSize,
 		WriteBufferSize: Config.WsWriteBufferSize,
-		CheckOrigin:     func(*http.Request) bool { return true },
+		// Don't check origin on tests
+		CheckOrigin: func(*http.Request) bool { return true },
 	}
 
 	// Create pool handler
 	handler := pwshandler.NewPoolHandler(
 		poolManager, connManager, verifier, upgrader)
 
-	// Shutdown goroutine
+	// Start goroutine looking for shutdown command
 	go func() {
-		// Waiting for shutdown command
+		// Waiting for shutdown command. We don't need of connection
 		if _, err := shutdownListener.Accept(); err != nil {
 			glog.Errorln("Accepting shutdown connection:", err)
 		}
@@ -68,7 +70,7 @@ func main() {
 			glog.Errorln("Closing shutdown listener:", err)
 		}
 
-		// Finishing all server goroutines
+		// Finishing all goroutines
 		cancel()
 
 		// Closing working listener
@@ -78,6 +80,8 @@ func main() {
 	}()
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	// Start server
 	if err = http.Serve(workingListener, handler); err != nil {
 		glog.Errorln("Game servering error:", err)
 	}
