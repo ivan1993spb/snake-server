@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
-	"bitbucket.org/pushkin_ivan/simple-2d-playground"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 )

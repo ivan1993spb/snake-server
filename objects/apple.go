@@ -3,7 +3,7 @@ package objects
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/simple-2d-playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
 const _LOC_APPLE_RETRIES_NUMBER = 10

@@ -86,11 +86,3 @@ func main() {
 		glog.Errorln("Game servering error:", err)
 	}
 }
-
-// const LOG_DEBUG_LEVEL glog.Level = 1
-
-// func DebugInfoln(args ...interface{}) {
-// 	if glog.V(LOG_DEBUG_LEVEL) {
-// 		glog.Infoln(args...)
-// 	}
-// }
