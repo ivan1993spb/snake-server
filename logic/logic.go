@@ -3,8 +3,9 @@ package logic
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 	"golang.org/x/net/context"
+
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
 const _STRENGTH_FACTOR float32 = 1.3

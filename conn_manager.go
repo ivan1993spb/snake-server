@@ -4,11 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
+
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
 type GameData struct {
@@ -26,7 +27,7 @@ func NewConnManager() pwshandler.ConnManager {
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
 
-	if /*gameData*/ _, ok := env.(*GameData); ok {
+	if /*gameData,*/ _, ok := env.(*GameData); ok {
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *          GAME LOGIC IS HERE. INIT PLAYER            *

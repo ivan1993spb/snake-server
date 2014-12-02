@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
+
+	"bitbucket.org/pushkin_ivan/clever-snake/objects"
+	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
 type PGPoolFactory struct {
@@ -53,6 +55,8 @@ func NewGamePool(cxt context.Context, cancel context.CancelFunc,
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *       GAME LOGIC STARTS HERE. INIT PLAYGROUND       *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	objects.NewApple(pg)
 
 	return &GamePool{make([]*websocket.Conn, 0, connLimit), cxt,
 		cancel, pg}

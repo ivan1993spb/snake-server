@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"bitbucket.org/pushkin_ivan/clever-snake/logic"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -219,8 +220,10 @@ func (s *Snake) Command(cmd string) error {
 		s.SetDirection(playground.DIR_SOUTH)
 	case "w":
 		s.SetDirection(playground.DIR_WEST)
+	default:
+		return errors.New("Cannot execute command")
 	}
-	return errors.New("Cannot execute command")
+	return nil
 }
 
 func (s *Snake) SetDirection(dir playground.Direction) {
