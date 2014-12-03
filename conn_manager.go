@@ -3,13 +3,13 @@ package main
 import (
 	"errors"
 	"net/http"
-	// "time"
 
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 
+	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
@@ -34,11 +34,36 @@ func NewConnManager(s *Streamer) (pwshandler.ConnManager, error) {
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
 
-	if /*gameData*/ _, ok := env.(*GameData); ok {
+	if gameData, ok := env.(*GameData); ok {
+
+		err := m.streamer.Subscribe(gameData.Playground, conn)
+		if err != nil {
+			return err
+		}
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                  BEGIN INIT PLAYER                  *
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		snake, err := objects.CreateSnake(
+			gameData.Playground,
+			gameData.Context,
+		)
+		if err != nil {
+			return err
+		}
+
+		for {
+			// @TODO need to close goroutine by context!!!!
+
+			messType, p, err := conn.ReadMessage()
+			if err != nil {
+				return err
+			}
+			if messType == websocket.TextMessage {
+				snake.Command(string(p))
+			}
+		}
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                   END INIT PLAYER                   *

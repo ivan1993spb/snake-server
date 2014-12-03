@@ -29,14 +29,9 @@ func NewStreamer(cxt context.Context, delay time.Duration,
 		return nil, errors.New("Invalid delay")
 	}
 
-	return &Streamer{
-			delay,
-			make(map[ShiftingObject][]*websocket.Conn),
-			cxt,
-			nil,
-			nil,
-		},
-		nil
+	return &Streamer{delay: delay,
+		subscriptions: make(map[ShiftingObject][]*websocket.Conn),
+		parentCxt:     cxt}, nil
 }
 
 func (s *Streamer) Subscribe(o ShiftingObject, c *websocket.Conn,
