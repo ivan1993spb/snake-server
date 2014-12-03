@@ -36,7 +36,11 @@ func (f *PGPoolFactory) NewPool() (Pool, error) {
 	// Create context for each pool
 	cxt, cancel := context.WithCancel(f.rootCxt)
 
-	return NewGamePool(cxt, cancel, f.connLimit, pg), nil
+	pool, err := NewGamePool(cxt, cancel, f.connLimit, pg)
+	if err != nil {
+		return nil, err
+	}
+	return pool, nil
 }
 
 type GamePool struct {
@@ -50,16 +54,27 @@ type GamePool struct {
 }
 
 func NewGamePool(cxt context.Context, cancel context.CancelFunc,
-	connLimit uint8, pg *playground.Playground) *GamePool {
+	connLimit uint8, pg *playground.Playground) (*GamePool, error) {
+
+	if pg == nil {
+		return nil, errors.New("Passed nil playground")
+	}
+	if connLimit == 0 {
+		return nil, errors.New("Invalid connection limit")
+	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *       GAME LOGIC STARTS HERE. INIT PLAYGROUND       *
+	 *                BEGIN INIT PLAYGROUND                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	objects.NewApple(pg)
+	objects.CreateApple(pg)
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                 END INIT PLAYGROUND                 *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	return &GamePool{make([]*websocket.Conn, 0, connLimit), cxt,
-		cancel, pg}
+		cancel, pg}, nil
 }
 
 // Implementing Pool interface

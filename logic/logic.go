@@ -3,8 +3,6 @@ package logic
 import (
 	"errors"
 
-	"golang.org/x/net/context"
-
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
@@ -39,14 +37,9 @@ type (
 		Object
 		Strength() float32
 	}
-)
-
-type (
-	Runnable interface {
-		Run(context.Context)
-	}
 
 	Controlled interface {
+		Object
 		Command(string) error
 	}
 )

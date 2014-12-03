@@ -58,6 +58,8 @@ func main() {
 	handler := pwshandler.NewPoolHandler(
 		poolManager, connManager, verifier, upgrader)
 
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	// Start goroutine looking for shutdown command
 	go func() {
 		// Waiting for shutdown command. We don't need of connection
@@ -78,8 +80,6 @@ func main() {
 			glog.Errorln("Closing working listener:", err)
 		}
 	}()
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// Start server
 	if err = http.Serve(workingListener, handler); err != nil {

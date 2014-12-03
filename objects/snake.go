@@ -13,15 +13,10 @@ import (
 )
 
 const (
-	_SNAKE_START_LENGTH uint16 = 3
-	_SNAKE_START_SPEED         = time.Second * 4
-
-	// Magnification of speed factor
-	_SNAKE_SPEED_FACTOR float64 = 1.02
-
-	_SNAKE_LOC_RETRIES_NUMBER = 15
-
-	_SNAKE_STRENGTH_FACTOR float32 = 0.5
+	_SNAKE_START_LENGTH    uint16  = 3
+	_SNAKE_START_SPEED             = time.Second * 4
+	_SNAKE_SPEED_FACTOR    float64 = 1.02
+	_SNAKE_STRENGTH_FACTOR float32 = 1
 )
 
 // Snake object
@@ -37,61 +32,54 @@ type Snake struct {
 	// Time of last movement
 	lastMove time.Time
 
-	dead chan struct{}
+	parentCxt context.Context
+
+	stop context.CancelFunc
 }
 
-// NewSnake creates new snake
-func NewSnake(pg *playground.Playground) (*Snake, error) {
+// CreateSnake creates new snake
+func CreateSnake(pg *playground.Playground, cxt context.Context,
+) (*Snake, error) {
+
 	if pg != nil {
-		if w, h := pg.GetSize(); uint16(w) < _SNAKE_START_LENGTH ||
-			uint16(h) < _SNAKE_START_LENGTH {
-			return nil, errors.New("Playground is too small")
-		}
-
-		for i := 0; i < _SNAKE_LOC_RETRIES_NUMBER; i++ {
-			direction, dots, err := findPlace(pg)
-			if err == nil {
-				snake := &Snake{pg, dots, _SNAKE_START_LENGTH,
-					direction, time.Now(), make(chan struct{})}
-
-				if pg.Locate(snake) == nil {
-					return snake, nil
-				}
-			}
-		}
+		return nil, errors.New("Passed nil playground")
 	}
 
-	return nil, errors.New("Cannot create snake")
-}
+	var (
+		dir  = playground.RandomDirection()
+		dots playground.DotList
+		err  error
+	)
 
-// findPlace calculates movement direction and dots for snake
-func findPlace(pg *playground.Playground,
-) (playground.Direction, playground.DotList, error) {
-	if pg == nil {
-		return 0, nil, errors.New("Passed nil playground")
+	switch dir {
+	case playground.DIR_NORTH, playground.DIR_SOUTH:
+		dots, err = pg.GetEmptyField(1, uint8(_SNAKE_START_LENGTH))
+	case playground.DIR_EAST, playground.DIR_WEST:
+		dots, err = pg.GetEmptyField(uint8(_SNAKE_START_LENGTH), 1)
 	}
 
-	direction := playground.RandomDirection()
-	dots := make(playground.DotList, _SNAKE_START_LENGTH)
-
-	dots[_SNAKE_START_LENGTH-1] = pg.RandomDot()
-
-	var i int16 = -1 * (int16(_SNAKE_START_LENGTH) - 2)
-	for ; i < int16(_SNAKE_START_LENGTH+1); i++ {
-		dot, err := pg.Navigate(dots[_SNAKE_START_LENGTH-1],
-			direction, i)
-		if err == nil {
-			return 0, nil, err
-		}
-		if pg.Occupied(dot) {
-			return 0, nil, errors.New("Occupied dot")
-		}
-		if i <= 0 {
-			dots[-i] = dot
-		}
+	if err != nil {
+		return nil, err
 	}
 
-	return direction, dots, nil
+	if dir == playground.DIR_SOUTH || dir == playground.DIR_EAST {
+		dots = dots.Reverse()
+	}
+
+	// Parent context stores in snake to pass it to corpse when snake
+	// will be died. Snakes context are passed in run func
+	scxt, cncl := context.WithCancel(cxt)
+
+	snake := &Snake{pg, dots, _SNAKE_START_LENGTH, dir, time.Now(),
+		cxt, cncl}
+
+	if err = pg.Locate(snake); err != nil {
+		return nil, err
+	}
+
+	snake.run(scxt)
+
+	return snake, nil
 }
 
 // Implementing playground.Object interface
@@ -126,21 +114,16 @@ func (s *Snake) PackChanges() string {
 // Implementing logic.Living interface
 func (s *Snake) Die() {
 	s.pg.Delete(s)
-	close(s.dead)
-	NewCorpse(s.pg, s.dots)
+	if s.stop != nil {
+		s.stop()
+	}
+	CreateCorpse(s.pg, s.parentCxt, s.dots)
 }
 
 // Implementing logic.Living interface
 func (s *Snake) Feed(f int8) {
 	if f > 0 {
 		s.length += uint16(f)
-	} else {
-		f *= -1
-		if s.length > uint16(f) {
-			s.length -= uint16(f)
-		} else {
-			s.length = 0
-		}
 	}
 }
 
@@ -149,58 +132,52 @@ func (s *Snake) Strength() float32 {
 	return _SNAKE_STRENGTH_FACTOR * float32(s.length)
 }
 
-// Implementing logic.Runnable interface
-func (s *Snake) Run(cxt context.Context) {
-	for {
+func (s *Snake) run(cxt context.Context) {
+	go func() {
+		for {
+			select {
+			case <-cxt.Done():
+				return
+			case <-time.After(s.calculateDelay()):
+			}
 
-		select {
-		case <-cxt.Done():
-			return
-		case <-s.dead:
-			return
-		case <-time.After(calculateDelay(s.length)):
-		}
-
-		if s.pg.Located(s) {
-			return
-		}
-
-		// Calculate next position
-		dot, err := s.GetNextHeadDot()
-		if err != nil {
-			return
-		}
-
-		// If this dot is occupied run clash handler
-		if object := s.pg.GetObjectByDot(dot); object != nil {
-			if err = logic.Clash(s, object, dot); err != nil {
+			if s.pg.Located(s) {
 				return
 			}
+
+			// Calculate next position
+			dot, err := s.GetNextHeadDot()
+			if err != nil {
+				return
+			}
+
+			if object := s.pg.GetObjectByDot(dot); object != nil {
+				if err = logic.Clash(s, object, dot); err != nil {
+					return
+				}
+			}
+
+			if s.pg.Located(s) {
+				return
+			}
+
+			tmpDots := make(playground.DotList, len(s.dots)+1)
+			copy(tmpDots[1:], s.dots)
+			tmpDots[0] = dot
+			s.dots = tmpDots
+
+			if s.length < s.DotCount() {
+				s.dots = s.dots[:len(s.dots)-1]
+			}
+
+			s.lastMove = time.Now()
 		}
-
-		if s.pg.Located(s) {
-			return
-		}
-
-		tmpDots := make(playground.DotList, len(s.dots)+1)
-		copy(tmpDots[1:], s.dots)
-		tmpDots[0] = dot
-		s.dots = tmpDots
-
-		if s.length < s.DotCount() {
-			s.dots = s.dots[:len(s.dots)-1]
-		}
-
-		s.lastMove = time.Now()
-	}
+	}()
 }
 
-// calculateDelay calculates delay by snake length
-func calculateDelay(length uint16) time.Duration {
-	k := math.Pow(_SNAKE_SPEED_FACTOR, float64(length))
-	// Delay in nano secunds
-	delay := k * float64(_SNAKE_START_SPEED)
-	return time.Duration(delay)
+func (s *Snake) calculateDelay() time.Duration {
+	k := math.Pow(_SNAKE_SPEED_FACTOR, float64(s.length))
+	return time.Duration(k * float64(_SNAKE_START_SPEED))
 }
 
 // GetNextHeadDot calculates new position of snake's head by its
@@ -213,28 +190,25 @@ func (s *Snake) GetNextHeadDot() (*playground.Dot, error) {
 func (s *Snake) Command(cmd string) error {
 	switch cmd {
 	case "n":
-		s.SetDirection(playground.DIR_NORTH)
+		s.SetMovementDirection(playground.DIR_NORTH)
 	case "e":
-		s.SetDirection(playground.DIR_EAST)
+		s.SetMovementDirection(playground.DIR_EAST)
 	case "s":
-		s.SetDirection(playground.DIR_SOUTH)
+		s.SetMovementDirection(playground.DIR_SOUTH)
 	case "w":
-		s.SetDirection(playground.DIR_WEST)
+		s.SetMovementDirection(playground.DIR_WEST)
 	default:
 		return errors.New("Cannot execute command")
 	}
 	return nil
 }
 
-func (s *Snake) SetDirection(dir playground.Direction) {
-	if playground.ValidDirection(dir) {
-		// Difference between opposite directions equals two if
-		// constants of directions were defined in correct sequence!
-		direction := playground.CalculateDirection(s.dots[1],
-			s.dots[0])
-
-		if direction != dir && (direction-dir)%2 != 0 {
-			s.nextDirection = dir
+func (s *Snake) SetMovementDirection(nextDir playground.Direction) {
+	if playground.ValidDirection(nextDir) {
+		currDir := playground.CalculateDirection(s.dots[1], s.dots[0])
+		// Next direction cannot be opposite to current direction
+		if playground.ReverseDirection(nextDir) != currDir {
+			s.nextDirection = nextDir
 		}
 	}
 }

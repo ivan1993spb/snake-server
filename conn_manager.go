@@ -3,9 +3,10 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
-	"github.com/golang/glog"
+	// "github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 
@@ -27,10 +28,14 @@ func NewConnManager() pwshandler.ConnManager {
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
 
-	if /*gameData,*/ _, ok := env.(*GameData); ok {
+	if gameData, ok := env.(*GameData); ok {
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
-		 *          GAME LOGIC IS HERE. INIT PLAYER            *
+		 *                  BEGIN INIT PLAYER                  *
+		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+		 *                   END INIT PLAYER                   *
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 		return nil
@@ -43,5 +48,5 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 func (m *ConnManager) HandleError(_ http.ResponseWriter,
 	_ *http.Request, err error) {
 	// Write error message to log
-	glog.Exitln(err)
+	// glog.Exitln(err)
 }

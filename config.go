@@ -1,6 +1,9 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"time"
+)
 
 var Config = &struct {
 	// Host and port on which game server handles requests
