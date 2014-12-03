@@ -3,10 +3,10 @@ package main
 import (
 	"errors"
 	"net/http"
-	"time"
+	// "time"
 
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
-	// "github.com/golang/glog"
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 
@@ -18,17 +18,23 @@ type GameData struct {
 	Playground *playground.Playground
 }
 
-type ConnManager struct{}
+type ConnManager struct {
+	streamer *Streamer
+}
 
-func NewConnManager() pwshandler.ConnManager {
-	return &ConnManager{}
+func NewConnManager(s *Streamer) (pwshandler.ConnManager, error) {
+	if s == nil {
+		return nil, errors.New("Passed nil streamer")
+	}
+
+	return &ConnManager{s}, nil
 }
 
 // Implementing pwshandler.ConnManager interface
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
 
-	if gameData, ok := env.(*GameData); ok {
+	if /*gameData*/ _, ok := env.(*GameData); ok {
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                  BEGIN INIT PLAYER                  *
@@ -46,7 +52,15 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 
 // Implementing pwshandler.ConnManager interface
 func (m *ConnManager) HandleError(_ http.ResponseWriter,
-	_ *http.Request, err error) {
-	// Write error message to log
-	// glog.Exitln(err)
+	r *http.Request, err error) {
+	if err == nil {
+		err = errors.New("Passed nil errer to reporting")
+	}
+
+	// Log error message
+	if r != nil {
+		glog.Infoln("IP:", r.RemoteAddr, ", Error:", err)
+	} else {
+		glog.Infoln("Error:", err)
+	}
 }

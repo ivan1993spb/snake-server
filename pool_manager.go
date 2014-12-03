@@ -36,8 +36,14 @@ type GamePoolManager struct {
 // NewGamePoolManager creates new GamePoolManager with fixed max
 // number of pools specified by poolLimit
 func NewGamePoolManager(factory PoolFactory, poolLimit uint8,
-) pwshandler.PoolManager {
-	return &GamePoolManager{factory, make([]Pool, 0, poolLimit)}
+) (pwshandler.PoolManager, error) {
+	if factory == nil {
+		return nil, errors.New("Passed nil pool factory")
+	}
+	if poolLimit == 0 {
+		return nil, errors.New("Invalid pool limit")
+	}
+	return &GamePoolManager{factory, make([]Pool, 0, poolLimit)}, nil
 }
 
 // Implementing pwshandler.ConnManager interface

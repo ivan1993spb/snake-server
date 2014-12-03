@@ -20,6 +20,8 @@ var Config = &struct {
 	HashSalt string
 	// Websocket input and output buffsizes
 	WsReadBufferSize, WsWriteBufferSize int
+	// Output stram delay
+	Delay time.Duration
 }{}
 
 func init() {
@@ -47,4 +49,11 @@ func init() {
 		"websocket input buffer size")
 	flag.IntVar(&Config.WsWriteBufferSize, "ws_write_buf", 4096,
 		"websocket output buffer size")
+
+	var s string
+	flag.StringVar(&s, "delay", "150ms", "game stream delay")
+	delay, err := time.ParseDuration(s)
+	if err == nil {
+		Config.Delay = delay
+	}
 }

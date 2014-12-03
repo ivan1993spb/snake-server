@@ -18,8 +18,17 @@ type PGPoolFactory struct {
 }
 
 func NewPGPoolFactory(rootCxt context.Context, connLimit,
-	pgW, pgH uint8) PoolFactory {
-	return &PGPoolFactory{rootCxt, connLimit, pgW, pgH}
+	pgW, pgH uint8) (PoolFactory, error) {
+	if err := rootCxt.Err(); err != nil {
+		return nil, err
+	}
+	if connLimit == 0 {
+		return nil, errors.New("Connection limit cannot be zero")
+	}
+	if pgW*pgH == 0 {
+		return nil, errors.New("Invalid playground size")
+	}
+	return &PGPoolFactory{rootCxt, connLimit, pgW, pgH}, nil
 }
 
 // Implementing PoolFactory interface
@@ -33,10 +42,7 @@ func (f *PGPoolFactory) NewPool() (Pool, error) {
 		return nil, err
 	}
 
-	// Create context for each pool
-	cxt, cancel := context.WithCancel(f.rootCxt)
-
-	pool, err := NewGamePool(cxt, cancel, f.connLimit, pg)
+	pool, err := NewGamePool(f.rootCxt, f.connLimit, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -53,14 +59,16 @@ type GamePool struct {
 	pg *playground.Playground
 }
 
-func NewGamePool(cxt context.Context, cancel context.CancelFunc,
-	connLimit uint8, pg *playground.Playground) (*GamePool, error) {
-
-	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+func NewGamePool(cxt context.Context, connLimit uint8,
+	pg *playground.Playground) (*GamePool, error) {
+	if err := cxt.Err(); err != nil {
+		return nil, err
 	}
 	if connLimit == 0 {
 		return nil, errors.New("Invalid connection limit")
+	}
+	if pg == nil {
+		return nil, errors.New("Passed nil playground")
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -73,7 +81,9 @@ func NewGamePool(cxt context.Context, cancel context.CancelFunc,
 	 *                 END INIT PLAYGROUND                 *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	return &GamePool{make([]*websocket.Conn, 0, connLimit), cxt,
+	pcxt, cancel := context.WithCancel(cxt)
+
+	return &GamePool{make([]*websocket.Conn, 0, connLimit), pcxt,
 		cancel, pg}, nil
 }
 
@@ -100,10 +110,7 @@ func (p *GamePool) AddConn(conn *websocket.Conn) (
 
 	p.conns = append(p.conns, conn)
 
-	// Create context for each connection in pool
-	cxt, _ := context.WithCancel(p.cxt)
-
-	return &GameData{cxt, p.pg}, nil
+	return &GameData{p.cxt, p.pg}, nil
 }
 
 // Implementing Pool interface
