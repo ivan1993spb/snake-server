@@ -32,8 +32,11 @@ type Snake struct {
 	// Time of last movement
 	lastMove time.Time
 
+	// parentCxt is used to create corpse when snake dies
 	parentCxt context.Context
 
+	// stop is CancelFunc of child context of parentCxt which belonges
+	// to snake. Calling stop() stops snake
 	stop context.CancelFunc
 }
 
@@ -137,14 +140,22 @@ func (s *Snake) Strength() float32 {
 
 func (s *Snake) run(cxt context.Context) {
 	go func() {
+		defer func() {
+			if s.pg.Located(s) {
+				s.Die()
+			}
+		}()
+
+		var ticker = time.Tick(s.calculateDelay())
+
 		for {
 			select {
 			case <-cxt.Done():
 				return
-			case <-time.After(s.calculateDelay()):
+			case <-ticker:
 			}
 
-			if s.pg.Located(s) {
+			if !s.pg.Located(s) {
 				return
 			}
 
@@ -158,10 +169,12 @@ func (s *Snake) run(cxt context.Context) {
 				if err = logic.Clash(s, object, dot); err != nil {
 					return
 				}
-			}
 
-			if s.pg.Located(s) {
-				return
+				if !s.pg.Located(s) {
+					return
+				}
+
+				ticker = time.Tick(s.calculateDelay())
 			}
 
 			tmpDots := make(playground.DotList, len(s.dots)+1)

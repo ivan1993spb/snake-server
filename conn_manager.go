@@ -36,10 +36,10 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 
 	if gameData, ok := env.(*GameData); ok {
 
-		err := m.streamer.Subscribe(gameData.Playground, conn)
-		if err != nil {
-			return err
-		}
+		// Starting game stream
+		m.streamer.Subscribe(gameData.Playground, conn)
+		// Defer unsubscribing
+		defer m.streamer.Unsubscribe(gameData.Playground, conn)
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                  BEGIN INIT PLAYER                  *
@@ -53,21 +53,38 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 			return err
 		}
 
-		for {
-			// @TODO need to close goroutine by context!!!!
-
-			messType, p, err := conn.ReadMessage()
-			if err != nil {
-				return err
-			}
-			if messType == websocket.TextMessage {
-				snake.Command(string(p))
-			}
-		}
-
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                   END INIT PLAYER                   *
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		var (
+			input = make(chan string) // Input commands
+			errch = make(chan error)  // Errors
+		)
+
+		go func() {
+			for {
+				if ty, cmd, err := conn.ReadMessage(); err != nil {
+					errch <- err
+					return
+				} else if ty == websocket.TextMessage {
+					input <- string(cmd)
+				}
+			}
+		}()
+
+		for {
+			select {
+			case <-gameData.Context.Done():
+				return nil
+			case err := <-errch:
+				return err
+			case cmd := <-input:
+				if err := snake.Command(cmd); err != nil {
+					return err
+				}
+			}
+		}
 
 		return nil
 	}

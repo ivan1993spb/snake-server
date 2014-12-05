@@ -6,20 +6,75 @@ import (
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
-
-	// "bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
-type ShiftingObject interface {
+// Playground wrapper
+type Playground interface {
 	Pack() string
 	Updated() bool
 }
 
+type stream struct {
+	playground  Playground
+	subscribers []*websocket.Conn
+}
+
+func newStream(pg Playground, first *websocket.Conn) *stream {
+	return &stream{pg, []*websocket.Conn{first}}
+}
+
+func (s *stream) addSubscriber(conn *websocket.Conn) {
+	if !s.connExists(conn) {
+		s.subscribers = append(s.subscribers, conn)
+	}
+}
+
+func (s *stream) delSubscriber(i int) {
+	if i > -1 && len(s.subscribers) > i {
+		s.subscribers = append(
+			s.subscribers[:i],
+			s.subscribers[i+1:]...,
+		)
+	}
+}
+
+func (s *stream) connExists(conn *websocket.Conn) bool {
+	return s.connIndex(conn) > -1
+}
+
+func (s *stream) connIndex(conn *websocket.Conn) int {
+	for i := range s.subscribers {
+		if s.subscribers[i] == conn {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s *stream) push() {
+	if s.playground.Updated() {
+		for i := 0; i < len(s.subscribers); {
+			err := s.subscribers[i].WriteMessage(
+				websocket.TextMessage,
+				[]byte(s.playground.Pack()),
+			)
+
+			if err != nil {
+				s.delSubscriber(i)
+				continue
+			}
+
+			i++
+		}
+	}
+}
+
 type Streamer struct {
-	delay          time.Duration
-	subscriptions  map[ShiftingObject][]*websocket.Conn
-	parentCxt, cxt context.Context
-	cancel         context.CancelFunc
+	delay    time.Duration
+	streams  []*stream
+	pingPong chan struct{}
+	parCxt   context.Context    // Parent context
+	cancel   context.CancelFunc // Cancel func of child context
 }
 
 func NewStreamer(cxt context.Context, delay time.Duration,
@@ -32,99 +87,122 @@ func NewStreamer(cxt context.Context, delay time.Duration,
 	}
 
 	return &Streamer{
-		delay:         delay,
-		subscriptions: make(map[ShiftingObject][]*websocket.Conn),
-		parentCxt:     cxt,
+		delay:    delay,
+		streams:  make([]*stream, 0),
+		pingPong: make(chan struct{}),
+		parCxt:   cxt,
 	}, nil
 }
 
-func (s *Streamer) Subscribe(o ShiftingObject, c *websocket.Conn,
-) error {
-	if c == nil {
-		return errors.New("Passed nil connection")
+func (s *Streamer) delStream(i int) {
+	if i > -1 && len(s.streams) > i {
+		s.streams = append(s.streams[:i], s.streams[i+1:]...)
 	}
-
-	if !s.running() {
-		s.start()
-	}
-
-	if _, ok := s.subscriptions[o]; ok {
-		for _, conn := range s.subscriptions[o] {
-			if conn == c {
-				return errors.New("Connection already subscribed")
-			}
-		}
-		s.subscriptions[o] = append(s.subscriptions[o], c)
-	} else {
-		s.subscriptions[o] = []*websocket.Conn{c}
-	}
-
-	return nil
 }
 
-func (s *Streamer) Unsubscribe(o ShiftingObject, c *websocket.Conn) {
-	if _, ok := s.subscriptions[o]; ok {
-		for i := range s.subscriptions[o] {
-			if s.subscriptions[o][i] == c {
-				s.subscriptions[o] = append(s.subscriptions[o][:i],
-					s.subscriptions[o][i+1:]...)
-				break
+func (s *Streamer) Subscribe(pg Playground, conn *websocket.Conn) {
+	if conn == nil {
+		return
+	}
+
+	defer func() {
+		if !s.running() {
+			s.start()
+		}
+	}()
+
+	for _, stream := range s.streams {
+		if stream.playground == pg {
+			if !stream.connExists(conn) {
+				stream.addSubscriber(conn)
 			}
+			return
 		}
+	}
 
-		if len(s.subscriptions[o]) == 0 {
-			delete(s.subscriptions, o)
-		}
+	s.streams = append(
+		s.streams,
+		newStream(pg, conn),
+	)
+}
 
-		if len(s.subscriptions) == 0 && s.running() {
-			s.stop()
+func (s *Streamer) Unsubscribe(pg Playground, conn *websocket.Conn) {
+	for i := range s.streams {
+		if s.streams[i].playground == pg {
+			if j := s.streams[i].connIndex(conn); j > -1 {
+				s.streams[i].delSubscriber(j)
+				if len(s.streams[i].subscribers) == 0 {
+					s.delStream(i)
+				}
+				return
+			}
 		}
 	}
 }
 
 func (s *Streamer) start() {
 	if !s.running() {
-		s.cxt, s.cancel = context.WithCancel(s.parentCxt)
-		s.run()
+		var cxt context.Context
+		cxt, s.cancel = context.WithCancel(s.parCxt)
+		s.run(cxt)
 	}
 }
 
 func (s *Streamer) stop() {
 	if s.running() && s.cancel != nil {
 		s.cancel()
-		s.cxt, s.cancel = nil, nil
 	}
 }
 
 func (s *Streamer) running() bool {
-	return s.cxt == nil || s.cxt.Err() != nil
+	go func() {
+		s.pingPong <- struct{}{}
+	}()
+	select {
+	case <-s.pingPong:
+		return true
+	case <-time.After(s.delay):
+	}
+	return false
 }
 
-func (s *Streamer) run() {
-	if !s.running() && len(s.subscriptions) > 0 {
-		go func() {
-			for {
-				select {
-				case <-s.cxt.Done():
-					return
-				case <-time.After(s.delay):
+func (s *Streamer) run(cxt context.Context) {
+	if len(s.streams) == 0 {
+		return
+	}
+
+	if s.running() {
+		return
+	}
+
+	go func() {
+		var t = time.Tick(s.delay)
+
+		for {
+			select {
+			case <-cxt.Done():
+				return
+			case <-s.pingPong:
+				s.pingPong <- struct{}{}
+				continue
+			case <-t:
+			}
+			if len(s.streams) > 0 {
+				return
+			}
+
+			for i := 0; i < len(s.streams); {
+				if len(s.streams[i].subscribers) == 0 {
+					s.delStream(i)
+					continue
 				}
-				if len(s.subscriptions) > 0 {
-					for o, conns := range s.subscriptions {
-						if o.Updated() {
-							for _, conn := range conns {
-								err := conn.WriteMessage(
-									websocket.TextMessage,
-									[]byte(o.Pack()),
-								)
-								if err != nil {
-									s.Unsubscribe(o, conn)
-								}
-							}
-						}
-					}
+
+				i++
+
+				if s.streams[i].playground.Updated() {
+					s.streams[i].push()
 				}
 			}
-		}()
-	}
+		}
+	}()
 }

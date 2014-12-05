@@ -76,7 +76,15 @@ func NewGamePool(cxt context.Context, connLimit uint8,
 	 *                BEGIN INIT PLAYGROUND                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	objects.CreateApple(pg)
+	// Create long wall to the playground
+	if _, err := objects.CreateLongWall(pg); err != nil {
+		return nil, err
+	}
+
+	// Create apple to the playground
+	if _, err := objects.CreateApple(pg); err != nil {
+		return nil, err
+	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *                 END INIT PLAYGROUND                 *
