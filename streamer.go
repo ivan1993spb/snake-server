@@ -72,7 +72,7 @@ func (s *stream) push() {
 type Streamer struct {
 	delay    time.Duration
 	streams  []*stream
-	pingPong chan struct{}
+	pingPong chan chan struct{}
 	parCxt   context.Context    // Parent context
 	cancel   context.CancelFunc // Cancel func of child context
 }
@@ -89,7 +89,7 @@ func NewStreamer(cxt context.Context, delay time.Duration,
 	return &Streamer{
 		delay:    delay,
 		streams:  make([]*stream, 0),
-		pingPong: make(chan struct{}),
+		pingPong: make(chan chan struct{}),
 		parCxt:   cxt,
 	}, nil
 }
@@ -134,6 +134,9 @@ func (s *Streamer) Unsubscribe(pg Playground, conn *websocket.Conn) {
 				if len(s.streams[i].subscribers) == 0 {
 					s.delStream(i)
 				}
+				if len(s.streams) == 0 {
+					s.stop()
+				}
 				return
 			}
 		}
@@ -155,13 +158,15 @@ func (s *Streamer) stop() {
 }
 
 func (s *Streamer) running() bool {
+	var ch = make(chan struct{})
 	go func() {
-		s.pingPong <- struct{}{}
+		s.pingPong <- ch
 	}()
 	select {
-	case <-s.pingPong:
+	case <-ch:
 		return true
 	case <-time.After(s.delay):
+		<-s.pingPong
 	}
 	return false
 }
@@ -182,8 +187,8 @@ func (s *Streamer) run(cxt context.Context) {
 			select {
 			case <-cxt.Done():
 				return
-			case <-s.pingPong:
-				s.pingPong <- struct{}{}
+			case ch := <-s.pingPong:
+				ch <- struct{}{}
 				continue
 			case <-t:
 			}
