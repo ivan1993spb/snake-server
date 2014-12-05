@@ -46,6 +46,7 @@ func (f *PGPoolFactory) NewPool() (Pool, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return pool, nil
 }
 

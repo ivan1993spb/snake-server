@@ -68,6 +68,7 @@ func Clash(first Living, second Object, dot *playground.Dot) error {
 
 			}
 		} else {
+			// Clash with any hard object will result to dying
 			first.Die()
 		}
 

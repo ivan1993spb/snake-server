@@ -6,6 +6,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
+
+	// "bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
 type ShiftingObject interface {
@@ -25,13 +27,15 @@ func NewStreamer(cxt context.Context, delay time.Duration,
 	if err := cxt.Err(); err != nil {
 		return nil, err
 	}
-	if delay == 0 {
+	if delay <= 0 {
 		return nil, errors.New("Invalid delay")
 	}
 
-	return &Streamer{delay: delay,
+	return &Streamer{
+		delay:         delay,
 		subscriptions: make(map[ShiftingObject][]*websocket.Conn),
-		parentCxt:     cxt}, nil
+		parentCxt:     cxt,
+	}, nil
 }
 
 func (s *Streamer) Subscribe(o ShiftingObject, c *websocket.Conn,

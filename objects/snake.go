@@ -44,6 +44,9 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 	if pg != nil {
 		return nil, errors.New("Passed nil playground")
 	}
+	if err := cxt.Err(); err != nil {
+		return nil, err
+	}
 
 	var (
 		dir  = playground.RandomDirection()
@@ -146,7 +149,7 @@ func (s *Snake) run(cxt context.Context) {
 			}
 
 			// Calculate next position
-			dot, err := s.GetNextHeadDot()
+			dot, err := s.getNextHeadDot()
 			if err != nil {
 				return
 			}
@@ -180,9 +183,9 @@ func (s *Snake) calculateDelay() time.Duration {
 	return time.Duration(k * float64(_SNAKE_START_SPEED))
 }
 
-// GetNextHeadDot calculates new position of snake's head by its
+//  getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
-func (s *Snake) GetNextHeadDot() (*playground.Dot, error) {
+func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
 	return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
 }
 
@@ -190,20 +193,20 @@ func (s *Snake) GetNextHeadDot() (*playground.Dot, error) {
 func (s *Snake) Command(cmd string) error {
 	switch cmd {
 	case "n":
-		s.SetMovementDirection(playground.DIR_NORTH)
+		s.setMovementDirection(playground.DIR_NORTH)
 	case "e":
-		s.SetMovementDirection(playground.DIR_EAST)
+		s.setMovementDirection(playground.DIR_EAST)
 	case "s":
-		s.SetMovementDirection(playground.DIR_SOUTH)
+		s.setMovementDirection(playground.DIR_SOUTH)
 	case "w":
-		s.SetMovementDirection(playground.DIR_WEST)
+		s.setMovementDirection(playground.DIR_WEST)
 	default:
 		return errors.New("Cannot execute command")
 	}
 	return nil
 }
 
-func (s *Snake) SetMovementDirection(nextDir playground.Direction) {
+func (s *Snake) setMovementDirection(nextDir playground.Direction) {
 	if playground.ValidDirection(nextDir) {
 		currDir := playground.CalculateDirection(s.dots[1], s.dots[0])
 		// Next direction cannot be opposite to current direction

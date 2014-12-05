@@ -34,7 +34,10 @@ func CreateCorpse(pg *playground.Playground, cxt context.Context,
 		return nil, errors.New("Passed nil playground")
 	}
 	if len(dots) == 0 {
-		return nil, errors.New("Passed empty list of dots")
+		return nil, errors.New("Passed empty dot list")
+	}
+	if err := cxt.Err(); err != nil {
+		return nil, err
 	}
 
 	ccxt, cancel := context.WithCancel(cxt)
@@ -75,7 +78,6 @@ func (c *Corpse) run(cxt context.Context) {
 		case <-time.After(_CORPSE_MAX_EXPERIENCE):
 			// If corpse lies too long
 		}
-
 		if c.pg.Located(c) {
 			c.pg.Delete(c)
 		}

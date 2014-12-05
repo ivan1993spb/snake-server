@@ -12,14 +12,6 @@ func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
 		return nil, errors.New("Invalid field size")
 	}
 
-	if w*h == 1 {
-		if dot, err := pg.GetEmptyDot(); err == nil {
-			return DotList{dot}, nil
-		} else {
-			return nil, err
-		}
-	}
-
 	var (
 		x0, y0 uint8
 		dots   DotList
@@ -44,6 +36,7 @@ mainLoop:
 			}
 		}
 	}
+
 	return dots, nil
 
 }

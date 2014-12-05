@@ -78,3 +78,18 @@ func ValidDirection(dir Direction) bool {
 	}
 	return false
 }
+
+// Pack packs direction
+func (dir Direction) Pack() string {
+	switch dir {
+	case DIR_NORTH:
+		return "!n"
+	case DIR_SOUTH:
+		return "!s"
+	case DIR_EAST:
+		return "!e"
+	case DIR_WEST:
+		return "!w"
+	}
+	return ""
+}

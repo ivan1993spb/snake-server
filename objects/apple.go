@@ -15,7 +15,6 @@ type Apple struct {
 func CreateApple(pg *playground.Playground) (*Apple, error) {
 	if pg == nil {
 		return nil, errors.New("Passed nil playground")
-
 	}
 
 	dot, err := pg.GetEmptyDot()
