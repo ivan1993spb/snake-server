@@ -2,7 +2,7 @@ package playground
 
 import "errors"
 
-const _RETRIES_NUMBER = 10
+const _RETRIES_NUMBER = 35
 
 // GetEmptyField finds empty field with passed width and height
 func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
@@ -20,8 +20,12 @@ func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
 
 mainLoop:
 
-	x0 = uint8(random.Intn(int(pgW - w)))
-	y0 = uint8(random.Intn(int(pgH - h)))
+	if pgW-w > 0 {
+		x0 = uint8(random.Intn(int(pgW - w)))
+	}
+	if pgH-h > 0 {
+		y0 = uint8(random.Intn(int(pgH - h)))
+	}
 	dots = dots[:0]
 
 	for x := x0; x < x0+w; x++ {

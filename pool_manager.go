@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 )
 
@@ -49,23 +50,53 @@ func NewGamePoolManager(factory PoolFactory, poolLimit uint8,
 // Implementing pwshandler.ConnManager interface
 func (pm *GamePoolManager) AddConn(conn *websocket.Conn,
 ) (pwshandler.Environment, error) {
+	if glog.V(3) {
+		glog.Infoln("Accepted new connection")
+	}
+	if glog.V(4) {
+		glog.Infoln("Try to find not full pool")
+	}
 	// Try to find not full pool
 	for i := range pm.pools {
 		if !pm.pools[i].IsFull() {
+			if glog.V(4) {
+				glog.Infoln("Was found not full pool")
+			}
+			if glog.V(3) {
+				glog.Infoln("Creating connection to pool")
+			}
 			return pm.pools[i].AddConn(conn)
 		}
 	}
 
+	if glog.V(3) {
+		glog.Infoln("Cannot find not full pool")
+	}
+
 	// Try to create pool
 	if !pm.isFull() {
-		// Generate new pool
+		if glog.V(3) {
+			glog.Infoln("Server is not full: create new pool")
+		}
+
+		// Creating new pool
 		if newPool, err := pm.factory.NewPool(); err == nil {
+			if glog.V(3) {
+				glog.Infoln("New pool was created")
+			}
 			// Save the pool
 			pm.pools = append(pm.pools, newPool)
 			// Create connection to the pool
 			return newPool.AddConn(conn)
 		} else {
+			if glog.V(3) {
+				glog.Infoln("Cannot create new pool")
+			}
 			return nil, err
+		}
+	} else {
+		if glog.V(3) {
+			glog.Infoln("Cannot create new pool: server is full")
 		}
 	}
 
@@ -74,16 +105,32 @@ func (pm *GamePoolManager) AddConn(conn *websocket.Conn,
 
 // Implementing pwshandler.ConnManager interface
 func (pm *GamePoolManager) DelConn(conn *websocket.Conn) {
+	if glog.V(4) {
+		glog.Infoln("Deleting information about closed connection")
+	}
+	if glog.V(3) {
+		glog.Infoln("Try to find pool of closed connection")
+	}
 	for i := range pm.pools {
 		// If current pool has the connection...
 		if pm.pools[i].HasConn(conn) {
+			if glog.V(3) {
+				glog.Infoln("Pool of removing connection was found")
+				glog.Infoln("Removing closed connection from pool")
+			}
 			// Remove it
 			pm.pools[i].DelConn(conn)
 
 			// And now if pool is empty
 			if pm.pools[i].IsEmpty() {
+				if glog.V(3) {
+					glog.Infoln("Removing empty pool")
+				}
 				// Delete pool
 				pm.pools = append(pm.pools[:i], pm.pools[i+1:]...)
+				if glog.V(4) {
+					glog.Infoln("Empty pool was removed")
+				}
 			}
 
 			return

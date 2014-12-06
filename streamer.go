@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 )
@@ -53,10 +54,11 @@ func (s *stream) connIndex(conn *websocket.Conn) int {
 
 func (s *stream) push() {
 	if s.playground.Updated() {
+		data := []byte(s.playground.Pack())
 		for i := 0; i < len(s.subscribers); {
 			err := s.subscribers[i].WriteMessage(
 				websocket.TextMessage,
-				[]byte(s.playground.Pack()),
+				data,
 			)
 
 			if err != nil {
@@ -114,12 +116,18 @@ func (s *Streamer) Subscribe(pg Playground, conn *websocket.Conn) {
 	for _, stream := range s.streams {
 		if stream.playground == pg {
 			if !stream.connExists(conn) {
+				if glog.V(3) {
+					glog.Infoln("Creating new subscriber to stream")
+				}
 				stream.addSubscriber(conn)
 			}
 			return
 		}
 	}
 
+	if glog.V(3) {
+		glog.Infoln("Creating new subscriber to NEW stream")
+	}
 	s.streams = append(
 		s.streams,
 		newStream(pg, conn),
@@ -127,14 +135,40 @@ func (s *Streamer) Subscribe(pg Playground, conn *websocket.Conn) {
 }
 
 func (s *Streamer) Unsubscribe(pg Playground, conn *websocket.Conn) {
+	if glog.V(3) {
+		glog.Infoln("Unsubscribe connection from stream")
+	}
+
 	for i := range s.streams {
 		if s.streams[i].playground == pg {
+			if glog.V(4) {
+				glog.Infoln("Necessary stream was found")
+			}
+
 			if j := s.streams[i].connIndex(conn); j > -1 {
+				if glog.V(4) {
+					glog.Infoln("Subscriber was found")
+				}
+				if glog.V(3) {
+					glog.Infoln("Removing subscriber from stream")
+				}
 				s.streams[i].delSubscriber(j)
 				if len(s.streams[i].subscribers) == 0 {
+					if glog.V(3) {
+						glog.Infoln(
+							"Stream has no subscribers.",
+							"Removing stream",
+						)
+					}
 					s.delStream(i)
 				}
-				if len(s.streams) == 0 {
+				if len(s.streams) == 0 && s.running() {
+					if glog.V(3) {
+						glog.Infoln(
+							"Streamer is empty.",
+							"Stoping streamer",
+						)
+					}
 					s.stop()
 				}
 				return
@@ -145,8 +179,13 @@ func (s *Streamer) Unsubscribe(pg Playground, conn *websocket.Conn) {
 
 func (s *Streamer) start() {
 	if !s.running() {
+		if glog.V(3) {
+			glog.Infoln("Starting streamer")
+		}
+
 		var cxt context.Context
 		cxt, s.cancel = context.WithCancel(s.parCxt)
+
 		s.run(cxt)
 	}
 }
@@ -186,13 +225,26 @@ func (s *Streamer) run(cxt context.Context) {
 		for {
 			select {
 			case <-cxt.Done():
+				if glog.V(2) {
+					glog.Infoln(
+						"Stopping streamer:",
+						"context was canceled",
+					)
+				}
 				return
 			case ch := <-s.pingPong:
 				ch <- struct{}{}
 				continue
 			case <-t:
 			}
-			if len(s.streams) > 0 {
+
+			if len(s.streams) == 0 {
+				if glog.V(2) {
+					glog.Infoln(
+						"Stopping streamer:",
+						"there is no one stream",
+					)
+				}
 				return
 			}
 
@@ -202,11 +254,11 @@ func (s *Streamer) run(cxt context.Context) {
 					continue
 				}
 
-				i++
-
 				if s.streams[i].playground.Updated() {
 					s.streams[i].push()
 				}
+
+				i++
 			}
 		}
 	}()

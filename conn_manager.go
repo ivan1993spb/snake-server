@@ -33,17 +33,40 @@ func NewConnManager(s *Streamer) (pwshandler.ConnManager, error) {
 // Implementing pwshandler.ConnManager interface
 func (m *ConnManager) Handle(conn *websocket.Conn,
 	env pwshandler.Environment) error {
+	if glog.V(3) {
+		glog.Infoln("Websocket handler started for new connection")
+	}
+	defer func() {
+		if glog.V(3) {
+			glog.Infoln("Websocket handler stops")
+		}
+	}()
 
 	if gameData, ok := env.(*GameData); ok {
+		if glog.V(4) {
+			glog.Infoln("Handler receive game data")
+		}
 
+		if glog.V(3) {
+			glog.Infoln("Subscribe connection to stream")
+		}
 		// Starting game stream
 		m.streamer.Subscribe(gameData.Playground, conn)
 		// Defer unsubscribing
-		defer m.streamer.Unsubscribe(gameData.Playground, conn)
+		defer func() {
+			if glog.V(3) {
+				glog.Infoln("Handler are finishing")
+			}
+			m.streamer.Unsubscribe(gameData.Playground, conn)
+		}()
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                  BEGIN INIT PLAYER                  *
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		if glog.V(4) {
+			glog.Infoln("Start player init")
+		}
 
 		snake, err := objects.CreateSnake(
 			gameData.Playground,
@@ -56,6 +79,10 @@ func (m *ConnManager) Handle(conn *websocket.Conn,
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
 		 *                   END INIT PLAYER                   *
 		 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+		if glog.V(3) {
+			glog.Infoln("Starting listening for player commands")
+		}
 
 		var (
 			input = make(chan string) // Input commands

@@ -44,7 +44,7 @@ type Snake struct {
 func CreateSnake(pg *playground.Playground, cxt context.Context,
 ) (*Snake, error) {
 
-	if pg != nil {
+	if pg == nil {
 		return nil, errors.New("Passed nil playground")
 	}
 	if err := cxt.Err(); err != nil {
@@ -196,10 +196,13 @@ func (s *Snake) calculateDelay() time.Duration {
 	return time.Duration(k * float64(_SNAKE_START_SPEED))
 }
 
-//  getNextHeadDot calculates new position of snake's head by its
+// getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
 func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
-	return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
+	if len(s.dots) > 0 {
+		return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
+	}
+	return nil, errors.New("Snake has no dots")
 }
 
 // Implementing logic.Controlled interface

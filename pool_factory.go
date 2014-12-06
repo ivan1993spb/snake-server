@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 
@@ -76,6 +77,10 @@ func NewGamePool(cxt context.Context, connLimit uint8,
 	 *                BEGIN INIT PLAYGROUND                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+	if glog.V(4) {
+		glog.Infoln("Starting playground init")
+	}
+
 	// Create long wall to the playground
 	if _, err := objects.CreateLongWall(pg); err != nil {
 		return nil, err
@@ -109,12 +114,19 @@ func (p *GamePool) IsEmpty() bool {
 // Implementing Pool interface
 func (p *GamePool) AddConn(conn *websocket.Conn) (
 	pwshandler.Environment, error) {
+	if glog.V(3) {
+		glog.Infoln("Creating connection to pool")
+	}
 
 	if p.IsFull() {
 		return nil, errors.New("Pool is full")
 	}
 	if p.HasConn(conn) {
 		return nil, errors.New("Pool already has passed connection")
+	}
+
+	if glog.V(3) {
+		glog.Infoln("Connection was created to pool")
 	}
 
 	p.conns = append(p.conns, conn)
@@ -128,11 +140,23 @@ func (p *GamePool) DelConn(conn *websocket.Conn) {
 		for i := range p.conns {
 			// Find connection
 			if p.conns[i] == conn {
+				if glog.V(3) {
+					glog.Infoln("Connection found and removed")
+				}
 				// Delete connection
 				p.conns = append(p.conns[:i], p.conns[i+1:]...)
 				// Stop all child goroutines if empty pool
-				if p.IsEmpty() && p.cancel != nil {
-					p.cancel()
+
+				if p.IsEmpty() {
+					if glog.V(4) {
+						glog.Infoln("Pool is empty")
+					}
+					if p.cancel != nil {
+						p.cancel()
+						if glog.V(4) {
+							glog.Infoln("Pool was stopped")
+						}
+					}
 				}
 
 				return

@@ -190,6 +190,9 @@ func (pg *Playground) Pack() (output string) {
 
 	pg.lastUpdates = currentUpdates
 
+	if len(output) > 0 {
+		output = output[1:]
+	}
 	return
 }
 

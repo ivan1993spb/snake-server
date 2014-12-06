@@ -55,6 +55,10 @@ func main() {
 		glog.Exitln("Cannot create shutdown listener:", err)
 	}
 
+	if glog.V(4) {
+		glog.Infoln("Listeners was created")
+	}
+
 	// Gets root context and cancel func for all goroutines on server
 	cxt, cancel := context.WithCancel(context.Background())
 
@@ -64,11 +68,17 @@ func main() {
 	if err != nil {
 		glog.Exitln("Cannot create pool factory:", err)
 	}
+	if glog.V(4) {
+		glog.Infoln("Pool factory was created")
+	}
 
 	// Init pool manager which allocates connections on pools
 	poolManager, err := NewGamePoolManager(factory, uint8(poolLimit))
 	if err != nil {
 		glog.Exitln("Cannot create pool manager:", err)
+	}
+	if glog.V(4) {
+		glog.Infoln("Pool manager was created")
 	}
 
 	streamDelay, err := time.ParseDuration(delay)
@@ -80,15 +90,24 @@ func main() {
 	if err != nil {
 		glog.Exitln("Cannot create streamer:", err)
 	}
+	if glog.V(4) {
+		glog.Infoln("Streamer was created")
+	}
 
 	// Init connection manager
 	connManager, err := NewConnManager(streamer)
 	if err != nil {
 		glog.Exitln("Cannot create connection manager:", err)
 	}
+	if glog.V(4) {
+		glog.Infoln("Connection manager was created")
+	}
 
 	// Init request verifier
 	verifier := NewVerifier(hashSalt)
+	if glog.V(4) {
+		glog.Infoln("Request verifier was created")
+	}
 
 	// Configure websocket upgrader
 	upgrader := &websocket.Upgrader{
@@ -101,6 +120,9 @@ func main() {
 	// Create pool handler
 	handler := pwshandler.NewPoolHandler(
 		poolManager, connManager, verifier, upgrader)
+	if glog.V(4) {
+		glog.Infoln("Game handler was init")
+	}
 
 	// Setup GOMAXPROCS
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -111,20 +133,44 @@ func main() {
 		if _, err := shutdownListener.Accept(); err != nil {
 			glog.Errorln("Accepting shutdown connection:", err)
 		}
+		if glog.V(3) {
+			glog.Infoln("Accepted shutdown command")
+		}
 
 		// Closing shutdown listener
 		if err := shutdownListener.Close(); err != nil {
 			glog.Errorln("Closing shutdown listener:", err)
 		}
+		if glog.V(4) {
+			glog.Infoln("Shutdown listener was closed")
+		}
 
 		// Finishing all goroutines
 		cancel()
+		if glog.V(3) {
+			glog.Infoln("Root context was canceled")
+		}
+		if glog.V(4) {
+			glog.Infoln("Wait...")
+		}
+		time.Sleep(time.Second * 2)
 
 		// Closing working listener
 		if err := workingListener.Close(); err != nil {
 			glog.Errorln("Closing working listener:", err)
 		}
+		if glog.V(4) {
+			glog.Infoln(
+				"Working listener was closed.",
+				"Server will shutdown with error:",
+				"use of closed network connection",
+			)
+		}
 	}()
+
+	if glog.V(4) {
+		glog.Infoln("Starting server")
+	}
 
 	// Start server
 	if err = http.Serve(workingListener, handler); err != nil {
