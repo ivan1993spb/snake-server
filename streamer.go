@@ -224,8 +224,7 @@ func (s *Streamer) run(cxt context.Context) {
 					)
 				}
 				return
-			case ch := <-s.pingPong:
-				ch <- struct{}{}
+			case <-s.pingPong <- struct{}{}:
 				continue
 			case <-t:
 			}

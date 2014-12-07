@@ -20,7 +20,7 @@ const (
 )
 
 func main() {
-	var host, port, sdPort, hashSalt, delay string
+	var host, port, sdPort, hashSalt string
 	flag.StringVar(&host, "host", "",
 		"host on which game server handles requests")
 	flag.StringVar(&port, "port", "8081",
@@ -29,7 +29,10 @@ func main() {
 		"port on which server accepts for shutdown request")
 	flag.StringVar(&hashSalt, "hash_salt", "",
 		"salt for request verifier")
-	flag.StringVar(&delay, "delay", "150ms", "game stream delay")
+
+	var delay time.Duration
+	flag.DurationVar(&delay, "delay", time.Millisecond*150,
+		"stream delay")
 
 	var poolLimit, connLimit, pgW, pgH uint
 	flag.UintVar(&poolLimit, "pool_limit", 10,
@@ -84,12 +87,7 @@ func main() {
 		glog.Infoln("Pool manager was created")
 	}
 
-	streamDelay, err := time.ParseDuration(delay)
-	if err != nil {
-		glog.Exitln("Invalid delay:", err)
-	}
-
-	streamer, err := NewStreamer(cxt, streamDelay)
+	streamer, err := NewStreamer(cxt, delay)
 	if err != nil {
 		glog.Exitln("Cannot create streamer:", err)
 	}

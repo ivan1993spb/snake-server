@@ -44,9 +44,6 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	if gameData, ok := data.(*GameData); ok {
 		if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 			glog.Infoln("Handler receive game data")
-		}
-
-		if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 			glog.Infoln("Subscribe connection to game stream")
 		}
 		// Starting game stream
