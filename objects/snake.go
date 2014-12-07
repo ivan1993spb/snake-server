@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"bitbucket.org/pushkin_ivan/clever-snake/logic"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"golang.org/x/net/context"
 )
 
 const (

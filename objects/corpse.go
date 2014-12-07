@@ -4,9 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"golang.org/x/net/context"
 )
 
 // Time for which corpse will be lie on playground
