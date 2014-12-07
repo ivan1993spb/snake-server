@@ -54,7 +54,7 @@ func (s *stream) connIndex(ws *websocket.Conn) int {
 
 func (s *stream) push() {
 	if s.playground.Updated() {
-		data := s.playground.Pack()
+		data := "playground:" + s.playground.Pack()
 		for i := 0; i < len(s.subscribers); {
 			err := websocket.Message.Send(s.subscribers[i], data)
 			if err != nil {

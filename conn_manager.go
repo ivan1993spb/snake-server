@@ -125,9 +125,14 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 						glog.Infoln("Error with connection:", err)
 					}
 					return err
+				} else if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
+					glog.Infoln("Connection was closed")
 				}
 				return nil
 			case cmd := <-input:
+				if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
+					glog.Infoln("Accepted player command")
+				}
 				if err := snake.Command(cmd); err != nil {
 					return err
 				}
