@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
-
 	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
+	"github.com/golang/glog"
+	"golang.org/x/net/websocket"
 )
 
 // RequestVerifier verifies requests by hash sum of passed request
@@ -15,6 +15,10 @@ func NewVerifier(HashSalt string) pwshandler.RequestVerifier {
 }
 
 // Implementing pwshandler.RequestVerifier interface
-func (*RequestVerifier) Verify(*http.Request) error {
+func (*RequestVerifier) Verify(ws *websocket.Conn) error {
+	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
+		glog.Infoln("Verifying accepted connection")
+	}
+
 	return nil
 }

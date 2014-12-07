@@ -3,13 +3,12 @@ package main
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
-	"github.com/golang/glog"
-	"github.com/gorilla/websocket"
-	"golang.org/x/net/context"
-
 	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
+	"github.com/golang/glog"
+	"golang.org/x/net/context"
+	"golang.org/x/net/websocket"
 )
 
 type PGPoolFactory struct {
@@ -77,7 +76,7 @@ func NewGamePool(cxt context.Context, connLimit uint8,
 	 *                BEGIN INIT PLAYGROUND                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	if glog.V(4) {
+	if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
 		glog.Infoln("Starting playground init")
 	}
 
@@ -112,35 +111,31 @@ func (p *GamePool) IsEmpty() bool {
 }
 
 // Implementing Pool interface
-func (p *GamePool) AddConn(conn *websocket.Conn) (
+func (p *GamePool) AddConn(ws *websocket.Conn) (
 	pwshandler.Environment, error) {
-	if glog.V(3) {
-		glog.Infoln("Creating connection to pool")
-	}
-
 	if p.IsFull() {
 		return nil, errors.New("Pool is full")
 	}
-	if p.HasConn(conn) {
+	if p.HasConn(ws) {
 		return nil, errors.New("Pool already has passed connection")
 	}
 
-	if glog.V(3) {
+	p.conns = append(p.conns, ws)
+
+	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 		glog.Infoln("Connection was created to pool")
 	}
-
-	p.conns = append(p.conns, conn)
 
 	return &GameData{p.cxt, p.pg}, nil
 }
 
 // Implementing Pool interface
-func (p *GamePool) DelConn(conn *websocket.Conn) {
-	if p.HasConn(conn) {
+func (p *GamePool) DelConn(ws *websocket.Conn) {
+	if p.HasConn(ws) {
 		for i := range p.conns {
 			// Find connection
-			if p.conns[i] == conn {
-				if glog.V(3) {
+			if p.conns[i] == ws {
+				if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 					glog.Infoln("Connection found and removed")
 				}
 				// Delete connection
@@ -148,13 +143,15 @@ func (p *GamePool) DelConn(conn *websocket.Conn) {
 				// Stop all child goroutines if empty pool
 
 				if p.IsEmpty() {
-					if glog.V(4) {
+					if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
 						glog.Infoln("Pool is empty")
 					}
 					if p.cancel != nil {
 						p.cancel()
-						if glog.V(4) {
-							glog.Infoln("Pool was stopped")
+						if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
+							glog.Infoln(
+								"Pool goroutines was canceled",
+							)
 						}
 					}
 				}
@@ -166,9 +163,9 @@ func (p *GamePool) DelConn(conn *websocket.Conn) {
 }
 
 // Implementing Pool interface
-func (p *GamePool) HasConn(conn *websocket.Conn) bool {
+func (p *GamePool) HasConn(ws *websocket.Conn) bool {
 	for i := range p.conns {
-		if p.conns[i] == conn {
+		if p.conns[i] == ws {
 			return true
 		}
 	}

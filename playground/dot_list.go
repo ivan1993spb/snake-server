@@ -45,7 +45,7 @@ func (dl DotList) Delete(dot *Dot) {
 func (dl DotList) Reverse() (rdl DotList) {
 	if len(dl) > 0 {
 		rdl = make(DotList, 0, len(dl))
-		for i := len(dl) - 1; i <= 0; i-- {
+		for i := len(dl) - 1; i >= 0; i-- {
 			rdl = append(rdl, dl[i])
 		}
 	}
