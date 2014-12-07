@@ -5,8 +5,8 @@ import (
 
 	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
-	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
+	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )

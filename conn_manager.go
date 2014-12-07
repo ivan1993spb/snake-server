@@ -6,8 +6,8 @@ import (
 
 	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
-	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
+	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
@@ -51,6 +51,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 		}
 		// Starting game stream
 		m.streamer.Subscribe(gameData.Playground, ws)
+
 		// Defer unsubscribing
 		defer func() {
 			if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
@@ -153,8 +154,8 @@ func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 
 	// Log error message
 	if ws != nil {
-		glog.Infoln("IP:", ws.Request().RemoteAddr, ", Error:", err)
+		glog.Errorln("IP:", ws.Request().RemoteAddr, ", Error:", err)
 	} else {
-		glog.Infoln("Error:", err)
+		glog.Errorln("Error:", err)
 	}
 }

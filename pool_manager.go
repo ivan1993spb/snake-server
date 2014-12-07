@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
+	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/websocket"
 )
 

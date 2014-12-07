@@ -166,8 +166,9 @@ func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn) {
 					}
 					s.stop()
 				}
-				return
 			}
+
+			return
 		}
 	}
 }

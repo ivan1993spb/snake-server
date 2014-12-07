@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"time"
 
-	"bitbucket.org/pushkin_ivan/pool-websocket-handler"
 	"github.com/golang/glog"
+	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/context"
 )
 
@@ -167,4 +167,7 @@ func main() {
 	if err != nil {
 		glog.Errorln("Servering error:", err)
 	}
+
+	// Flush log
+	glog.Flush()
 }
