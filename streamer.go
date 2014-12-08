@@ -148,7 +148,7 @@ func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn) {
 				s.streams[i].delSubscriber(j)
 
 				if len(s.streams[i].subscribers) == 0 {
-					if glog.V(INFOLOG_LEVEL_ABOUT_STREAMS) {
+					if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 						glog.Infoln(
 							"Stream has no subscribers.",
 							"Removing stream",

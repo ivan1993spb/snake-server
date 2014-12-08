@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/golang/glog"
 	"github.com/ivan1993spb/pwshandler"
@@ -17,19 +18,16 @@ type Pool interface {
 	// AddConn creates connection in the pool
 	AddConn(ws *websocket.Conn) (pwshandler.Environment, error)
 	// DelConn removes connection from pool
-	DelConn(ws *websocket.Conn)
+	DelConn(ws *websocket.Conn) error
 	// HasConn returns true if passed connection belongs to the pool
 	HasConn(ws *websocket.Conn) bool
 }
 
-// PoolFactory interface represents pool factory
-type PoolFactory interface {
-	// NewPool returns new Pool
-	NewPool() (Pool, error)
-}
+// PoolFactory must generate new pool
+type PoolFactory func() (Pool, error)
 
 type GamePoolManager struct {
-	factory PoolFactory
+	newPool PoolFactory
 	pools   []Pool
 }
 
@@ -75,7 +73,9 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		}
 
 		// Creating new pool
-		if newPool, err := pm.factory.NewPool(); err == nil {
+		newPool, err := pm.newPool()
+
+		if err == nil {
 			// Save the pool
 			pm.pools = append(pm.pools, newPool)
 
@@ -84,19 +84,16 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			}
 			// Create connection to new pool
 			return newPool.AddConn(ws)
-		} else {
-			if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
-				glog.Infoln("Cannot create new pool:", err)
-			}
-			return nil, err
 		}
+
+		return nil, fmt.Errorf("Cannot create new pool: %s", err)
 	}
 
 	return nil, errors.New("Cannot create new pool: server is full")
 }
 
 // Implementing pwshandler.ConnManager interface
-func (pm *GamePoolManager) DelConn(ws *websocket.Conn) {
+func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 		glog.Infoln("Try to remove information about connection")
 		glog.Infoln("Try to find pool of closed connection")
@@ -110,7 +107,7 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) {
 				glog.Infoln("Removing closed connection from pool")
 			}
 			// Remove it
-			pm.pools[i].DelConn(ws)
+			err := pm.pools[i].DelConn(ws)
 
 			// And now if pool is empty
 			if pm.pools[i].IsEmpty() {
@@ -125,9 +122,11 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) {
 				}
 			}
 
-			return
+			return err
 		}
 	}
+
+	return errors.New("Connection to removing was not found")
 }
 
 // isFull returns true if pool storage is full

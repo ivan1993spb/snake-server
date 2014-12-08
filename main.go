@@ -13,10 +13,9 @@ import (
 )
 
 const (
-	INFOLOG_LEVEL_ABOUT_SERVER  = iota + 1 // Messages about server
-	INFOLOG_LEVEL_ABOUT_STREAMS            // Messages about streams
-	INFOLOG_LEVEL_ABOUT_POOLS              // Messages about pools
-	INFOLOG_LEVEL_ABOUT_CONNS              // About connections
+	INFOLOG_LEVEL_ABOUT_SERVER = iota + 1 // Messages about server
+	INFOLOG_LEVEL_ABOUT_POOLS             // about pools
+	INFOLOG_LEVEL_ABOUT_CONNS             // and connections
 )
 
 func main() {
