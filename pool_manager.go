@@ -106,6 +106,7 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 				glog.Infoln("Pool of closed connection was found")
 				glog.Infoln("Removing closed connection from pool")
 			}
+
 			// Remove it
 			err := pm.pools[i].DelConn(ws)
 

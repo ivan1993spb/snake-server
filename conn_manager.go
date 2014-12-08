@@ -37,13 +37,12 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 	defer func() {
 		if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
-			glog.Infoln("Websocket handler stops")
+			glog.Infoln("Websocket handler was finished")
 		}
 	}()
 
 	if gameData, ok := data.(*GameData); ok {
 		if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
-			glog.Infoln("Handler receive game data")
 			glog.Infoln("Subscribe connection to game stream")
 		}
 		// Starting game stream
@@ -54,12 +53,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 			if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 				glog.Infoln("Unsubscribe connection from stream")
 			}
-
 			m.streamer.Unsubscribe(gameData.Playground, ws)
-
-			if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
-				glog.Infoln("Handler are finishing")
-			}
 		}()
 
 		/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -113,7 +107,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 				if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 					glog.Infoln(
 						"Parent context was canceled:",
-						"Finishing handler",
+						"finishing handler",
 					)
 				}
 				return nil
