@@ -187,9 +187,6 @@ func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 
 func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn,
 ) error {
-	if pg == nil {
-		return errors.New("Cannot subscribe to nil playground")
-	}
 	if ws == nil {
 		return errors.New("Passed nil connection")
 	}
@@ -271,6 +268,9 @@ func (s *Streamer) running() bool {
 
 func (s *Streamer) run(cxt context.Context) error {
 
+	if err := cxt.Err(); err != nil {
+		return err
+	}
 	if s.running() {
 		return errors.New("Streamer already started")
 	}

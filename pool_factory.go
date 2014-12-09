@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
@@ -11,13 +12,15 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+var ErrInvalidConnLimit = errors.New("Invalid connection limit")
+
 func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := rootCxt.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Cannot create factory: %s", err)
 	}
 	if connLimit == 0 {
-		return nil, errors.New("Connection limit cannot be zero")
+		return nil, ErrInvalidConnLimit
 	}
 	if pgW*pgH == 0 {
 		return nil, playground.ErrInvalid_W_or_H
@@ -26,7 +29,7 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	return func() (Pool, error) {
 		pool, err := NewPGPool(rootCxt, connLimit, pgW, pgH)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Cannot create pool %s", err)
 		}
 
 		return pool, nil
@@ -49,10 +52,10 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		return nil, err
 	}
 	if connLimit == 0 {
-		return nil, errors.New("Invalid connection limit")
+		return nil, ErrInvalidConnLimit
 	}
 	if pgW*pgH == 0 {
-		return nil, errors.New("Invalid playground size")
+		return nil, playground.ErrInvalid_W_or_H
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
