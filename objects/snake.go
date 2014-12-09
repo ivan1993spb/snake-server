@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	_SNAKE_START_LENGTH    uint16  = 3
-	_SNAKE_START_SPEED             = time.Second * 4
-	_SNAKE_SPEED_FACTOR    float64 = 1.02
-	_SNAKE_STRENGTH_FACTOR float32 = 1
+	_SNAKE_START_LENGTH    = 3
+	_SNAKE_START_SPEED     = time.Second * 4
+	_SNAKE_SPEED_FACTOR    = 1.02
+	_SNAKE_STRENGTH_FACTOR = 1
 )
 
 // Snake object

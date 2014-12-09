@@ -168,7 +168,9 @@ func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 			if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 				glog.Infoln("Starting streamer")
 			}
-			s.start()
+			if err := s.start(); err != nil {
+				glog.Errorln("Cannot start stream:", err)
+			}
 		}
 	}()
 
@@ -229,24 +231,29 @@ func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn,
 		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 			glog.Infoln("Streamer is empty. Stoping streamer")
 		}
-		s.stop()
+		if err := s.stop(); err != nil {
+			glog.Errorln("Cannot stop streamer:", err)
+		}
 	}
 
 	return nil
 }
 
-func (s *Streamer) start() {
-	if !s.running() {
-		var cxt context.Context
-		cxt, s.cancel = context.WithCancel(s.parCxt)
-		s.run(cxt)
+func (s *Streamer) start() error {
+	if s.running() {
+		return errors.New("Streamer already started")
 	}
+	var cxt context.Context
+	cxt, s.cancel = context.WithCancel(s.parCxt)
+	return s.run(cxt)
 }
 
-func (s *Streamer) stop() {
-	if s.cancel != nil {
-		s.cancel()
+func (s *Streamer) stop() error {
+	if s.cancel == nil {
+		return errors.New("CancelFunc is nil")
 	}
+	s.cancel()
+	return nil
 }
 
 func (s *Streamer) running() bool {
@@ -265,10 +272,10 @@ func (s *Streamer) running() bool {
 	return false
 }
 
-func (s *Streamer) run(cxt context.Context) {
+func (s *Streamer) run(cxt context.Context) error {
 
 	if s.running() {
-		return
+		return errors.New("Streamer already started")
 	}
 
 	go func() {
@@ -277,8 +284,7 @@ func (s *Streamer) run(cxt context.Context) {
 			select {
 			case <-cxt.Done():
 				if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-					glog.Infoln(
-						"Stopping streamer: context was canceled")
+					glog.Infoln("Streamer was stopped")
 				}
 				return
 			case ch := <-s.pingPong:
@@ -299,4 +305,6 @@ func (s *Streamer) run(cxt context.Context) {
 			}
 		}
 	}()
+
+	return nil
 }
