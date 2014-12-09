@@ -29,25 +29,25 @@ func CreateCorpse(pg *playground.Playground, cxt context.Context,
 	dots playground.DotList) (*Corpse, error) {
 
 	if pg == nil {
-		return nil, playground.ErrNilPlayground
+		return nil, &errCreateObject{playground.ErrNilPlayground}
 	}
 	if len(dots) == 0 {
-		return nil, playground.ErrEmptyDotList
+		return nil, &errCreateObject{playground.ErrEmptyDotList}
 	}
 	if err := cxt.Err(); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	ccxt, cancel := context.WithCancel(cxt)
 	corpse := &Corpse{pg, dots, time.Now(), nil, cancel}
 
 	if err := pg.Locate(corpse); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	if err := corpse.run(ccxt); err != nil {
 		pg.Delete(corpse)
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	return corpse, nil

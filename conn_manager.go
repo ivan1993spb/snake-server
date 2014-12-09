@@ -23,7 +23,8 @@ type ConnManager struct {
 
 func NewConnManager(s *Streamer) (pwshandler.ConnManager, error) {
 	if s == nil {
-		return nil, errors.New("Passed nil streamer")
+		return nil, errors.New("Cannot create connection manager:" +
+			" passed nil streamer")
 	}
 
 	return &ConnManager{s}, nil
@@ -117,7 +118,8 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 						glog.Infoln("Error with connection:", err)
 					}
 					return err
-				} else if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
+				}
+				if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
 					glog.Infoln("Connection was closed")
 				}
 				return nil

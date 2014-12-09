@@ -29,7 +29,7 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	return func() (Pool, error) {
 		pool, err := NewPGPool(rootCxt, connLimit, pgW, pgH)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot create pool %s", err)
+			return nil, fmt.Errorf("Cannot create pool: %s", err)
 		}
 
 		return pool, nil
@@ -135,15 +135,13 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 					glog.Infoln("Pool is empty")
 				}
 
-				if p.cancel != nil {
-					p.cancel()
-					if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
-						glog.Infoln(
-							"Pool goroutines was canceled")
-					}
-				} else {
-					return errors.New(
-						"CancelFunc of pool was not found")
+				if p.cancel == nil {
+					return errors.New("CancelFunc is nil")
+				}
+
+				p.cancel()
+				if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
+					glog.Infoln("Pool goroutines was canceled")
 				}
 			}
 

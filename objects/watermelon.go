@@ -36,15 +36,15 @@ func CreateWatermelon(pg *playground.Playground, cxt context.Context,
 ) (*Watermelon, error) {
 
 	if pg == nil {
-		return nil, playground.ErrNilPlayground
+		return nil, &errCreateObject{playground.ErrNilPlayground}
 	}
 	if err := cxt.Err(); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	dots, err := pg.GetEmptyField(_WATERMELON_W, _WATERMELON_H)
 	if err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	wcxt, cncl := context.WithCancel(cxt)
@@ -56,12 +56,12 @@ func CreateWatermelon(pg *playground.Playground, cxt context.Context,
 	copy(watermelon.dots[:], dots[:_WATERMELON_AREA])
 
 	if err := pg.Locate(watermelon); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	if err := watermelon.run(wcxt); err != nil {
 		pg.Delete(watermelon)
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	return watermelon, nil

@@ -43,10 +43,10 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 ) (*Snake, error) {
 
 	if pg == nil {
-		return nil, playground.ErrNilPlayground
+		return nil, &errCreateObject{playground.ErrNilPlayground}
 	}
 	if err := cxt.Err(); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	var (
@@ -63,7 +63,7 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	if dir == playground.DIR_SOUTH || dir == playground.DIR_EAST {
@@ -78,12 +78,12 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 		cxt, cncl}
 
 	if err = pg.Locate(snake); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	if err := snake.run(scxt); err != nil {
 		pg.Delete(snake)
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	return snake, nil

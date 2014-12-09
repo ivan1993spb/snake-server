@@ -9,16 +9,16 @@ const _WALL_STRENGTH_FACTOR = 1000
 func CreateWall(pg *playground.Playground, dots playground.DotList,
 ) (Wall, error) {
 	if pg == nil {
-		return nil, playground.ErrNilPlayground
+		return nil, &errCreateObject{playground.ErrNilPlayground}
 	}
 	if len(dots) == 0 {
-		return nil, playground.ErrEmptyDotList
+		return nil, &errCreateObject{playground.ErrEmptyDotList}
 	}
 
 	var w Wall = Wall(dots)
 
 	if err := pg.Locate(w); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	return w, nil

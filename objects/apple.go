@@ -10,18 +10,18 @@ type Apple struct {
 // CreateApple creates and locates new apple
 func CreateApple(pg *playground.Playground) (*Apple, error) {
 	if pg == nil {
-		return nil, playground.ErrNilPlayground
+		return nil, &errCreateObject{playground.ErrNilPlayground}
 	}
 
 	dot, err := pg.GetEmptyDot()
 	if err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 	}
 
 	apple := &Apple{pg, dot}
 
 	if err := pg.Locate(apple); err != nil {
-		return nil, err
+		return nil, &errCreateObject{err}
 
 	}
 

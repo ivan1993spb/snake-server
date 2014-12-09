@@ -1,6 +1,9 @@
 package playground
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const _RETRIES_NUMBER = 35
 
@@ -9,7 +12,8 @@ func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
 	var pgW, pgH = pg.GetSize()
 
 	if w*h == 0 || w > pgW || h > pgH {
-		return nil, ErrInvalid_W_or_H
+		return nil, fmt.Errorf("Cannot find empty field: %s",
+			ErrInvalid_W_or_H)
 	}
 
 	var (

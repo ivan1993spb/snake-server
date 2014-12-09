@@ -2,6 +2,7 @@ package playground
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -9,6 +10,7 @@ var (
 	ErrPGNotContainsDot = errors.New("Playground doesn't contain dot")
 	ErrNilPlayground    = errors.New("Playground is nil")
 	ErrInvalid_W_or_H   = errors.New("Invalid width or height")
+	ErrPassedNilObject  = errors.New("Passed nil object")
 )
 
 // Playground object contains all objects on map
@@ -21,7 +23,8 @@ type Playground struct {
 // NewPlayground returns new empty playground
 func NewPlayground(width, height uint8) (*Playground, error) {
 	if width*height == 0 {
-		return nil, ErrInvalid_W_or_H
+		return nil, fmt.Errorf("Cannot create playground: %s",
+			ErrInvalid_W_or_H)
 	}
 
 	return &Playground{width, height, make(map[oid]Object),
@@ -71,7 +74,7 @@ func (pg *Playground) GetObjectByDot(dot *Dot) Object {
 // Locate tries to create object to playground
 func (pg *Playground) Locate(object Object) error {
 	if object == nil {
-		return errors.New("Passed nil object to location")
+		return fmt.Errorf("Cannot locate: %s", ErrPassedNilObject)
 	}
 	// Return error if object is already located on playground
 	if pg.Located(object) {
@@ -130,7 +133,7 @@ func (pg *Playground) Contains(dot *Dot) bool {
 // there is a problem
 func (pg *Playground) Delete(object Object) error {
 	if object == nil {
-		return errors.New("Passed nil object to deletion")
+		return fmt.Errorf("Cannot delocate: %s", ErrPassedNilObject)
 	}
 
 	if pg.Located(object) {
@@ -262,13 +265,21 @@ func (pg *Playground) PackObjects(ids []int) (output string) {
 	return
 }
 
+type errNavigation struct {
+	err error
+}
+
+func (e *errNavigation) Error() string {
+	return "Cannot navigate: " + e.err.Error()
+}
+
 // Navigate calculates and returns dot placed on distance dis dots
 // from passed dot in direction dir
 func (pg *Playground) Navigate(dot *Dot, dir Direction, dis int16,
 ) (*Dot, error) {
 	// Check direction
 	if !ValidDirection(dir) {
-		return nil, ErrInvalidDirection
+		return nil, &errNavigation{ErrInvalidDirection}
 	}
 	// If distance is zero return passed dot
 	if dis == 0 {
@@ -276,7 +287,7 @@ func (pg *Playground) Navigate(dot *Dot, dir Direction, dis int16,
 	}
 	// Playground must contain passed dot
 	if !pg.Contains(dot) {
-		return nil, ErrPGNotContainsDot
+		return nil, &errNavigation{ErrPGNotContainsDot}
 	}
 
 	// Get default dot if passed nil dot
