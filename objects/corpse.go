@@ -46,7 +46,10 @@ func CreateCorpse(pg *playground.Playground, cxt context.Context,
 		return nil, err
 	}
 
-	corpse.run(ccxt)
+	if err := corpse.run(ccxt); err != nil {
+		pg.Delete(corpse)
+		return nil, err
+	}
 
 	return corpse, nil
 }
@@ -67,20 +70,6 @@ func (c *Corpse) Dot(i uint16) *playground.Dot {
 // Implementing playground.Object interface
 func (c *Corpse) Pack() string {
 	return c.dots.Pack()
-}
-
-func (c *Corpse) run(cxt context.Context) {
-	go func() {
-		select {
-		case <-cxt.Done():
-			// If pool are closed or corpse was eaten
-		case <-time.After(_CORPSE_MAX_EXPERIENCE):
-			// If corpse lies too long
-		}
-		if c.pg.Located(c) {
-			c.pg.Delete(c)
-		}
-	}()
 }
 
 // Implementing playground.Shifting interface. Updated returns last
@@ -117,4 +106,24 @@ func (c *Corpse) NutritionalValue(dot *playground.Dot) int8 {
 	}
 
 	return 0
+}
+
+func (c *Corpse) run(cxt context.Context) error {
+	if err := cxt.Err(); err != nil {
+		return err
+	}
+
+	go func() {
+		select {
+		case <-cxt.Done():
+			// If pool are closed or corpse was eaten
+		case <-time.After(_CORPSE_MAX_EXPERIENCE):
+			// If corpse lies too long
+		}
+		if c.pg.Located(c) {
+			c.pg.Delete(c)
+		}
+	}()
+
+	return nil
 }

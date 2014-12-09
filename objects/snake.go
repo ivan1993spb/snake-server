@@ -82,7 +82,10 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 		return nil, err
 	}
 
-	snake.run(scxt)
+	if err := snake.run(scxt); err != nil {
+		pg.Delete(snake)
+		return nil, err
+	}
 
 	return snake, nil
 }
@@ -137,7 +140,11 @@ func (s *Snake) Strength() float32 {
 	return _SNAKE_STRENGTH_FACTOR * float32(s.length)
 }
 
-func (s *Snake) run(cxt context.Context) {
+func (s *Snake) run(cxt context.Context) error {
+	if err := cxt.Err(); err != nil {
+		return err
+	}
+
 	go func() {
 		defer func() {
 			if s.pg.Located(s) {
@@ -188,6 +195,8 @@ func (s *Snake) run(cxt context.Context) {
 			s.lastMove = time.Now()
 		}
 	}()
+
+	return nil
 }
 
 func (s *Snake) calculateDelay() time.Duration {
