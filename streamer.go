@@ -156,9 +156,6 @@ func (s *Streamer) isEmpty() bool {
 
 func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 ) error {
-	if pg == nil {
-		return errors.New("Cannot subscribe to nil playground")
-	}
 	if ws == nil {
 		return errors.New("Passed nil connection")
 	}

@@ -1,5 +1,9 @@
 package playground
 
+import "errors"
+
+var ErrInvalidDirection = errors.New("Invalid direction")
+
 // Direction indicates movement direction of a object
 type Direction uint8
 

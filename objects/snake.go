@@ -1,7 +1,6 @@
 package objects
 
 import (
-	"errors"
 	"math"
 	"strconv"
 	"time"
@@ -44,7 +43,7 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 ) (*Snake, error) {
 
 	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, err
@@ -210,7 +209,7 @@ func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
 	if len(s.dots) > 0 {
 		return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
 	}
-	return nil, errors.New("Snake has no dots")
+	return nil, playground.ErrEmptyDotList
 }
 
 // Implementing logic.Controlled interface
@@ -225,7 +224,7 @@ func (s *Snake) Command(cmd string) error {
 	case "w":
 		s.setMovementDirection(playground.DIR_WEST)
 	default:
-		return errors.New("Cannot execute command")
+		return logic.ErrExecuteCommand
 	}
 	return nil
 }

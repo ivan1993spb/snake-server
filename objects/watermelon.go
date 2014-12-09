@@ -1,7 +1,6 @@
 package objects
 
 import (
-	"errors"
 	"math/rand"
 	"time"
 
@@ -37,7 +36,7 @@ func CreateWatermelon(pg *playground.Playground, cxt context.Context,
 ) (*Watermelon, error) {
 
 	if pg == nil {
-		return nil, errors.New("passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, err
@@ -131,6 +130,9 @@ func (w *Watermelon) Updated() time.Time {
 func (w *Watermelon) NutritionalValue(dot *playground.Dot) int8 {
 	for i := range w.dots {
 		if w.dots[i].Equals(dot) {
+			w.updated = time.Now()
+			w.dots[i] = nil
+
 			return _WATERMELON_MIN_NUTR_VALUE +
 				int8(random.Intn(_WATERMELON_NUTR_VAR))
 		}

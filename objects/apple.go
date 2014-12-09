@@ -1,10 +1,6 @@
 package objects
 
-import (
-	"errors"
-
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
-)
+import "bitbucket.org/pushkin_ivan/clever-snake/playground"
 
 type Apple struct {
 	pg  *playground.Playground
@@ -14,7 +10,7 @@ type Apple struct {
 // CreateApple creates and locates new apple
 func CreateApple(pg *playground.Playground) (*Apple, error) {
 	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 
 	dot, err := pg.GetEmptyDot()

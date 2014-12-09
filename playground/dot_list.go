@@ -1,7 +1,11 @@
 package playground
 
+import "errors"
+
 // DotList represents list of dots and provides list packing
 type DotList []*Dot
+
+var ErrEmptyDotList = errors.New("Empty dot list")
 
 // Pack packs dot list to string in accordance with standard ST_1
 func (dl DotList) Pack() (output string) {
@@ -23,21 +27,24 @@ func (dl DotList) Pack() (output string) {
 
 // Contains returns true if dot list contains passed dot
 func (dl DotList) Contains(dot *Dot) bool {
-	for i := range dl {
-		if dl[i].Equals(dot) {
-			return true
+	if len(dl) > 0 {
+		for i := range dl {
+			if dl[i].Equals(dot) {
+				return true
+			}
 		}
 	}
-
 	return false
 }
 
 // Delete deletes dot from dot list
 func (dl DotList) Delete(dot *Dot) {
-	for i := range dl {
-		if dl[i].Equals(dot) {
-			dl = append(dl[:i], dl[i+1:]...)
-			return
+	if len(dl) > 0 {
+		for i := range dl {
+			if dl[i].Equals(dot) {
+				dl = append(dl[:i], dl[i+1:]...)
+				return
+			}
 		}
 	}
 }

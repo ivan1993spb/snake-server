@@ -1,10 +1,6 @@
 package objects
 
-import (
-	"errors"
-
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
-)
+import "bitbucket.org/pushkin_ivan/clever-snake/playground"
 
 type Wall playground.DotList
 
@@ -13,10 +9,10 @@ const _WALL_STRENGTH_FACTOR = 1000
 func CreateWall(pg *playground.Playground, dots playground.DotList,
 ) (Wall, error) {
 	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 	if len(dots) == 0 {
-		return nil, errors.New("Passed empty dot list")
+		return nil, playground.ErrEmptyDotList
 	}
 
 	var w Wall = Wall(dots)
@@ -30,7 +26,7 @@ func CreateWall(pg *playground.Playground, dots playground.DotList,
 
 func CreateLongWall(pg *playground.Playground) (Wall, error) {
 	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 
 	var (
@@ -45,7 +41,7 @@ func CreateLongWall(pg *playground.Playground) (Wall, error) {
 	case playground.DIR_EAST, playground.DIR_WEST:
 		dots, err = pg.GetEmptyField(pgW, 1)
 	default:
-		err = errors.New("Invalid direction")
+		err = playground.ErrInvalidDirection
 	}
 
 	if err != nil {

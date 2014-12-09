@@ -20,7 +20,7 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 		return nil, errors.New("Connection limit cannot be zero")
 	}
 	if pgW*pgH == 0 {
-		return nil, errors.New("Invalid playground size")
+		return nil, playground.ErrInvalid_W_or_H
 	}
 
 	return func() (Pool, error) {

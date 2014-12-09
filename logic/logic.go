@@ -8,9 +8,19 @@ import (
 
 const _STRENGTH_FACTOR float32 = 1.3
 
+var (
+	ErrRecognizingObject = errors.New("Cannot recognize object")
+	ErrExecuteCommand    = errors.New("Cannot execute command")
+)
+
 // Object game characteristics
 type (
 	Object interface{}
+
+	Resistant interface {
+		Object
+		Strength() float32
+	}
 
 	Living interface {
 		Object
@@ -31,11 +41,6 @@ type (
 		Object
 		// Nutritional value
 		NutritionalValue(*playground.Dot) int8
-	}
-
-	Resistant interface {
-		Object
-		Strength() float32
 	}
 
 	Controlled interface {
@@ -79,5 +84,6 @@ func Clash(first Living, second Object, dot *playground.Dot) error {
 	return nil
 
 cannot_recognize_object:
-	return errors.New("Cannot recognize object")
+
+	return ErrRecognizingObject
 }

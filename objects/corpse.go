@@ -1,7 +1,6 @@
 package objects
 
 import (
-	"errors"
 	"time"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
@@ -30,10 +29,10 @@ func CreateCorpse(pg *playground.Playground, cxt context.Context,
 	dots playground.DotList) (*Corpse, error) {
 
 	if pg == nil {
-		return nil, errors.New("Passed nil playground")
+		return nil, playground.ErrNilPlayground
 	}
 	if len(dots) == 0 {
-		return nil, errors.New("Passed empty dot list")
+		return nil, playground.ErrEmptyDotList
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, err

@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+var (
+	ErrPGNotContainsDot = errors.New("Playground doesn't contain dot")
+	ErrNilPlayground    = errors.New("Playground is nil")
+	ErrInvalid_W_or_H   = errors.New("Invalid width or height")
+)
+
 // Playground object contains all objects on map
 type Playground struct {
 	width, height uint8             // Width and height of map
@@ -15,7 +21,7 @@ type Playground struct {
 // NewPlayground returns new empty playground
 func NewPlayground(width, height uint8) (*Playground, error) {
 	if width*height == 0 {
-		return nil, errors.New("Invalid width or height")
+		return nil, ErrInvalid_W_or_H
 	}
 
 	return &Playground{width, height, make(map[oid]Object),
@@ -74,16 +80,19 @@ func (pg *Playground) Locate(object Object) error {
 	// Check each dot of passed object
 	for i := uint16(0); i < object.DotCount(); i++ {
 		var dot = object.Dot(i)
-		// Return if any dot is occupied or not valid
+		// Return error if any dot is occupied or invalid
+
 		if !pg.Contains(dot) {
-			return errors.New("Playground don't contain dot")
+			return ErrPGNotContainsDot
 		}
 		if pg.Occupied(dot) {
 			return errors.New("Dot is occupied")
 		}
 	}
+
 	// Object count can't be more than playground area
 	var maxId = oid(pg.GetArea())
+
 	// Add to object list of playground
 	for id := oid(0); id < maxId; id++ {
 		if _, ok := pg.objects[id]; !ok {
@@ -259,7 +268,7 @@ func (pg *Playground) Navigate(dot *Dot, dir Direction, dis int16,
 ) (*Dot, error) {
 	// Check direction
 	if !ValidDirection(dir) {
-		return nil, errors.New("Invalid direction")
+		return nil, ErrInvalidDirection
 	}
 	// If distance is zero return passed dot
 	if dis == 0 {
@@ -267,8 +276,7 @@ func (pg *Playground) Navigate(dot *Dot, dir Direction, dis int16,
 	}
 	// Playground must contain passed dot
 	if !pg.Contains(dot) {
-		return nil,
-			errors.New("Playground doesn't contain passed dot")
+		return nil, ErrPGNotContainsDot
 	}
 
 	// Get default dot if passed nil dot

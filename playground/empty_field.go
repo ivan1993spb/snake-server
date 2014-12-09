@@ -9,7 +9,7 @@ func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
 	var pgW, pgH = pg.GetSize()
 
 	if w*h == 0 || w > pgW || h > pgH {
-		return nil, errors.New("Invalid field size")
+		return nil, ErrInvalid_W_or_H
 	}
 
 	var (
