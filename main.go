@@ -71,7 +71,7 @@ func main() {
 	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
 		uint8(pgW), uint8(pgH))
 	if err != nil {
-		glog.Exitln("Cannot create pool factory:", err)
+		glog.Exitln(err)
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Pool factory was created")
@@ -80,7 +80,7 @@ func main() {
 	// Init pool manager which allocates connections on pools
 	poolManager, err := NewGamePoolManager(factory, uint8(poolLimit))
 	if err != nil {
-		glog.Exitln("Cannot create pool manager:", err)
+		glog.Exitln(err)
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Pool manager was created")
@@ -88,7 +88,7 @@ func main() {
 
 	streamer, err := NewStreamer(cxt, delay)
 	if err != nil {
-		glog.Exitln("Cannot create streamer:", err)
+		glog.Exitln(err)
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Streamer was created")
@@ -97,7 +97,7 @@ func main() {
 	// Init connection manager
 	connManager, err := NewConnManager(streamer)
 	if err != nil {
-		glog.Exitln("Cannot create connection manager:", err)
+		glog.Exitln(err)
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Connection manager was created")
@@ -116,7 +116,7 @@ func main() {
 	go func() {
 		// Waiting for shutdown command. We don't need of connection
 		if _, err := shutdownListener.Accept(); err != nil {
-			glog.Errorln("Accepting shutdown connection:", err)
+			glog.Errorln("Accepting shutdown connection error:", err)
 		}
 		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 			glog.Infoln("Accepted shutdown command")
@@ -124,7 +124,7 @@ func main() {
 
 		// Closing shutdown listener
 		if err := shutdownListener.Close(); err != nil {
-			glog.Errorln("Closing shutdown listener:", err)
+			glog.Errorln("Closing shutdown listener error:", err)
 		}
 		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 			glog.Infoln("Shutdown listener was closed")
@@ -142,7 +142,7 @@ func main() {
 
 		// Closing working listener
 		if err := workingListener.Close(); err != nil {
-			glog.Errorln("Closing working listener:", err)
+			glog.Errorln("Closing working listener error:", err)
 		}
 		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 			glog.Infoln(

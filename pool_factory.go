@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
@@ -14,22 +13,40 @@ import (
 
 var ErrInvalidConnLimit = errors.New("Invalid connection limit")
 
+type errCreatingPoolFactory struct {
+	err error
+}
+
+func (e *errCreatingPoolFactory) Error() string {
+	return "Cannot create pool factory: " + e.err.Error()
+}
+
+type errCannotCreatePool struct {
+	err error
+}
+
+func (e *errCannotCreatePool) Error() string {
+	return "Cannot create pool: " + e.err.Error()
+}
+
 func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := rootCxt.Err(); err != nil {
-		return nil, fmt.Errorf("Cannot create factory: %s", err)
+		return nil, &errCreatingPoolFactory{err}
 	}
 	if connLimit == 0 {
-		return nil, ErrInvalidConnLimit
+		return nil, &errCreatingPoolFactory{ErrInvalidConnLimit}
 	}
 	if pgW*pgH == 0 {
-		return nil, playground.ErrInvalid_W_or_H
+		return nil, &errCreatingPoolFactory{
+			playground.ErrInvalid_W_or_H,
+		}
 	}
 
 	return func() (Pool, error) {
 		pool, err := NewPGPool(rootCxt, connLimit, pgW, pgH)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot create pool: %s", err)
+			return nil, err
 		}
 
 		return pool, nil
@@ -49,13 +66,13 @@ type PGPool struct {
 func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 ) (*PGPool, error) {
 	if err := cxt.Err(); err != nil {
-		return nil, err
+		return nil, &errCannotCreatePool{err}
 	}
 	if connLimit == 0 {
-		return nil, ErrInvalidConnLimit
+		return nil, &errCannotCreatePool{ErrInvalidConnLimit}
 	}
 	if pgW*pgH == 0 {
-		return nil, playground.ErrInvalid_W_or_H
+		return nil, &errCannotCreatePool{playground.ErrInvalid_W_or_H}
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -64,7 +81,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 
 	pg, err := playground.NewPlayground(pgW, pgH)
 	if err != nil {
-		return nil, err
+		return nil, &errCannotCreatePool{err}
 	}
 
 	if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
@@ -73,12 +90,12 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 
 	// Create long wall to the playground
 	if _, err := objects.CreateLongWall(pg); err != nil {
-		return nil, err
+		return nil, &errCannotCreatePool{err}
 	}
 
 	// Create apple to the playground
 	if _, err := objects.CreateApple(pg); err != nil {
-		return nil, err
+		return nil, &errCannotCreatePool{err}
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -105,7 +122,8 @@ func (p *PGPool) IsEmpty() bool {
 func (p *PGPool) AddConn(ws *websocket.Conn) (
 	pwshandler.Environment, error) {
 	if p.IsFull() {
-		return nil, errors.New("Pool is full")
+		return nil, errors.New(
+			"Cannot create connection: pool is full")
 	}
 
 	p.conns = append(p.conns, ws)
@@ -135,13 +153,13 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 					glog.Infoln("Pool is empty")
 				}
 
-				if p.cancel == nil {
-					return errors.New("CancelFunc is nil")
-				}
-
-				p.cancel()
-				if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
-					glog.Infoln("Pool goroutines was canceled")
+				if p.cancel != nil {
+					p.cancel()
+					if glog.V(INFOLOG_LEVEL_ABOUT_POOLS) {
+						glog.Infoln("Pool goroutines was canceled")
+					}
+				} else {
+					glog.Errorln("CancelFunc is nil")
 				}
 			}
 
@@ -149,7 +167,8 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 		}
 	}
 
-	return errors.New("Connection was not found in pool")
+	return errors.New("Cannot delete connection: " +
+		"connection was not found in pool")
 }
 
 // Implementing Pool interface

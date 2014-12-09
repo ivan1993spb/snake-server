@@ -23,6 +23,14 @@ type Pool interface {
 	HasConn(ws *websocket.Conn) bool
 }
 
+type errCreatingPoolManager struct {
+	err error
+}
+
+func (e *errCreatingPoolManager) Error() string {
+	return "Cannot create pool manager: " + e.err.Error()
+}
+
 // PoolFactory must generate new pool
 type PoolFactory func() (Pool, error)
 
@@ -36,10 +44,14 @@ type GamePoolManager struct {
 func NewGamePoolManager(factory PoolFactory, poolLimit uint8,
 ) (pwshandler.PoolManager, error) {
 	if factory == nil {
-		return nil, errors.New("Passed nil pool factory")
+		return nil, &errCreatingPoolManager{
+			errors.New("Passed nil pool factory"),
+		}
 	}
 	if poolLimit == 0 {
-		return nil, errors.New("Invalid pool limit")
+		return nil, &errCreatingPoolManager{
+			errors.New("Invalid pool limit"),
+		}
 	}
 	return &GamePoolManager{factory, make([]Pool, 0, poolLimit)}, nil
 }

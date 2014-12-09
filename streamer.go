@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -9,6 +10,14 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
+
+type errCannotCreateStreamer struct {
+	err error
+}
+
+func (e *errCannotCreateStreamer) Error() string {
+	return "Cannot create streamer: " + e.err.Error()
+}
 
 // Playground wrapper
 type Playground interface {
@@ -31,8 +40,8 @@ func (s *stream) addSubscriber(ws *websocket.Conn) error {
 		return nil
 	}
 
-	return errors.New(
-		"Passed connection already subscribed to this stream")
+	return errors.New("Cannot create subscriber to stream: " +
+		"Passed connection already exists")
 }
 
 func (s *stream) delSubscriber(ws *websocket.Conn) error {
@@ -49,7 +58,8 @@ func (s *stream) delSubscriber(ws *websocket.Conn) error {
 		}
 	}
 
-	return errors.New("Cannot remove not found subscriber")
+	return errors.New("Cannot remove subscriber: " +
+		"not found subscriber")
 }
 
 func (s *stream) hasSubscriber(ws *websocket.Conn) bool {
@@ -74,7 +84,7 @@ func (s *stream) pushData() {
 			if err := websocket.Message.Send(ws, data); err != nil {
 				if err != io.EOF {
 					if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
-						glog.Error("Connection error:", err)
+						glog.Warningln("Connection error:", err)
 					}
 				}
 
@@ -95,10 +105,12 @@ type Streamer struct {
 func NewStreamer(cxt context.Context, delay time.Duration,
 ) (*Streamer, error) {
 	if err := cxt.Err(); err != nil {
-		return nil, err
+		return nil, &errCannotCreateStreamer{err}
 	}
 	if delay <= 0 {
-		return nil, errors.New("Invalid delay")
+		return nil, &errCannotCreateStreamer{
+			errors.New("Invalid delay"),
+		}
 	}
 
 	return &Streamer{
@@ -137,7 +149,7 @@ func (s *Streamer) getStreamByPlayground(pg Playground) *stream {
 
 func (s *Streamer) delStream(sm *stream) error {
 	if !sm.isEmpty() {
-		return errors.New("Passed to removing stream is not empty")
+		return errors.New("Cannot delete stream: stream is not empty")
 	}
 
 	for i := range s.streams {
@@ -147,7 +159,7 @@ func (s *Streamer) delStream(sm *stream) error {
 		}
 	}
 
-	return errors.New("Passed to removing stream was not found")
+	return errors.New("Cannot delete stream: stream was not found")
 }
 
 func (s *Streamer) isEmpty() bool {
@@ -157,7 +169,7 @@ func (s *Streamer) isEmpty() bool {
 func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 ) error {
 	if ws == nil {
-		return errors.New("Passed nil connection")
+		return errors.New("Cannot subscribe: passed nil connection")
 	}
 
 	defer func() {
@@ -173,7 +185,8 @@ func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 
 	var stm = s.getStreamWithPlayground(pg)
 	if stm.hasSubscriber(ws) {
-		return errors.New("Connection already subscribed to stream")
+		return errors.New("Cannot subscribe: " +
+			"connection is already subscribed")
 	}
 
 	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
@@ -188,16 +201,18 @@ func (s *Streamer) Subscribe(pg Playground, ws *websocket.Conn,
 func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn,
 ) error {
 	if ws == nil {
-		return errors.New("Passed nil connection")
+		return errors.New("Cannot unsubscribe: passed nil connection")
 	}
 
 	var stm = s.getStreamByPlayground(pg)
 	if stm == nil {
-		return errors.New("Stream with passed playground not found")
+		return errors.New("Cannot unsubscribe: " +
+			"stream with passed playground not found")
 	}
 
 	if !stm.hasSubscriber(ws) {
-		return errors.New("Subscriber was not found")
+		return errors.New("Cannot unsubscribe: " +
+			"subscriber was not found")
 	}
 
 	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
@@ -217,7 +232,7 @@ func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn,
 			)
 		}
 		if err := s.delStream(stm); err != nil {
-			return err
+			glog.Errorln(err)
 		}
 	}
 
@@ -225,9 +240,7 @@ func (s *Streamer) Unsubscribe(pg Playground, ws *websocket.Conn,
 		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 			glog.Infoln("Streamer is empty. Stoping streamer")
 		}
-		if err := s.stop(); err != nil {
-			glog.Errorln("Cannot stop streamer:", err)
-		}
+		s.stop()
 	}
 
 	return nil
@@ -242,12 +255,12 @@ func (s *Streamer) start() error {
 	return s.run(cxt)
 }
 
-func (s *Streamer) stop() error {
+func (s *Streamer) stop() {
 	if s.cancel == nil {
-		return errors.New("CancelFunc is nil")
+		glog.Errorln("CancelFunc is nil")
+	} else {
+		s.cancel()
 	}
-	s.cancel()
-	return nil
 }
 
 func (s *Streamer) running() bool {
@@ -267,26 +280,28 @@ func (s *Streamer) running() bool {
 }
 
 func (s *Streamer) run(cxt context.Context) error {
-
 	if err := cxt.Err(); err != nil {
-		return err
+		return fmt.Errorf("Cannot start streamer: %s", err)
 	}
 	if s.running() {
 		return errors.New("Streamer already started")
 	}
 
 	go func() {
+		defer func() {
+			if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+				glog.Infoln("Streamer was stopped")
+			}
+		}()
+
 		var ticker = time.Tick(s.delay)
+
 		for {
 			select {
 			case <-cxt.Done():
-				if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-					glog.Infoln("Streamer was stopped")
-				}
 				return
 			case ch := <-s.pingPong:
 				ch <- struct{}{}
-				time.Sleep(s.delay / 2)
 			case <-ticker:
 			}
 
