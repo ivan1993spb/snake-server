@@ -71,14 +71,24 @@ func (pg *Playground) GetObjectByDot(dot *Dot) Object {
 	return nil
 }
 
+type errCannotLocate struct {
+	err error
+}
+
+func (e *errCannotLocate) Error() string {
+	return "Cannot locate object: " + e.err.Error()
+}
+
 // Locate tries to create object to playground
 func (pg *Playground) Locate(object Object) error {
 	if object == nil {
-		return fmt.Errorf("Cannot locate: %s", ErrPassedNilObject)
+		return &errCannotLocate{ErrPassedNilObject}
 	}
 	// Return error if object is already located on playground
 	if pg.Located(object) {
-		return errors.New("Object is already located")
+		return &errCannotLocate{
+			errors.New("Object is already located"),
+		}
 	}
 	// Check each dot of passed object
 	for i := uint16(0); i < object.DotCount(); i++ {
@@ -86,10 +96,10 @@ func (pg *Playground) Locate(object Object) error {
 		// Return error if any dot is occupied or invalid
 
 		if !pg.Contains(dot) {
-			return ErrPGNotContainsDot
+			return &errCannotLocate{ErrPGNotContainsDot}
 		}
 		if pg.Occupied(dot) {
-			return errors.New("Dot is occupied")
+			return &errCannotLocate{errors.New("Dot is occupied")}
 		}
 	}
 
@@ -104,7 +114,7 @@ func (pg *Playground) Locate(object Object) error {
 		}
 	}
 
-	return errors.New("Playground is full")
+	return &errCannotLocate{errors.New("Playground is full")}
 }
 
 // Located returns true if passed object is located on playground
@@ -149,7 +159,7 @@ func (pg *Playground) Delete(object Object) error {
 		}
 	}
 
-	return errors.New("Passed object isn't located")
+	return errors.New("Cannot delocate: Passed object isn't located")
 }
 
 // Pack packs playground in accordance with standard ST_1

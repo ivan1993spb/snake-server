@@ -109,7 +109,7 @@ func (c *Corpse) NutritionalValue(dot *playground.Dot) int8 {
 
 func (c *Corpse) run(cxt context.Context) error {
 	if err := cxt.Err(); err != nil {
-		return err
+		return &errStartingObject{err}
 	}
 
 	go func() {

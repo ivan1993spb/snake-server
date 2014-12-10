@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -141,7 +142,7 @@ func (s *Snake) Strength() float32 {
 
 func (s *Snake) run(cxt context.Context) error {
 	if err := cxt.Err(); err != nil {
-		return err
+		return &errStartingObject{err}
 	}
 
 	go func() {
@@ -209,7 +210,8 @@ func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
 	if len(s.dots) > 0 {
 		return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
 	}
-	return nil, playground.ErrEmptyDotList
+	return nil, fmt.Errorf("Cannot get next head dot: %s",
+		playground.ErrEmptyDotList)
 }
 
 // Implementing logic.Controlled interface

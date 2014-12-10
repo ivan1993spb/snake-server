@@ -1,7 +1,6 @@
 package objects
 
 import (
-	"math/rand"
 	"time"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
@@ -22,8 +21,6 @@ const (
 
 	_WATERMELON_MAX_EXPERIENCE = time.Second * 30
 )
-
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 type Watermelon struct {
 	pg      *playground.Playground
@@ -143,7 +140,7 @@ func (w *Watermelon) NutritionalValue(dot *playground.Dot) int8 {
 
 func (w *Watermelon) run(cxt context.Context) error {
 	if err := cxt.Err(); err != nil {
-		return err
+		return &errStartingObject{err}
 	}
 
 	go func() {
