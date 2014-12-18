@@ -15,49 +15,36 @@ func (e *errEmptyField) Error() string {
 }
 
 // GetEmptyField finds empty field with passed width and height
-func (pg *Playground) GetEmptyField(w, h uint8) (DotList, error) {
-	var pgW, pgH = pg.GetSize()
+func (pg *Playground) GetRandomEmptyRect(rw, rh uint8,
+) (*Rect, error) {
 
-	if w*h == 0 || w > pgW || h > pgH {
-		return nil, &errEmptyField{ErrInvalid_W_or_H}
-	}
+	var count = 0
 
-	var (
-		x0, y0 uint8
-		count  int
+loop:
 
-		dots = make(DotList, 0, w*h)
-	)
-
-mainLoop:
-
-	if pgW-w > 0 {
-		x0 = uint8(random.Intn(int(pgW - w)))
-	}
-	if pgH-h > 0 {
-		y0 = uint8(random.Intn(int(pgH - h)))
-	}
-	dots = dots[:0]
-
-	for x := x0; x < x0+w; x++ {
-		for y := y0; y < y0+h; y++ {
-			if dot := NewDot(x, y); !pg.Occupied(dot) {
-				dots = append(dots, dot)
-			} else if count < _RETRIES_NUMBER {
-				count++
-				goto mainLoop
-			} else {
-				return nil, &errEmptyField{errRetriesLimit}
+	if rect, err := pg.RandomRect(rw, rh); err == nil {
+		for i := uint16(0); i < rect.DotCount(); i++ {
+			if pg.Occupied(rect.Dot(i)) {
+				goto rewind
 			}
 		}
+		return rect, nil
+	} else {
+		return nil, &errEmptyField{err}
 	}
 
-	return dots, nil
+rewind:
 
+	if count < _RETRIES_NUMBER {
+		count++
+		goto loop
+	}
+
+	return nil, &errEmptyField{errRetriesLimit}
 }
 
-// GetEmptyDot finds empty random dot
-func (pg *Playground) GetEmptyDot() (*Dot, error) {
+// GetRandomEmptyDot returns random empty dot
+func (pg *Playground) GetRandomEmptyDot() (*Dot, error) {
 	for count := 0; count < _RETRIES_NUMBER; count++ {
 		if dot := pg.RandomDot(); !pg.Occupied(dot) {
 			return dot, nil

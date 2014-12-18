@@ -1,38 +1,23 @@
 package playground
 
 import (
+	"encoding/json"
 	"math/rand"
-	"reflect"
-	"strconv"
 	"time"
 )
 
-// Each object must implements Object interface
-type Object interface {
-	DotCount() uint16  // DotCount must return dot count
+type Entity interface {
 	Dot(i uint16) *Dot // Dot returns dot by index
-	Pack() string      // Pack converts object data to string
+	DotCount() uint16  // DotCount must return dot count
 }
 
-// Moving and shifting objects must implement Shifting interface.
-// For objects which implements Object and Shifting interfaces method
-// Pack returns all object data and method PackChanges returns only
-// last updates.
-type Shifting interface {
-	PackChanges() string // PackChanges packs last changes
-	Updated() time.Time  // Updated returns last updating time
+type Json interface {
+	PackJson() (json.RawMessage, error)
 }
 
-// oid represents object identifier in playground
-type oid uint16
-
-func (i oid) String() string {
-	return strconv.Itoa(int(i))
+type Object interface {
+	Entity
+	Json
 }
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-// objectType returns type name of passed object
-func objectType(object Object) string {
-	return reflect.Indirect(reflect.ValueOf(object)).Type().Name()
-}
