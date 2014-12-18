@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"runtime"
@@ -16,6 +17,14 @@ const (
 	INFOLOG_LEVEL_ABOUT_POOLS             // about pools
 	INFOLOG_LEVEL_ABOUT_CONNS             // and connections
 )
+
+type errStartingServer struct {
+	err error
+}
+
+func (e *errStartingServer) Error() string {
+	return "Starting server error: " + e.err.Error()
+}
 
 func main() {
 	var host, port, sdPort, hashSalt string
@@ -45,14 +54,18 @@ func main() {
 	// Working listener is used for game servering
 	workingListener, err := net.Listen("tcp", host+":"+port)
 	if err != nil {
-		glog.Exitln("Cannot create working listener:", err)
+		glog.Exitln(&errStartingServer{
+			fmt.Errorf("Cannot create working listener: %s", err),
+		})
 	}
 
 	// Shutdown listener is used only for shutdown command. Listening
 	// only local requests
 	shutdownListener, err := net.Listen("tcp", "127.0.0.1:"+sdPort)
 	if err != nil {
-		glog.Exitln("Cannot create shutdown listener:", err)
+		glog.Exitln(&errStartingServer{
+			fmt.Errorf("Cannot create shutdown listener: %s", err),
+		})
 	}
 
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
@@ -66,7 +79,7 @@ func main() {
 	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
 		uint8(pgW), uint8(pgH))
 	if err != nil {
-		glog.Exitln(err)
+		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Pool factory was created")
@@ -75,7 +88,7 @@ func main() {
 	// Init pool manager which allocates connections on pools
 	poolManager, err := NewGamePoolManager(factory, uint8(poolLimit))
 	if err != nil {
-		glog.Exitln(err)
+		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Pool manager was created")
@@ -83,7 +96,7 @@ func main() {
 
 	streamer, err := NewStreamer(cxt, delay)
 	if err != nil {
-		glog.Exitln(err)
+		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Streamer was created")
@@ -92,7 +105,7 @@ func main() {
 	// Init connection manager
 	connManager, err := NewConnManager(streamer)
 	if err != nil {
-		glog.Exitln(err)
+		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
 		glog.Infoln("Connection manager was created")
