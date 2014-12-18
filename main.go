@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"runtime"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/ivan1993spb/pwshandler"
@@ -36,10 +35,6 @@ func main() {
 		"max connection number on pool")
 	flag.UintVar(&pgW, "pg_w", 40, "playground width")
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
-
-	var delay time.Duration
-	flag.DurationVar(&delay, "delay", time.Millisecond*150,
-		"stream delay")
 
 	flag.Parse()
 

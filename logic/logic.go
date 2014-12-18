@@ -6,13 +6,6 @@ import (
 	"bitbucket.org/pushkin_ivan/clever-snake/playground"
 )
 
-const _STRENGTH_FACTOR float32 = 1.3
-
-var (
-	ErrRecognizingObject = errors.New("Cannot recognize object")
-	ErrExecuteCommand    = errors.New("Cannot execute command")
-)
-
 // Object game characteristics
 type (
 	Object interface{}
@@ -49,6 +42,13 @@ type (
 	}
 )
 
+var (
+	ErrRecognizingObject = errors.New("Cannot recognize object")
+	ErrExecuteCommand    = errors.New("Cannot execute command")
+)
+
+const _STRENGTH_FACTOR float32 = 1.3
+
 // Clash implements logic of clash of two objects (first and second)
 // in dot dot
 func Clash(first Living, second Object, dot *playground.Dot) error {
@@ -69,7 +69,7 @@ func Clash(first Living, second Object, dot *playground.Dot) error {
 				second.Break(dot)
 
 			default:
-				goto cannot_recognize_object
+				return ErrRecognizingObject
 
 			}
 		} else {
@@ -78,12 +78,8 @@ func Clash(first Living, second Object, dot *playground.Dot) error {
 		}
 
 	default:
-		goto cannot_recognize_object
+		return ErrRecognizingObject
 	}
 
 	return nil
-
-cannot_recognize_object:
-
-	return ErrRecognizingObject
 }

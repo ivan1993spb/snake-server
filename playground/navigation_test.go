@@ -45,6 +45,8 @@ func TestCalculateDirection(t *testing.T) {
 }
 
 func TestNavigationOnPlayground(t *testing.T) {
+	var pg, _ = NewPlayground(30, 30)
+
 	var tests = []*struct {
 		dot *Dot
 		dir Direction
@@ -55,14 +57,17 @@ func TestNavigationOnPlayground(t *testing.T) {
 		{NewDot(10, 10), DIR_NORTH, 10, NewDot(10, 0)},
 		{NewDot(10, 0), DIR_WEST, 10, NewDot(0, 0)},
 		{NewDot(0, 0), DIR_EAST, 11, NewDot(11, 0)},
+		{NewDot(0, 0), DIR_WEST, 3, NewDot(27, 0)},
+		{NewDot(28, 0), DIR_EAST, 2, NewDot(0, 0)},
+		{NewDot(28, 0), DIR_EAST, 92, NewDot(0, 0)},
+		{NewDot(10, 0), DIR_NORTH, 10, NewDot(10, 20)},
+		{NewDot(10, 10), DIR_SOUTH, 30, NewDot(10, 10)},
 	}
-
-	pg, _ := NewPlayground(30, 30)
 
 	for i, test := range tests {
 		if dot, _ := pg.Navigate(test.dot, test.dir,
 			test.dis); !dot.Equals(test.res) {
-			t.Fatalf("Navigation error: test #%i", i+1)
+			t.Fatalf("Navigation error: test #%i %s", i+1, dot)
 		}
 	}
 }

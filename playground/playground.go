@@ -60,8 +60,9 @@ func (e *errCannotLocate) Error() string {
 	return "Cannot locate object: " + e.err.Error()
 }
 
-// Locate tries to create object to playground
-func (pg *Playground) Locate(object Object) error {
+// Locate tries to create object on playground. If occupy=true object
+// may be located only if each object dot is not occupied
+func (pg *Playground) Locate(object Object, occupy bool) error {
 	// Return error if object is already located on playground
 	if pg.Located(object) {
 		return &errCannotLocate{
@@ -76,7 +77,7 @@ func (pg *Playground) Locate(object Object) error {
 			return &errCannotLocate{ErrPGNotContainsDot}
 		}
 		// ...or occupied
-		if pg.Occupied(dot) {
+		if oc && pg.Occupied(dot) {
 			return &errCannotLocate{errors.New("Dot is occupied")}
 		}
 	}
