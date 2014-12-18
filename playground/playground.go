@@ -77,7 +77,7 @@ func (pg *Playground) Locate(object Object, occupy bool) error {
 			return &errCannotLocate{ErrPGNotContainsDot}
 		}
 		// ...or occupied
-		if oc && pg.Occupied(dot) {
+		if occupy && pg.Occupied(dot) {
 			return &errCannotLocate{errors.New("Dot is occupied")}
 		}
 	}

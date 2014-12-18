@@ -93,7 +93,7 @@ func (pg *Playground) Navigate(dot *Dot, dir Direction, dis uint8,
 	switch dir {
 	case DIR_NORTH, DIR_SOUTH:
 		if dis > pg.height {
-			dis = dis % pg.height
+			dis %= pg.height
 		}
 
 		// North
@@ -112,7 +112,7 @@ func (pg *Playground) Navigate(dot *Dot, dir Direction, dis uint8,
 
 	case DIR_WEST, DIR_EAST:
 		if dis > pg.width {
-			dis = dis % pg.width
+			dis %= pg.width
 		}
 
 		// East
