@@ -132,6 +132,20 @@ func (pg *Playground) RandomDot() *Dot {
 	return NewRandomDotOnSquare(0, 0, pg.width, pg.height)
 }
 
-func (pg Playground) RandomRect(rw, rh uint8) (*Rect, error) {
+func (pg *Playground) RandomRect(rw, rh uint8) (*Rect, error) {
 	return NewRandomRectOnSquare(rw, rh, 0, 0, pg.width, pg.height)
+}
+
+func (pg *Playground) GetObjects() []Object {
+	if len(pg.objects) > 0 {
+		objects := make([]Object, 0, len(pg.objects))
+
+		for _, object := range pg.objects {
+			objects = append(objects, object)
+		}
+
+		return objects
+	}
+
+	return []Object{}
 }
