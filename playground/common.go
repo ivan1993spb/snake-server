@@ -17,7 +17,6 @@ type Json interface {
 
 type Object interface {
 	Entity
-	json.Marshaler
 }
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))

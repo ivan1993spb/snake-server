@@ -8,12 +8,13 @@ import (
 var (
 	ErrPGNotContainsDot = errors.New("Playground doesn't contain dot")
 	ErrInvalid_W_or_H   = errors.New("Invalid width or height")
+	ErrObjectNotLocated = errors.New("Passed object is not located")
 )
 
 // Playground object contains all objects on map
 type Playground struct {
-	width, height uint8             // Width and height of map
-	objects       map[uint16]Object // All objects on map
+	width, height uint8    // Width and height of map
+	objects       []Object // All objects on map
 }
 
 // NewPlayground returns new empty playground
@@ -23,7 +24,7 @@ func NewPlayground(width, height uint8) (*Playground, error) {
 			ErrInvalid_W_or_H)
 	}
 
-	return &Playground{width, height, make(map[uint16]Object)}, nil
+	return &Playground{width, height, make([]Object, 0, 0)}, nil
 }
 
 // GetArea returns playground area
@@ -80,18 +81,10 @@ func (pg *Playground) Locate(object Object) error {
 		}
 	}
 
-	// Object count can't be more than playground area
-	var maxId = pg.GetArea()
-
 	// Add to object list of playground
-	for id := uint16(0); id < maxId; id++ {
-		if _, ok := pg.objects[id]; !ok {
-			pg.objects[id] = object
-			return nil
-		}
-	}
+	pg.objects = append(pg.objects, object)
 
-	return &errCannotLocate{errors.New("Playground is full")}
+	return nil
 }
 
 // Located returns true if passed object is located on playground
@@ -114,17 +107,16 @@ func (pg *Playground) Contains(dot *Dot) bool {
 // there is a problem
 func (pg *Playground) Delete(object Object) error {
 	if pg.Located(object) {
-		for id := range pg.objects {
-			if pg.objects[id] == object {
-				// Delete object from object storage
-				delete(pg.objects, id)
-
+		for i := range pg.objects {
+			if pg.objects[i] == object {
+				pg.objects = append(pg.objects[:i],
+					pg.objects[i+1:]...)
 				return nil
 			}
 		}
 	}
 
-	return errors.New("Cannot delocate: Passed object isn't located")
+	return fmt.Errorf("Cannot delocate: %s", ErrObjectNotLocated)
 }
 
 // RandomDot generates random dot located on playground
@@ -134,18 +126,4 @@ func (pg *Playground) RandomDot() *Dot {
 
 func (pg *Playground) RandomRect(rw, rh uint8) (*Rect, error) {
 	return NewRandomRectOnSquare(rw, rh, 0, 0, pg.width, pg.height)
-}
-
-func (pg *Playground) GetObjects() []Object {
-	if len(pg.objects) > 0 {
-		objects := make([]Object, 0, len(pg.objects))
-
-		for _, object := range pg.objects {
-			objects = append(objects, object)
-		}
-
-		return objects
-	}
-
-	return []Object{}
 }
