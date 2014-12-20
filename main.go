@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/ivan1993spb/pwshandler"
@@ -13,9 +14,9 @@ import (
 )
 
 const (
-	INFOLOG_LEVEL_ABOUT_SERVER = iota + 1 // Messages about server
-	INFOLOG_LEVEL_ABOUT_POOLS             // about pools
-	INFOLOG_LEVEL_ABOUT_CONNS             // and connections
+	INFOLOG_LEVEL_SERVER = iota + 1 // Messages about server
+	INFOLOG_LEVEL_POOLS             // about pools
+	INFOLOG_LEVEL_CONNS             // and connections
 )
 
 type errStartingServer struct {
@@ -27,10 +28,10 @@ func (e *errStartingServer) Error() string {
 }
 
 func main() {
-	var host, port, sdPort, hashSalt string
+	var host, gamePort, sdPort, hashSalt string
 	flag.StringVar(&host, "host", "",
 		"host on which game server handles requests")
-	flag.StringVar(&port, "port", "8081",
+	flag.StringVar(&gamePort, "game_port", "8081",
 		"port on which game server handles requests")
 	flag.StringVar(&sdPort, "shutdown_port", "8082",
 		"port on which server accepts for shutdown request")
@@ -47,20 +48,19 @@ func main() {
 
 	flag.Parse()
 
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Preparing to start server")
 	}
 
-	// Working listener is used for game servering
-	workingListener, err := net.Listen("tcp", host+":"+port)
+	// Working listener is using for game servering
+	workingListener, err := net.Listen("tcp", host+":"+gamePort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
 			fmt.Errorf("Cannot create working listener: %s", err),
 		})
 	}
 
-	// Shutdown listener is used only for shutdown command. Listening
-	// only local requests
+	// Shutdown listener is using only for shutdown command
 	shutdownListener, err := net.Listen("tcp", "127.0.0.1:"+sdPort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
@@ -68,11 +68,11 @@ func main() {
 		})
 	}
 
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Listeners was created")
 	}
 
-	// Gets root context and cancel func for all goroutines on server
+	// Get root context and cancel func for all goroutines on server
 	cxt, cancel := context.WithCancel(context.Background())
 
 	// Init pool factory
@@ -81,7 +81,7 @@ func main() {
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
 	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Pool factory was created")
 	}
 
@@ -90,30 +90,19 @@ func main() {
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
 	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Pool manager was created")
 	}
 
-	streamer, err := NewStreamer(cxt, delay)
-	if err != nil {
-		glog.Exitln(&errStartingServer{err})
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Streamer was created")
-	}
-
 	// Init connection manager
-	connManager, err := NewConnManager(streamer)
-	if err != nil {
-		glog.Exitln(&errStartingServer{err})
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	connManager := NewConnManager()
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Connection manager was created")
 	}
 
 	// Init request verifier
-	verifier := NewVerifier(hashSalt)
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	verifier := NewRequestVerifier(hashSalt)
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Request verifier was created")
 	}
 
@@ -122,11 +111,11 @@ func main() {
 
 	// Start goroutine looking for shutdown command
 	go func() {
-		// Waiting for shutdown command. We don't need of connection
+		// Waiting for shutdown command
 		if _, err := shutdownListener.Accept(); err != nil {
 			glog.Errorln("Accepting shutdown connection error:", err)
 		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("Accepted shutdown command")
 		}
 
@@ -134,17 +123,17 @@ func main() {
 		if err := shutdownListener.Close(); err != nil {
 			glog.Errorln("Closing shutdown listener error:", err)
 		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("Shutdown listener was closed")
 		}
 
 		// Finishing all goroutines
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("Canceling root context")
 		}
 		go cancel()
 		time.Sleep(time.Second)
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("Root context was canceled")
 		}
 
@@ -152,7 +141,7 @@ func main() {
 		if err := workingListener.Close(); err != nil {
 			glog.Errorln("Closing working listener error:", err)
 		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln(
 				"Working listener was closed.",
 				"Server will shutdown with error:",
@@ -161,10 +150,11 @@ func main() {
 		}
 	}()
 
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
+	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Starting server")
 	}
-	// Start server
+
+	// Starting server
 	err = http.Serve(
 		workingListener,
 		pwshandler.PoolHandler(poolManager, connManager, verifier),

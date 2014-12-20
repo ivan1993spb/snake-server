@@ -10,14 +10,14 @@ import (
 // data
 type RequestVerifier struct{}
 
-func NewVerifier(HashSalt string) pwshandler.RequestVerifier {
+func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 	return &RequestVerifier{}
 }
 
 // Implementing pwshandler.RequestVerifier interface
 func (*RequestVerifier) Verify(ws *websocket.Conn) error {
-	if glog.V(INFOLOG_LEVEL_ABOUT_CONNS) {
-		glog.Infoln("Verifying accepted connection")
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("Verifying connection")
 	}
 
 	return nil
