@@ -149,7 +149,8 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 		}
 	}
 
-	return errors.New("Cannot delete connection from pool: connection was not found in pool")
+	return errors.New("Cannot delete connection from pool: " +
+		"connection was not found in pool")
 }
 
 // Implementing Pool interface

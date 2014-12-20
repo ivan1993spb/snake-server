@@ -25,7 +25,7 @@ func (d1 *Dot) Equals(d2 *Dot) bool {
 	return d1 == d2 || (d1.x == d2.x && d1.y == d2.y)
 }
 
-// PackJson packs dot
-func (d *Dot) PackJson() (json.RawMessage, error) {
+// Implementing json.Marshaler interface
+func (d *Dot) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]uint16{uint16(d.x), uint16(d.y)})
 }

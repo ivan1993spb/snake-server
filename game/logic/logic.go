@@ -3,7 +3,7 @@ package logic
 import (
 	"errors"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 )
 
 // Object game characteristics
@@ -36,15 +36,15 @@ type (
 		NutritionalValue(*playground.Dot) int8
 	}
 
-	Controlled interface {
-		Object
-		Command(string) error
-	}
+	// Controlled interface {
+	// 	Object
+	// 	Command(string) error
+	// }
 )
 
 var (
 	ErrRecognizingObject = errors.New("Cannot recognize object")
-	ErrExecuteCommand    = errors.New("Cannot execute command")
+	// ErrExecuteCommand    = errors.New("Cannot execute command")
 )
 
 const _STRENGTH_FACTOR float32 = 1.3

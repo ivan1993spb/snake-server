@@ -1,9 +1,6 @@
 package playground
 
-import (
-	"encoding/json"
-	"errors"
-)
+import "errors"
 
 var ErrInvalidDirection = errors.New("Invalid direction")
 
@@ -32,17 +29,17 @@ func ValidDirection(dir Direction) bool {
 	return false
 }
 
-// PackJson packs direction to json
-func (dir Direction) PackJson() (json.RawMessage, error) {
+// Implementing json.Marshaler interface
+func (dir Direction) MarshalJSON() ([]byte, error) {
 	switch dir {
 	case DIR_NORTH:
-		return json.RawMessage{'n'}, nil
+		return []byte(`"n"`), nil
 	case DIR_SOUTH:
-		return json.RawMessage{'s'}, nil
+		return []byte(`"s"`), nil
 	case DIR_EAST:
-		return json.RawMessage{'e'}, nil
+		return []byte(`"e"`), nil
 	case DIR_WEST:
-		return json.RawMessage{'w'}, nil
+		return []byte(`"w"`), nil
 	}
 	return nil, ErrInvalidDirection
 }

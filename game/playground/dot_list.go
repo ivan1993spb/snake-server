@@ -1,7 +1,5 @@
 package playground
 
-import "encoding/json"
-
 // DotList represents list of dots
 type DotList []*Dot
 
@@ -52,9 +50,4 @@ func (dl DotList) Dot(i uint16) *Dot {
 // Implementing Entity interface
 func (dl DotList) DotCount() uint16 {
 	return uint16(len(dl))
-}
-
-// PackJson packs dot list
-func (dl DotList) PackJson() (json.RawMessage, error) {
-	return json.Marshal(dl)
 }

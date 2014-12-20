@@ -63,7 +63,8 @@ func (r *Rect) RandomDotOnRect() *Dot {
 	return NewRandomDotOnSquare(0, 0, r.w, r.h)
 }
 
-func (r *Rect) PackJson() (json.RawMessage, error) {
+// Implementing json.Marshaler interface
+func (r *Rect) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]uint16{
 		uint16(r.x),
 		uint16(r.y),
