@@ -40,10 +40,14 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 }
 
 type PGPool struct {
-	conns    []*websocket.Conn
-	cancel   context.CancelFunc
-	playGame game.PlayFunc
-	createWs CreateWebsocketFunc
+	// conns is connections in the pool
+	conns []*websocket.Conn
+	// cancel stops all inside pool goroutines
+	cancel context.CancelFunc
+	// startStream starts stream for passed websocket connection
+	startStream StartStreamFunc
+	// startPlayer starts new player
+	startPlayer game.StartPlayerFunc
 }
 
 type errCannotCreatePool struct {
@@ -65,21 +69,27 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 
 	pcxt, cancel := context.WithCancel(cxt)
 
-	chStream, playFunc, err := game.StartGame(pcxt, pgW, pgH)
+	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("Game was started")
+	}
 
-	createWsFunc, err := StartStream(pcxt, chStream)
+	startStreamFunc, err := StartStream(pcxt, chStream)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
+	}
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("Stream was started")
 	}
 
 	return &PGPool{
 		make([]*websocket.Conn, 0, connLimit),
 		cancel,
-		playFunc,
-		createWsFunc,
+		startStreamFunc,
+		startPlayerFunc,
 	}, nil
 }
 
@@ -97,17 +107,17 @@ func (p *PGPool) IsEmpty() bool {
 func (p *PGPool) AddConn(ws *websocket.Conn) (
 	pwshandler.Environment, error) {
 	if p.IsFull() {
-		return nil, errors.New(
-			"Cannot create connection: pool is full")
+		return nil,
+			errors.New("Cannot add connection to pool: pool is full")
 	}
 
 	p.conns = append(p.conns, ws)
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Connection was created to pool")
+		glog.Infoln("Connection was created to the pool")
 	}
 
-	return &GameData{p.playGame, p.createWs}, nil
+	return &PoolFeatures{p.startStream, p.startPlayer}, nil
 }
 
 // Implementing Pool interface
@@ -128,13 +138,10 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 					glog.Infoln("Pool is empty")
 				}
 
-				if p.cancel != nil {
-					p.cancel()
-					if glog.V(INFOLOG_LEVEL_POOLS) {
-						glog.Infoln("Pool goroutines was canceled")
-					}
-				} else {
-					glog.Errorln("CancelFunc is nil")
+				p.cancel()
+
+				if glog.V(INFOLOG_LEVEL_POOLS) {
+					glog.Infoln("Pool goroutines was canceled")
 				}
 			}
 
@@ -142,8 +149,7 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 		}
 	}
 
-	return errors.New("Cannot delete connection: " +
-		"connection was not found in pool")
+	return errors.New("Cannot delete connection from pool: connection was not found in pool")
 }
 
 // Implementing Pool interface
@@ -153,5 +159,6 @@ func (p *PGPool) HasConn(ws *websocket.Conn) bool {
 			return true
 		}
 	}
+
 	return false
 }

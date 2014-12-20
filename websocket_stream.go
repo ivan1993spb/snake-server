@@ -9,14 +9,11 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type CreateWebsocketFunc func(*websocket.Conn) error
+// StartStreamFunc starts stream for passed websocket connection
+type StartStreamFunc func(*websocket.Conn) error
 
 func StartStream(cxt context.Context, chByte <-chan []byte,
-) (CreateWebsocketFunc, error) {
-	if glog.V(INFOLOG_LEVEL_POOLS) {
-		glog.Infoln("Starting stream")
-	}
-
+) (StartStreamFunc, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("Cannot start stream: %s", err)
 	}
@@ -24,6 +21,7 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 	chWs := make(chan *websocket.Conn)
 
 	go func() {
+		defer close(chWs)
 		var webSocks = make([]*websocket.Conn, 0)
 
 	loop:
@@ -32,6 +30,7 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 			if glog.V(INFOLOG_LEVEL_POOLS) {
 				glog.Infoln("Stopping stream")
 			}
+			return
 		case ws := <-chWs:
 			for i := range webSocks {
 				if webSocks[i] == ws {
@@ -39,7 +38,6 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 				}
 			}
 			webSocks = append(webSocks, ws)
-			goto loop
 		case data := <-chByte:
 			for i := 0; i < len(webSocks); {
 				if _, err := webSocks[i].Write(data); err != nil {
@@ -52,18 +50,17 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 					i++
 				}
 			}
-			goto loop
 		}
 
-		close(chWs)
+		goto loop
 	}()
 
 	return func(ws *websocket.Conn) (err error) {
 		defer func() {
-			err = fmt.Errorf(
-				"Cannot subscribe connection to stream: %s",
-				recover(),
-			)
+			if r := recover(); r != nil {
+				err = fmt.Errorf(
+					"Cannot subscribe connection for stream: %s", r)
+			}
 		}()
 		chWs <- ws
 		return

@@ -52,7 +52,7 @@ func main() {
 		glog.Infoln("Preparing to start server")
 	}
 
-	// Working listener is using for game servering
+	// Working listener is used for game servering
 	workingListener, err := net.Listen("tcp", host+":"+gamePort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
@@ -60,7 +60,7 @@ func main() {
 		})
 	}
 
-	// Shutdown listener is using only for shutdown command
+	// Shutdown listener is used for shutdown command
 	shutdownListener, err := net.Listen("tcp", "127.0.0.1:"+sdPort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
@@ -133,9 +133,6 @@ func main() {
 		}
 		go cancel()
 		time.Sleep(time.Second)
-		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("Root context was canceled")
-		}
 
 		// Closing working listener
 		if err := workingListener.Close(); err != nil {
@@ -165,4 +162,8 @@ func main() {
 
 	// Flush log
 	glog.Flush()
+
+	if glog.V(INFOLOG_LEVEL_SERVER) {
+		glog.Infoln("Goodbye")
+	}
 }

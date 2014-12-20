@@ -4,7 +4,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-type PlayFunc func(<-chan []byte) error
+type StartPlayerFunc func(<-chan []byte) error
 
 // type Game struct {
 // 	chError    chan error
@@ -22,8 +22,9 @@ type PlayFunc func(<-chan []byte) error
 // }
 
 func StartGame(cxt context.Context, pgW, pgH uint8,
-) (<-chan []byte, PlayFunc, error) {
-	return make(chan []byte), func(<-chan []byte) error {
+) (<-chan []byte, StartPlayerFunc, error) {
+	return make(chan []byte), func(ch <-chan []byte) error {
+		<-ch
 		return nil
 	}, nil
 }

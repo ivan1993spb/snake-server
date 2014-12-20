@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
@@ -9,9 +10,19 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type GameData struct {
-	PlayGame game.PlayFunc
-	createWs CreateWebsocketFunc
+const INPUT_MAX_LENGTH = 512
+
+type PoolFeatures struct {
+	startStream StartStreamFunc
+	startPlayer game.StartPlayerFunc
+}
+
+type errConnHandling struct {
+	err error
+}
+
+func (e *errConnHandling) Error() string {
+	return "Error of connection handling: " + e.err.Error()
 }
 
 type ConnManager struct{}
@@ -24,39 +35,52 @@ func NewConnManager() pwshandler.ConnManager {
 func (m *ConnManager) Handle(ws *websocket.Conn,
 	data pwshandler.Environment) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Websocket handler started for new connection")
+		glog.Infoln("Websocket handler was started")
+		defer glog.Infoln("Websocket handler was finished")
 	}
-	defer func() {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("Websocket handler was finished")
+
+	if game, ok := data.(*PoolFeatures); ok {
+		if err := game.startStream(ws); err != nil {
+			return &errConnHandling{err}
 		}
-	}()
 
-	if _, ok := data.(*GameData); ok {
-		// if glog.V(INFOLOG_LEVEL_CONNS) {
-		// 	glog.Infoln("Subscribe connection to game stream")
-		// }
+		input := StartListen(ws)
 
-		// if glog.V(INFOLOG_LEVEL_CONNS) {
-		// 	glog.Infoln("Starting listening for player commands")
-		// }
+		if err := game.startPlayer(input); err != nil {
+			return &errConnHandling{err}
+		}
 
 		return nil
 	}
 
-	return errors.New("Game data was not received")
+	return &errConnHandling{errors.New("Pool data was not received")}
 }
 
 // Implementing pwshandler.ConnManager interface
-func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
+func (m *ConnManager) HandleError(_ *websocket.Conn, err error) {
 	if err == nil {
-		err = errors.New("Passed nil errer to reporting")
+		err = errors.New("Passed nil errer for reporting")
 	}
+	glog.Errorln(err)
+}
 
-	// Log error message
-	if ws != nil {
-		glog.Errorln("IP:", ws.Request().RemoteAddr, ", Error:", err)
-	} else {
-		glog.Errorln("Error:", err)
-	}
+func StartListen(ws *websocket.Conn) <-chan []byte {
+	input := make(chan []byte)
+
+	go func() {
+		buffer := make([]byte, INPUT_MAX_LENGTH)
+		for {
+			n, err := ws.Read(buffer)
+			if err != nil {
+				if err != io.EOF {
+					glog.Errorln(&errConnHandling{err})
+				}
+				close(input)
+				return
+			}
+			input <- buffer[:n]
+		}
+	}()
+
+	return input
 }
