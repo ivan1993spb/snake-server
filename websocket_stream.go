@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/golang/glog"
@@ -8,10 +9,16 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+type CreateWebsocketFunc func(*websocket.Conn) error
+
 func StartStream(cxt context.Context, chByte <-chan []byte,
-) <-chan *websocket.Conn {
+) (CreateWebsocketFunc, error) {
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("Starting stream")
+	}
+
+	if err := cxt.Err(); err != nil {
+		return nil, fmt.Errorf("Cannot start stream: %s", err)
 	}
 
 	chWs := make(chan *websocket.Conn)
@@ -51,5 +58,14 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 		close(chWs)
 	}()
 
-	return chWs
+	return func(ws *websocket.Conn) (err error) {
+		defer func() {
+			err = fmt.Errorf(
+				"Cannot subscribe connection to stream: %s",
+				recover(),
+			)
+		}()
+		chWs <- ws
+		return
+	}, nil
 }

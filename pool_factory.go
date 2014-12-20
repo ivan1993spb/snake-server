@@ -40,10 +40,10 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 }
 
 type PGPool struct {
-	conns  []*websocket.Conn
-	cancel context.CancelFunc
-	game   *game.Game
-	chWs   <-chan *websocket.Conn
+	conns    []*websocket.Conn
+	cancel   context.CancelFunc
+	playGame game.PlayFunc
+	createWs CreateWebsocketFunc
 }
 
 type errCannotCreatePool struct {
@@ -64,12 +64,22 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	}
 
 	pcxt, cancel := context.WithCancel(cxt)
-	g := game.NewGame(pcxt, pgW, pgH)
-	chWs := StartStream(pcxt, g.GetStream())
-	g.Start()
+
+	chStream, playFunc, err := game.StartGame(pcxt, pgW, pgH)
+	if err != nil {
+		return nil, &errCannotCreatePool{err}
+	}
+
+	createWsFunc, err := StartStream(pcxt, chStream)
+	if err != nil {
+		return nil, &errCannotCreatePool{err}
+	}
 
 	return &PGPool{
-		make([]*websocket.Conn, 0, connLimit), cancel, g, chWs,
+		make([]*websocket.Conn, 0, connLimit),
+		cancel,
+		playFunc,
+		createWsFunc,
 	}, nil
 }
 
@@ -97,7 +107,7 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		glog.Infoln("Connection was created to pool")
 	}
 
-	return p.game, nil
+	return &GameData{p.playGame, p.createWs}, nil
 }
 
 // Implementing Pool interface

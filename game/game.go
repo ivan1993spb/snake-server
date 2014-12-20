@@ -1,9 +1,10 @@
 package game
 
-// import (
-// 	"golang.org/x/net/context"
-// 	"golang.org/x/net/websocket"
-// )
+import (
+	"golang.org/x/net/context"
+)
+
+type PlayFunc func(<-chan []byte) error
 
 // type Game struct {
 // 	chError    chan error
@@ -20,16 +21,9 @@ package game
 
 // }
 
-type Game struct{}
-
-func NewGame(...interface{}) *Game {
-	return &Game{}
-}
-
-func (g *Game) Start() {
-
-}
-
-func (g *Game) GetStream() <-chan []byte {
-	return make(chan []byte)
+func StartGame(cxt context.Context, pgW, pgH uint8,
+) (<-chan []byte, PlayFunc, error) {
+	return make(chan []byte), func(<-chan []byte) error {
+		return nil
+	}, nil
 }

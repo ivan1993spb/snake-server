@@ -10,8 +10,8 @@ import (
 )
 
 type GameData struct {
-	Game *game.Game
-	chWs <-chan *websocket.Conn
+	PlayGame game.PlayFunc
+	createWs CreateWebsocketFunc
 }
 
 type ConnManager struct{}
