@@ -47,18 +47,25 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 			return &errConnProcessing{err}
 		}
 
+		cxt, cancel := context.WithCancel(game.poolContext)
 		input := make(chan []byte)
-		output, err := game.startPlayer(input)
+
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("Starting new player")
+		}
+		output, err := game.startPlayer(cxt, input)
 
 		if err == nil {
-
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Infoln("Starting private game stream")
+			}
 			go func() {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					defer glog.Infoln("Private game stream stops")
+				}
 				for {
 					select {
-					case <-game.poolContext.Done():
-						if glog.V(INFOLOG_LEVEL_CONNS) {
-							glog.Infoln("Private game stream stops")
-						}
+					case <-cxt.Done():
 						return
 					case data := <-output:
 						if _, err := ws.Write(data); err != nil {
@@ -74,7 +81,9 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 				}
 			}()
 
-			stop := make(chan struct{})
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Infoln("Starting player listener")
+			}
 			go func() {
 				buffer := make([]byte, INPUT_MAX_LENGTH)
 				for {
@@ -87,16 +96,17 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 							glog.Infoln("Player listener stops")
 						}
 
-						stop <- struct{}{}
+						cancel()
 						return
 					}
 					input <- buffer[:n]
 				}
 			}()
 
-			select {
-			case <-stop:
-			case <-game.poolContext.Done():
+			<-cxt.Done()
+
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Infoln("Finishing player")
 			}
 
 			close(input)
