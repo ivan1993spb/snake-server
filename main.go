@@ -143,16 +143,16 @@ func main() {
 		go cancel()
 		time.Sleep(time.Second)
 
-		// Closing working listener
-		if err := workingListener.Close(); err != nil {
-			glog.Errorln("Closing working listener error:", err)
-		}
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln(
-				"Working listener was closed.",
+				"Closing working listener.",
 				"Server will shutdown with error:",
 				"use of closed network connection",
 			)
+		}
+		// Closing working listener
+		if err := workingListener.Close(); err != nil {
+			glog.Errorln("Closing working listener error:", err)
 		}
 	}()
 

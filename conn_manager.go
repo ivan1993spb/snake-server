@@ -43,6 +43,9 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 
 	if game, ok := data.(*PoolFeatures); ok {
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("Creating connection to common game stream")
+		}
 		if err := game.startStream(ws); err != nil {
 			return &errConnProcessing{err}
 		}
@@ -51,7 +54,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 		input := make(chan []byte)
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("Starting new player")
+			glog.Infoln("Starting player")
 		}
 		output, err := game.startPlayer(cxt, input)
 
@@ -96,7 +99,10 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 							glog.Infoln("Player listener stops")
 						}
 
-						cancel()
+						if cxt.Err() == nil {
+							cancel()
+						}
+
 						return
 					}
 					input <- buffer[:n]
@@ -110,6 +116,10 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 			}
 
 			close(input)
+
+			if cxt.Err() == nil {
+				cancel()
+			}
 
 			return nil
 
