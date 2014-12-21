@@ -17,7 +17,7 @@ func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 // Implementing pwshandler.RequestVerifier interface
 func (*RequestVerifier) Verify(ws *websocket.Conn) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Verifying connection")
+		glog.Infoln("Verifying accepted connection")
 	}
 
 	return nil

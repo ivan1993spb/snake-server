@@ -92,7 +92,6 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			glog.Infoln("Server is not full so create new pool")
 		}
 
-		// Creating new pool
 		pool, err := pm.addPool()
 
 		if err == nil {

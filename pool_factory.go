@@ -42,7 +42,9 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 type PGPool struct {
 	// conns is connections in the pool
 	conns []*websocket.Conn
-	// cancel stops all inside pool goroutines
+	// Pool context
+	cxt context.Context
+	// cancel stops all pool goroutines
 	cancel context.CancelFunc
 	// startStream starts stream for passed websocket connection
 	startStream StartStreamFunc
@@ -67,6 +69,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		return nil, &errCannotCreatePool{ErrInvalidConnLimit}
 	}
 
+	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
 	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
@@ -87,6 +90,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 
 	return &PGPool{
 		make([]*websocket.Conn, 0, connLimit),
+		pcxt,
 		cancel,
 		startStreamFunc,
 		startPlayerFunc,
@@ -103,12 +107,26 @@ func (p *PGPool) IsEmpty() bool {
 	return len(p.conns) == 0
 }
 
+type errCannotAddConnToPool struct {
+	err error
+}
+
+func (e *errCannotAddConnToPool) Error() string {
+	return "Cannot add connection to pool: " + e.err.Error()
+}
+
 // Implementing Pool interface
 func (p *PGPool) AddConn(ws *websocket.Conn) (
 	pwshandler.Environment, error) {
 	if p.IsFull() {
-		return nil,
-			errors.New("Cannot add connection to pool: pool is full")
+		return nil, &errCannotAddConnToPool{
+			errors.New("Pool is full"),
+		}
+	}
+	if p.HasConn(ws) {
+		return nil, &errCannotAddConnToPool{
+			errors.New("Passed connection already added in pool"),
+		}
 	}
 
 	p.conns = append(p.conns, ws)
@@ -117,7 +135,7 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		glog.Infoln("Connection was created to the pool")
 	}
 
-	return &PoolFeatures{p.startStream, p.startPlayer}, nil
+	return &PoolFeatures{p.startStream, p.startPlayer, p.cxt}, nil
 }
 
 // Implementing Pool interface
@@ -132,12 +150,12 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 				glog.Infoln("Connection was found and removed")
 			}
 
-			// Stop all child goroutines if empty pool
 			if p.IsEmpty() {
 				if glog.V(INFOLOG_LEVEL_POOLS) {
 					glog.Infoln("Pool is empty")
 				}
 
+				// Stop all pool goroutines
 				p.cancel()
 
 				if glog.V(INFOLOG_LEVEL_POOLS) {

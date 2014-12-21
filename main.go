@@ -52,6 +52,12 @@ func main() {
 		glog.Infoln("Preparing to start server")
 	}
 
+	if poolLimit == 0 {
+		glog.Warningln("Invalid pool limit")
+	}
+	if connLimit == 0 {
+		glog.Warningln("Invalid connection limit per pool")
+	}
 	if pgW*pgH == 0 {
 		glog.Warningln("Invalid playground proportions")
 	}
@@ -76,7 +82,6 @@ func main() {
 		glog.Infoln("Listeners was created")
 	}
 
-	// Get root context and cancel func for all goroutines on server
 	cxt, cancel := context.WithCancel(context.Background())
 
 	// Init pool factory
