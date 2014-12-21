@@ -44,9 +44,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 			return &errConnHandling{err}
 		}
 
-		input := StartListen(ws)
-
-		if err := game.startPlayer(input); err != nil {
+		if err := game.startPlayer(StartListen(ws)); err != nil {
 			return &errConnHandling{err}
 		}
 

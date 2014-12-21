@@ -52,6 +52,10 @@ func main() {
 		glog.Infoln("Preparing to start server")
 	}
 
+	if pgW*pgH == 0 {
+		glog.Warningln("Invalid playground proportions")
+	}
+
 	// Working listener is used for game servering
 	workingListener, err := net.Listen("tcp", host+":"+gamePort)
 	if err != nil {
