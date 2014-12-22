@@ -125,9 +125,27 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	select {
 	case <-stop:
 	case <-poolFeatures.poolContext.Done():
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infof(
+				"Forced connection closing [addr: %s]",
+				ws.Request().RemoteAddr,
+			)
+		}
+		if err = ws.Close(); err != nil {
+			glog.Warningln("Forced connection closing error:", err)
+		}
+		// Waiting for stopping player command listener
+		for range stop {
+		}
 	}
 
+	// Closing input channel calls stopping player processes and
+	// closing output channel
 	close(input)
+
+	// Waiting for stopping private game stream
+	for range output {
+	}
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Removing connection from common game stream")
@@ -137,7 +155,6 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 
 	return nil
-
 }
 
 // Implementing pwshandler.ConnManager interface
