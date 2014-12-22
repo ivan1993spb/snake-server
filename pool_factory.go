@@ -72,6 +72,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
+	// chStream common game data for all players in current pool
 	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}

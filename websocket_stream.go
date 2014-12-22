@@ -20,7 +20,7 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 		return nil, fmt.Errorf("Cannot start stream: %s", err)
 	}
 
-	// Channel for creation new websockets
+	// Channel for creation new websocket connections
 	chWs := make(chan *websocket.Conn)
 
 	go func() {
@@ -28,6 +28,7 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 		var webSocks = make([]*websocket.Conn, 0)
 
 	loop:
+
 		select {
 		case <-cxt.Done():
 			if glog.V(INFOLOG_LEVEL_POOLS) {
@@ -35,6 +36,7 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 			}
 			return
 		case ws := <-chWs:
+			// Check if passed websocket connection already exists
 			for i := range webSocks {
 				if webSocks[i] == ws {
 					goto loop
@@ -42,12 +44,18 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 			}
 			webSocks = append(webSocks, ws)
 		case data := <-chByte:
+			// Send data for each websocket connection in webSocks
 			for i := 0; i < len(webSocks); {
 				if _, err := webSocks[i].Write(data); err != nil {
+					// Remove connection on error
 					if glog.V(INFOLOG_LEVEL_CONNS) {
-						glog.Errorln(
+						glog.Warningln(
 							"Cannot send common game data:",
 							err,
+						)
+						glog.
+							Infoln(
+							"Removing connection from game stream",
 						)
 					}
 					webSocks = append(webSocks[:i], webSocks[i+1:]...)
