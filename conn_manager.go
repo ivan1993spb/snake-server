@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 
@@ -60,7 +61,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 
 	// input is channel for transferring information from client to
 	// player goroutine, for example: player commands
-	input := make(chan []byte)
+	input := make(chan json.RawMessage)
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Starting player")
@@ -102,7 +103,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 	// Listen for player commands
 	go func() {
-		buffer := make([]byte, INPUT_MAX_LENGTH)
+		buffer := make(json.RawMessage, INPUT_MAX_LENGTH)
 
 		for {
 			n, err := ws.Read(buffer)
@@ -139,8 +140,8 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 		}
 	}
 
-	// Closing input channel calls stopping player processes and
-	// closing output channel
+	// Closing input channel calls stopping player and then closing
+	// output channel
 	close(input)
 
 	// Waiting for stopping private game stream

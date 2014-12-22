@@ -7,7 +7,7 @@ import (
 )
 
 //
-type StartPlayerFunc func(<-chan []byte) (<-chan []byte, error)
+type StartPlayerFunc func(<-chan json.RawMessage) (<-chan json.RawMessage, error)
 
 type errStartingGame struct {
 	err error
@@ -22,7 +22,7 @@ type Object json.Marshaler
 type ObjectSet map[uint16]Object
 
 func StartGame(cxt context.Context, pgW, pgH uint8,
-) (<-chan []byte, StartPlayerFunc, error) {
+) (<-chan json.RawMessage, StartPlayerFunc, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, nil, &errStartingGame{err}
 	}
@@ -34,15 +34,15 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 
 	// objects := make(map[uint16]Object)
 
-	output := make(chan []byte)
+	output := make(chan json.RawMessage)
 	go func() {
 		<-cxt.Done()
 		close(output)
 	}()
 
 	return output,
-		func(input <-chan []byte) (<-chan []byte, error) {
-			output := make(chan []byte)
+		func(input <-chan json.RawMessage) (<-chan json.RawMessage, error) {
+			output := make(chan json.RawMessage)
 			go func() {
 				for range input {
 				}

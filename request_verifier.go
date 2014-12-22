@@ -20,5 +20,9 @@ func (*RequestVerifier) Verify(ws *websocket.Conn) error {
 		glog.Infoln("Verifying accepted connection")
 	}
 
+	// Send game server protocol version
+
+	// Check received hash
+
 	return nil
 }

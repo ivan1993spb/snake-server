@@ -13,6 +13,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+const PROTOCOL_VERSION = "1.0"
+
 const (
 	// Infolog leveles
 	INFOLOG_LEVEL_SERVER = iota + 1 // Server level
@@ -30,9 +32,9 @@ func (e *errStartingServer) Error() string {
 
 func main() {
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *               BEGIN PARSING PARAMETERS                *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                  BEGIN PARSING PARAMETERS                   *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	var host, gamePort, sdPort, hashSalt string
 	flag.StringVar(&host, "host", "",
@@ -54,9 +56,9 @@ func main() {
 
 	flag.Parse()
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                 END PARSING PARAMETERS                *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                   END PARSING PARAMETERS                    *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Preparing to start server")
@@ -72,9 +74,9 @@ func main() {
 		glog.Warningln("Invalid playground proportions")
 	}
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                BEGIN CREATING LISTENERS               *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                  BEGIN CREATING LISTENERS                   *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Working listener is used for game servering
 	workingListener, err := net.Listen("tcp", host+":"+gamePort)
@@ -96,15 +98,15 @@ func main() {
 		glog.Infoln("Listeners was created")
 	}
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                 END CREATING LISTENERS                *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                   END CREATING LISTENERS                    *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	cxt, cancel := context.WithCancel(context.Background())
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                   BEGIN INIT MODULES                  *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                     BEGIN INIT MODULES                      *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Init pool factory
 	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
@@ -137,9 +139,9 @@ func main() {
 		glog.Infoln("Request verifier was created")
 	}
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                    END INIT MODULES                   *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                      END INIT MODULES                       *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Setup GOMAXPROCS
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -170,7 +172,7 @@ func main() {
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("Canceling root context")
 		}
-		go cancel()
+		cancel()
 		time.Sleep(time.Second)
 
 		if glog.V(INFOLOG_LEVEL_SERVER) {

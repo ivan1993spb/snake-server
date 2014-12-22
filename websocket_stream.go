@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/golang/glog"
@@ -14,13 +15,13 @@ type StartStreamConnFunc func(*websocket.Conn) error
 type StopStreamConnFunc func(*websocket.Conn) error
 
 //  StartGameStream starts common pool game stream
-func StartGameStream(chByte <-chan []byte,
+func StartGameStream(stream <-chan json.RawMessage,
 ) (StartStreamConnFunc, StopStreamConnFunc) {
 
 	conns := make([]*websocket.Conn, 0)
 
 	go func() {
-		for data := range chByte {
+		for data := range stream {
 			if len(data) == 0 || len(conns) == 0 {
 				continue
 			}
