@@ -22,11 +22,7 @@ func RandomDirection() Direction {
 
 // ValidDirection returns true if passed direction is valid
 func ValidDirection(dir Direction) bool {
-	switch dir {
-	case DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST:
-		return true
-	}
-	return false
+	return _DIR_COUNT > dir
 }
 
 // Implementing json.Marshaler interface
