@@ -7,7 +7,7 @@ import (
 )
 
 //
-type StartPlayerFunc func(context.Context, <-chan []byte) (<-chan []byte, error)
+type StartPlayerFunc func(<-chan []byte) (<-chan []byte, error)
 
 type errStartingGame struct {
 	err error
@@ -34,12 +34,20 @@ func StartGame(gameCxt context.Context, pgW, pgH uint8,
 
 	// objects := make(map[uint16]Object)
 
+	output := make(chan []byte)
 	go func() {
+		<-gameCxt.Done()
+		close(output)
 	}()
 
-	return make(chan []byte),
-		func(playerCxt context.Context, input <-chan []byte) (<-chan []byte, error) {
-
-			return make(chan []byte), nil
+	return output,
+		func(input <-chan []byte) (<-chan []byte, error) {
+			output := make(chan []byte)
+			go func() {
+				for range input {
+				}
+				close(output)
+			}()
+			return output, nil
 		}, nil
 }

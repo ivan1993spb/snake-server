@@ -18,7 +18,6 @@ type PoolFeatures struct {
 	stopStreamConn  StopStreamConnFunc
 	// startPlayer starts player
 	startPlayer game.StartPlayerFunc
-	// poolContext is context of current pool
 	poolContext context.Context
 }
 
@@ -59,8 +58,6 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 		return &errConnProcessing{err}
 	}
 
-	cxt, cancel := context.WithCancel(game.poolContext)
-
 	// input is channel for transferring information from client to
 	// player goroutine, for example: player commands
 	input := make(chan []byte)
@@ -72,7 +69,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	// output is channel for transferring private game information
 	// for only one player. This information are useful only for
 	// current player
-	output, err := game.startPlayer(cxt, input)
+	output, err := game.startPlayer(input)
 	if err != nil {
 		return &errConnProcessing{err}
 	}
@@ -82,55 +79,53 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 	// Send game data which are useful only for current player
 	go func() {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			defer glog.Infoln("Private game stream stops")
-		}
-		for {
-			select {
-			case <-cxt.Done():
-				return
-			case data := <-output:
-				if _, err := ws.Write(data); err != nil {
-					if glog.V(INFOLOG_LEVEL_CONNS) {
-						glog.Errorln(
-							"Cannot send private game data:",
-							err,
-						)
-					}
-					return
-				}
+		for data := range output {
+			if _, err := ws.Write(data); err != nil {
+				glog.Warningln("Cannot send private game data:", err)
+				break
 			}
 		}
+
+		// Wait for closing output channel
+		for range output {
+		}
+
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("Private game stream finished")
+		}
 	}()
+
+	stop := make(chan struct{})
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Starting player listener")
 	}
 	// Listen for player commands
 	go func() {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			defer glog.Infoln("Player listener stops")
-		}
-
 		buffer := make([]byte, INPUT_MAX_LENGTH)
+
 		for {
 			n, err := ws.Read(buffer)
 			if err != nil {
 				if err != io.EOF {
 					glog.Errorln("Cannot read data:", err)
 				}
-
-				if cxt.Err() == nil {
-					cancel()
-				}
-
-				return
+				break
 			}
 			input <- buffer[:n]
 		}
+
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("Player listener finished")
+		}
+
+		close(stop)
 	}()
 
-	<-cxt.Done()
+	select {
+	case <-stop:
+	case <-game.poolContext.Done():
+	}
 
 	close(input)
 
