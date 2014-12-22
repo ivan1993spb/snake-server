@@ -74,8 +74,8 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
-	// cStream common game channel for data of all players in pool
-	cStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
+	// chStream common game channel for data of all players in pool
+	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -83,10 +83,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		glog.Infoln("Game was started")
 	}
 
-	startStreamConn, stopStreamConn, err := StartStream(pcxt, cStream)
-	if err != nil {
-		return nil, &errCannotCreatePool{err}
-	}
+	startStreamConn, stopStreamConn := StartGameStream(chStream)
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("Stream was started")
 	}

@@ -2,10 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/golang/glog"
-	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
 
@@ -15,45 +13,46 @@ type StartStreamConnFunc func(*websocket.Conn) error
 // StopStreamConnFunc stops stream for passed websocket connection
 type StopStreamConnFunc func(*websocket.Conn) error
 
-// StartStream starts common pool game stream
-func StartStream(cxt context.Context, chByte <-chan []byte,
-) (StartStreamConnFunc, StopStreamConnFunc, error) {
-	if err := cxt.Err(); err != nil {
-		return nil, nil, fmt.Errorf("Cannot start stream: %s", err)
-	}
+//  StartGameStream starts common pool game stream
+func StartGameStream(chByte <-chan []byte,
+) (StartStreamConnFunc, StopStreamConnFunc) {
 
 	conns := make([]*websocket.Conn, 0)
 
 	go func() {
-		for {
-			select {
-			case <-cxt.Done():
-				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("Common game stream stops")
-				}
-				return
-			case data := <-chByte:
-				// Send data for each websocket connection in conns
-				for i := 0; i < len(conns); {
-					if _, err := conns[i].Write(data); err != nil {
-						// Remove connection on error
+		for data := range chByte {
+			if len(data) == 0 || len(conns) == 0 {
+				continue
+			}
 
-						if glog.V(INFOLOG_LEVEL_CONNS) {
-							glog.Warningln(
-								"Cannot send common game data:",
-								err,
-							)
-							glog.Infoln(
-								"Removing wsconn from game stream",
-							)
-						}
+			// Send data for each websocket connection in conns
+			for i := 0; i < len(conns); {
+				if _, err := conns[i].Write(data); err != nil {
+					// Remove connection on error
+					glog.Warningln(
+						"Cannot send common game data:",
+						err,
+					)
 
-						conns = append(conns[:i], conns[i+1:]...)
-					} else {
-						i++
+					if glog.V(INFOLOG_LEVEL_CONNS) {
+						glog.Infoln(
+							"Removing wsconn from game stream",
+						)
 					}
+
+					conns = append(conns[:i], conns[i+1:]...)
+				} else {
+					i++
 				}
 			}
+		}
+
+		if len(conns) < 0 {
+			conns = conns[:0]
+		}
+
+		if glog.V(INFOLOG_LEVEL_POOLS) {
+			glog.Infoln("Common game stream finished")
 		}
 	}()
 
@@ -80,5 +79,5 @@ func StartStream(cxt context.Context, chByte <-chan []byte,
 
 			return errors.New("Cannot remove connection from common" +
 				" pool game stream: Passed connection was not found")
-		}, nil
+		}
 }

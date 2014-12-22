@@ -31,7 +31,7 @@ func (e *errStartingServer) Error() string {
 func main() {
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                BEGIN PARSE PARAMETERS                 *
+	 *               BEGIN PARSING PARAMETERS                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	var host, gamePort, sdPort, hashSalt string
@@ -55,7 +55,7 @@ func main() {
 	flag.Parse()
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                  END PARSE PARAMETERS                 *
+	 *                 END PARSING PARAMETERS                *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
