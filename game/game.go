@@ -21,9 +21,9 @@ type Object json.Marshaler
 
 type ObjectSet map[uint16]Object
 
-func StartGame(gameCxt context.Context, pgW, pgH uint8,
+func StartGame(cxt context.Context, pgW, pgH uint8,
 ) (<-chan []byte, StartPlayerFunc, error) {
-	if err := gameCxt.Err(); err != nil {
+	if err := cxt.Err(); err != nil {
 		return nil, nil, &errStartingGame{err}
 	}
 
@@ -36,7 +36,7 @@ func StartGame(gameCxt context.Context, pgW, pgH uint8,
 
 	output := make(chan []byte)
 	go func() {
-		<-gameCxt.Done()
+		<-cxt.Done()
 		close(output)
 	}()
 

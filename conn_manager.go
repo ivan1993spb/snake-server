@@ -44,7 +44,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 		defer glog.Infoln("Websocket handler was finished")
 	}
 
-	game, ok := data.(*PoolFeatures)
+	poolFeatures, ok := data.(*PoolFeatures)
 	if !ok {
 		return &errConnProcessing{
 			errors.New("Pool data was not received"),
@@ -54,7 +54,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Creating connection to common game stream")
 	}
-	if err := game.startStreamConn(ws); err != nil {
+	if err := poolFeatures.startStreamConn(ws); err != nil {
 		return &errConnProcessing{err}
 	}
 
@@ -69,7 +69,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	// output is channel for transferring private game information
 	// for only one player. This information are useful only for
 	// current player
-	output, err := game.startPlayer(input)
+	output, err := poolFeatures.startPlayer(input)
 	if err != nil {
 		return &errConnProcessing{err}
 	}
@@ -124,7 +124,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 
 	select {
 	case <-stop:
-	case <-game.poolContext.Done():
+	case <-poolFeatures.poolContext.Done():
 	}
 
 	close(input)
@@ -132,7 +132,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Removing connection from common game stream")
 	}
-	if err := game.stopStreamConn(ws); err != nil {
+	if err := poolFeatures.stopStreamConn(ws); err != nil {
 		return &errConnProcessing{err}
 	}
 
