@@ -14,10 +14,11 @@ import (
 const INPUT_MAX_LENGTH = 512
 
 type PoolFeatures struct {
-	// Starts common game pool stream for passed connection
-	startStream StartStreamFunc
+	startStreamConn StartStreamConnFunc
+	stopStreamConn  StopStreamConnFunc
+	// startPlayer starts player
 	startPlayer game.StartPlayerFunc
-	// Context of current pool
+	// poolContext is context of current pool
 	poolContext context.Context
 }
 
@@ -54,8 +55,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Creating connection to common game stream")
 	}
-	// Game data which is common for all players in current pool
-	if err := game.startStream(ws); err != nil {
+	if err := game.startStreamConn(ws); err != nil {
 		return &errConnProcessing{err}
 	}
 
@@ -133,6 +133,13 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	<-cxt.Done()
 
 	close(input)
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("Removing connection from common game stream")
+	}
+	if err := game.stopStreamConn(ws); err != nil {
+		return &errConnProcessing{err}
+	}
 
 	return nil
 

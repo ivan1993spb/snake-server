@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	INFOLOG_LEVEL_SERVER = iota + 1 // Messages about server
-	INFOLOG_LEVEL_POOLS             // about pools
-	INFOLOG_LEVEL_CONNS             // and connections
+	// Infolog leveles
+	INFOLOG_LEVEL_SERVER = iota + 1 // Server level
+	INFOLOG_LEVEL_POOLS             // Pool level
+	INFOLOG_LEVEL_CONNS             // Connection level
 )
 
 type errStartingServer struct {
@@ -28,6 +29,11 @@ func (e *errStartingServer) Error() string {
 }
 
 func main() {
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                BEGIN PARSE PARAMETERS                 *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 	var host, gamePort, sdPort, hashSalt string
 	flag.StringVar(&host, "host", "",
 		"host on which game server handles requests")
@@ -48,6 +54,10 @@ func main() {
 
 	flag.Parse()
 
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                  END PARSE PARAMETERS                 *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("Preparing to start server")
 	}
@@ -61,6 +71,10 @@ func main() {
 	if pgW*pgH == 0 {
 		glog.Warningln("Invalid playground proportions")
 	}
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                BEGIN CREATING LISTENERS               *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Working listener is used for game servering
 	workingListener, err := net.Listen("tcp", host+":"+gamePort)
@@ -82,7 +96,15 @@ func main() {
 		glog.Infoln("Listeners was created")
 	}
 
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                 END CREATING LISTENERS                *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 	cxt, cancel := context.WithCancel(context.Background())
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                   BEGIN INIT MODULES                  *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Init pool factory
 	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
@@ -115,8 +137,16 @@ func main() {
 		glog.Infoln("Request verifier was created")
 	}
 
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                    END INIT MODULES                   *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 	// Setup GOMAXPROCS
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	if glog.V(INFOLOG_LEVEL_SERVER) {
+		glog.Infoln("Starting server")
+	}
 
 	// Start goroutine looking for shutdown command
 	go func() {
@@ -155,10 +185,6 @@ func main() {
 			glog.Errorln("Closing working listener error:", err)
 		}
 	}()
-
-	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Starting server")
-	}
 
 	// Starting server
 	err = http.Serve(

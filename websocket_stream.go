@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -8,76 +9,76 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-// StartStreamFunc starts stream for passed websocket connection
-type StartStreamFunc func(*websocket.Conn) error
+// StartStreamConnFunc starts stream for passed websocket connection
+type StartStreamConnFunc func(*websocket.Conn) error
 
-// StartStream starts game stream. Func receives websockets from
-// returned StartStreamFunc and saves it. When bytes received from
-// passed channel StartStream sends bytes to all saved websockets
+// StopStreamConnFunc stops stream for passed websocket connection
+type StopStreamConnFunc func(*websocket.Conn) error
+
+// StartStream starts common pool game stream
 func StartStream(cxt context.Context, chByte <-chan []byte,
-) (StartStreamFunc, error) {
+) (StartStreamConnFunc, StopStreamConnFunc, error) {
 	if err := cxt.Err(); err != nil {
-		return nil, fmt.Errorf("Cannot start stream: %s", err)
+		return nil, nil, fmt.Errorf("Cannot start stream: %s", err)
 	}
 
-	// Channel for creation new websocket connections
-	chWs := make(chan *websocket.Conn)
+	conns := make([]*websocket.Conn, 0)
 
 	go func() {
-		defer close(chWs)
-		var webSocks = make([]*websocket.Conn, 0)
-
-	loop:
-
-		select {
-		case <-cxt.Done():
-			if glog.V(INFOLOG_LEVEL_POOLS) {
-				glog.Infoln("Common game stream stops")
-			}
-			return
-		case ws := <-chWs:
-			// Check if passed websocket connection already exists
-			for i := range webSocks {
-				if webSocks[i] == ws {
-					goto loop
+		for {
+			select {
+			case <-cxt.Done():
+				if glog.V(INFOLOG_LEVEL_POOLS) {
+					glog.Infoln("Common game stream stops")
 				}
-			}
-			webSocks = append(webSocks, ws)
-		case data := <-chByte:
-			// Send data for each websocket connection in webSocks
-			for i := 0; i < len(webSocks); {
-				if _, err := webSocks[i].Write(data); err != nil {
-					// Remove connection on error
-					if glog.V(INFOLOG_LEVEL_CONNS) {
-						glog.Warningln(
-							"Cannot send common game data:",
-							err,
-						)
-						glog.
-							Infoln(
-							"Removing connection from game stream",
-						)
+				return
+			case data := <-chByte:
+				// Send data for each websocket connection in conns
+				for i := 0; i < len(conns); {
+					if _, err := conns[i].Write(data); err != nil {
+						// Remove connection on error
+
+						if glog.V(INFOLOG_LEVEL_CONNS) {
+							glog.Warningln(
+								"Cannot send common game data:",
+								err,
+							)
+							glog.Infoln(
+								"Removing wsconn from game stream",
+							)
+						}
+
+						conns = append(conns[:i], conns[i+1:]...)
+					} else {
+						i++
 					}
-					webSocks = append(webSocks[:i], webSocks[i+1:]...)
-				} else {
-					i++
 				}
 			}
 		}
-
-		goto loop
 	}()
 
-	return func(ws *websocket.Conn) (err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf(
-					"Cannot create connection to game stream: %s", r,
-				)
+	return func(ws *websocket.Conn) error {
+			// Check if passed websocket connection already exists
+			for i := range conns {
+				if conns[i] == ws {
+					return errors.New("Cannot create connection to " +
+						"common pool game stream: Passed connection" +
+						" already exists")
+				}
 			}
-		}()
 
-		chWs <- ws
-		return
-	}, nil
+			conns = append(conns, ws)
+
+			return nil
+		}, func(ws *websocket.Conn) (err error) {
+			for i := range conns {
+				if conns[i] == ws {
+					conns = append(conns[:i], conns[i+1:]...)
+					return nil
+				}
+			}
+
+			return errors.New("Cannot remove connection from common" +
+				" pool game stream: Passed connection was not found")
+		}, nil
 }

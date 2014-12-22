@@ -46,8 +46,10 @@ type PGPool struct {
 	cxt context.Context
 	// cancel stops all pool goroutines
 	cancel context.CancelFunc
-	// startStream starts stream for passed websocket connection
-	startStream StartStreamFunc
+	// startStreamConn starts stream for passed websocket connection
+	startStreamConn StartStreamConnFunc
+	// stopStreamConn stops stream for passed websocket connection
+	stopStreamConn StopStreamConnFunc
 	// startPlayer starts new player
 	startPlayer game.StartPlayerFunc
 }
@@ -72,8 +74,8 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
-	// chStream common game data for all players in current pool
-	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
+	// cStream common game channel for data of all players in pool
+	cStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -81,7 +83,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		glog.Infoln("Game was started")
 	}
 
-	startStreamFunc, err := StartStream(pcxt, chStream)
+	startStreamConn, stopStreamConn, err := StartStream(pcxt, cStream)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -93,7 +95,8 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		make([]*websocket.Conn, 0, connLimit),
 		pcxt,
 		cancel,
-		startStreamFunc,
+		startStreamConn,
+		stopStreamConn,
 		startPlayerFunc,
 	}, nil
 }
@@ -136,7 +139,12 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		glog.Infoln("Connection was created to the pool")
 	}
 
-	return &PoolFeatures{p.startStream, p.startPlayer, p.cxt}, nil
+	return &PoolFeatures{
+		p.startStreamConn,
+		p.stopStreamConn,
+		p.startPlayer,
+		p.cxt,
+	}, nil
 }
 
 // Implementing Pool interface
