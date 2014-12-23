@@ -6,6 +6,14 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+type errConnVerifying struct {
+	err error
+}
+
+func (e *errConnVerifying) Error() string {
+	return "Verifying connection error: " + e.err.Error()
+}
+
 // RequestVerifier verifies requests by hash sum of passed request
 // data
 type RequestVerifier struct{}
@@ -15,14 +23,28 @@ func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 }
 
 // Implementing pwshandler.RequestVerifier interface
-func (*RequestVerifier) Verify(ws *websocket.Conn) error {
+func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Verifying accepted connection")
 	}
 
-	// Send game server protocol version
+	err = websocket.JSON.Send(ws, &Message{
+		HEADER_INFO, "Verifying connection",
+	})
+	if err != nil {
+		return &errConnVerifying{err}
+	}
 
 	// Check received hash
+
+	// ...
+
+	err = websocket.JSON.Send(ws, &Message{
+		HEADER_INFO, "Connection was verified",
+	})
+	if err != nil {
+		return &errConnVerifying{err}
+	}
 
 	return nil
 }

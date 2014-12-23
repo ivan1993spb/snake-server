@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/golang/glog"
@@ -15,29 +14,31 @@ type StartStreamConnFunc func(*websocket.Conn) error
 type StopStreamConnFunc func(*websocket.Conn) error
 
 //  StartGameStream starts common pool game stream
-func StartGameStream(stream <-chan json.RawMessage,
+func StartGameStream(stream <-chan interface{},
 ) (StartStreamConnFunc, StopStreamConnFunc) {
 
 	conns := make([]*websocket.Conn, 0)
 
 	go func() {
 		for data := range stream {
-			if len(data) == 0 || len(conns) == 0 {
+			if len(conns) == 0 {
 				continue
 			}
 
 			// Send data for each websocket connection in conns
 			for i := 0; i < len(conns); {
-				if _, err := conns[i].Write(data); err != nil {
+				err := websocket.JSON.Send(conns[i], &Message{
+					HEADER_GAME, data,
+				})
+				if err != nil {
 					// Remove connection on error
 					glog.Warningln(
-						"Cannot send common game data:",
-						err,
+						"Cannot send common game data:", err,
 					)
 
 					if glog.V(INFOLOG_LEVEL_CONNS) {
 						glog.Infoln(
-							"Removing wsconn from game stream",
+							"Removing connection from game stream",
 						)
 					}
 

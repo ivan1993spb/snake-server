@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 
@@ -61,7 +60,7 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 
 	// input is channel for transferring information from client to
 	// player goroutine, for example: player commands
-	input := make(chan json.RawMessage)
+	input := make(chan interface{})
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Starting player")
@@ -81,7 +80,10 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	// Send game data which are useful only for current player
 	go func() {
 		for data := range output {
-			if _, err := ws.Write(data); err != nil {
+			err := websocket.JSON.Send(ws, &Message{
+				HEADER_GAME, data,
+			})
+			if err != nil {
 				glog.Warningln("Cannot send private game data:", err)
 				break
 			}
@@ -103,17 +105,26 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 	}
 	// Listen for player commands
 	go func() {
-		buffer := make(json.RawMessage, INPUT_MAX_LENGTH)
-
 		for {
-			n, err := ws.Read(buffer)
-			if err != nil {
+			var msg *Message
+			if err := websocket.JSON.Receive(ws, &msg); err != nil {
 				if err != io.EOF {
 					glog.Errorln("Cannot read data:", err)
 				}
 				break
 			}
-			input <- buffer[:n]
+
+			if msg.Header != HEADER_GAME {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					glog.Warningln("Unexpected header:", msg.Header)
+				}
+				websocket.JSON.Send(ws, &Message{
+					HEADER_ERROR, "Unexpected header: " + msg.Header,
+				})
+				continue
+			}
+
+			input <- msg.Data
 		}
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
@@ -159,9 +170,16 @@ func (m *ConnManager) Handle(ws *websocket.Conn,
 }
 
 // Implementing pwshandler.ConnManager interface
-func (m *ConnManager) HandleError(_ *websocket.Conn, err error) {
+func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 	if err == nil {
 		err = errors.New("Passed nil errer for reporting")
 	}
+
 	glog.Errorln(err)
+
+	err = websocket.JSON.Send(ws, &Message{HEADER_ERROR, err})
+
+	if err != nil {
+		glog.Error(err)
+	}
 }

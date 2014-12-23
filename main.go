@@ -13,8 +13,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-const PROTOCOL_VERSION = "1.0"
-
 const (
 	// Infolog leveles
 	INFOLOG_LEVEL_SERVER = iota + 1 // Server level

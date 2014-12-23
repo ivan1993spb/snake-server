@@ -10,8 +10,6 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var ErrInvalidConnLimit = errors.New("Invalid connection limit")
-
 type errCreatingPoolFactory struct {
 	err error
 }
@@ -24,9 +22,6 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := rootCxt.Err(); err != nil {
 		return nil, &errCreatingPoolFactory{err}
-	}
-	if connLimit == 0 {
-		return nil, &errCreatingPoolFactory{ErrInvalidConnLimit}
 	}
 
 	return func() (Pool, error) {
@@ -68,14 +63,16 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		return nil, &errCannotCreatePool{err}
 	}
 	if connLimit == 0 {
-		return nil, &errCannotCreatePool{ErrInvalidConnLimit}
+		return nil, &errCannotCreatePool{
+			errors.New("Invalid connection limit"),
+		}
 	}
 
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
 	// chStream common game channel for data of all players in pool
-	chStream, startPlayerFunc, err := game.StartGame(pcxt, pgW, pgH)
+	chStream, startPlayer, err := game.StartGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -94,7 +91,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		cancel,
 		startStreamConn,
 		stopStreamConn,
-		startPlayerFunc,
+		startPlayer,
 	}, nil
 }
 
