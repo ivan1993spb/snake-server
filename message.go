@@ -1,5 +1,11 @@
+/*
+Input and output data is JSON objects:
+
+	{"header": HEADER, "data": DATA}
+*/
 package main
 
+// Headers
 const (
 	// Used only by client
 	HEADER_AUTH = "auth" // Header for auth data

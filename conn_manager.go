@@ -37,7 +37,7 @@ func NewConnManager() pwshandler.ConnManager {
 }
 
 // Implementing pwshandler.ConnManager interface
-func (m *ConnManager) Handle(ws *websocket.Conn,
+func (*ConnManager) Handle(ws *websocket.Conn,
 	data pwshandler.Environment) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Websocket handler was started")

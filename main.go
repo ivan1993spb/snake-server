@@ -13,8 +13,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Infolog leveles
 const (
-	// Infolog leveles
 	INFOLOG_LEVEL_SERVER = iota + 1 // Server level
 	INFOLOG_LEVEL_POOLS             // Pool level
 	INFOLOG_LEVEL_CONNS             // Connection level
