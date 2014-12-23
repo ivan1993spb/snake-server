@@ -28,7 +28,7 @@ func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 		glog.Infoln("Verifying accepted connection")
 	}
 
-	err = websocket.JSON.Send(ws, &Message{
+	err = websocket.JSON.Send(ws, &OutputMessage{
 		HEADER_INFO, "Verifying connection",
 	})
 	if err != nil {
@@ -39,7 +39,7 @@ func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 
 	// ...
 
-	err = websocket.JSON.Send(ws, &Message{
+	err = websocket.JSON.Send(ws, &OutputMessage{
 		HEADER_INFO, "Connection was verified",
 	})
 	if err != nil {

@@ -1,13 +1,15 @@
 package game
 
 import (
-	// "bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"encoding/json"
+	"time"
+
+	// "bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"golang.org/x/net/context"
 )
 
 //
-type StartPlayerFunc func(<-chan interface{}) (<-chan interface{}, error)
+type StartPlayerFunc func(<-chan []byte) (<-chan interface{}, error)
 
 type errStartingGame struct {
 	err error
@@ -36,12 +38,15 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 
 	output := make(chan interface{})
 	go func() {
+		for range time.Tick(time.Second * 3) {
+			output <- "test"
+		}
 		<-cxt.Done()
 		close(output)
 	}()
 
 	return output,
-		func(input <-chan interface{}) (<-chan interface{}, error) {
+		func(input <-chan []byte) (<-chan interface{}, error) {
 			output := make(chan interface{})
 			go func() {
 				for range input {

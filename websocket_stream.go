@@ -27,7 +27,7 @@ func StartGameStream(stream <-chan interface{},
 
 			// Send data for each websocket connection in conns
 			for i := 0; i < len(conns); {
-				err := websocket.JSON.Send(conns[i], &Message{
+				err := websocket.JSON.Send(conns[i], &OutputMessage{
 					HEADER_GAME, data,
 				})
 				if err != nil {

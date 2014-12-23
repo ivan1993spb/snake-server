@@ -11,8 +11,6 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const INPUT_MAX_LENGTH = 512
-
 type PoolFeatures struct {
 	startStreamConn StartStreamConnFunc
 	stopStreamConn  StopStreamConnFunc
@@ -60,7 +58,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 
 	// input is channel for transferring information from client to
 	// player goroutine, for example: player commands
-	input := make(chan interface{})
+	input := make(chan []byte)
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("Starting player")
@@ -80,7 +78,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	// Send game data which are useful only for current player
 	go func() {
 		for data := range output {
-			err := websocket.JSON.Send(ws, &Message{
+			err := websocket.JSON.Send(ws, &OutputMessage{
 				HEADER_GAME, data,
 			})
 			if err != nil {
@@ -106,7 +104,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	// Listen for player commands
 	go func() {
 		for {
-			var msg *Message
+			var msg *InputMessage
 			if err := websocket.JSON.Receive(ws, &msg); err != nil {
 				if err != io.EOF {
 					glog.Errorln("Cannot read data:", err)
@@ -114,11 +112,22 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 				break
 			}
 
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				// glog.Infof("Received data: %+v", msg)
+			}
+
+			if len(msg.Header) == 0 {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					glog.Warningln("Empty header")
+				}
+				continue
+			}
+
 			if msg.Header != HEADER_GAME {
 				if glog.V(INFOLOG_LEVEL_CONNS) {
 					glog.Warningln("Unexpected header:", msg.Header)
 				}
-				websocket.JSON.Send(ws, &Message{
+				websocket.JSON.Send(ws, &OutputMessage{
 					HEADER_ERROR, "Unexpected header: " + msg.Header,
 				})
 				continue
@@ -177,7 +186,7 @@ func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 
 	glog.Errorln(err)
 
-	err = websocket.JSON.Send(ws, &Message{HEADER_ERROR, err})
+	err = websocket.JSON.Send(ws, &OutputMessage{HEADER_ERROR, err})
 
 	if err != nil {
 		glog.Error(err)
