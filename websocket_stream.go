@@ -13,7 +13,7 @@ type StartStreamConnFunc func(*websocket.Conn) error
 // StopStreamConnFunc stops stream for passed websocket connection
 type StopStreamConnFunc func(*websocket.Conn) error
 
-//  StartGameStream starts common pool game stream
+// StartGameStream starts common pool game stream
 func StartGameStream(stream <-chan interface{},
 ) (StartStreamConnFunc, StopStreamConnFunc) {
 
@@ -32,13 +32,13 @@ func StartGameStream(stream <-chan interface{},
 				})
 				if err != nil {
 					// Remove connection on error
-					glog.Warningln(
-						"Cannot send common game data:", err,
+					glog.Errorln(
+						"cannot send common game data:", err,
 					)
 
 					if glog.V(INFOLOG_LEVEL_CONNS) {
 						glog.Infoln(
-							"Removing connection from game stream",
+							"removing connection from game stream",
 						)
 					}
 
@@ -49,12 +49,13 @@ func StartGameStream(stream <-chan interface{},
 			}
 		}
 
-		if len(conns) < 0 {
+		if len(conns) > 0 {
 			conns = conns[:0]
+			conns = nil
 		}
 
 		if glog.V(INFOLOG_LEVEL_POOLS) {
-			glog.Infoln("Common game stream finished")
+			glog.Infoln("common game stream finished")
 		}
 	}()
 
@@ -62,8 +63,8 @@ func StartGameStream(stream <-chan interface{},
 			// Check if passed websocket connection already exists
 			for i := range conns {
 				if conns[i] == ws {
-					return errors.New("Cannot create connection to " +
-						"common pool game stream: Passed connection" +
+					return errors.New("cannot create connection to " +
+						"common pool game stream: passed connection" +
 						" already exists")
 				}
 			}
@@ -79,7 +80,7 @@ func StartGameStream(stream <-chan interface{},
 				}
 			}
 
-			return errors.New("Cannot remove connection from common" +
-				" pool game stream: Passed connection was not found")
+			return errors.New("cannot remove connection from common" +
+				" pool game stream: passed connection was not found")
 		}
 }

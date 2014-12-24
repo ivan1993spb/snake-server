@@ -17,7 +17,7 @@ func NewRect(x, y, w, h uint8) *Rect {
 func NewRandomRectOnSquare(rw, rh, sx, sy, sw, sh uint8,
 ) (*Rect, error) {
 	if rw > sw || rh > sh {
-		return nil, fmt.Errorf("Cannot get random rect on square: %s",
+		return nil, fmt.Errorf("cannot get random rect on square: %s",
 			ErrInvalid_W_or_H)
 	}
 

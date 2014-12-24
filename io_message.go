@@ -24,8 +24,9 @@ const (
 )
 
 type InputMessage struct {
-	Header string          `json:"header"`
-	Data   json.RawMessage `json:"data"`
+	Header string `json:"header"`
+	// Do not parse data while header is unknown
+	Data json.RawMessage `json:"data"`
 }
 
 // Input/output headers

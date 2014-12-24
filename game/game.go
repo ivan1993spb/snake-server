@@ -9,14 +9,14 @@ import (
 )
 
 //
-type StartPlayerFunc func(<-chan []byte) (<-chan interface{}, error)
+type StartPlayerFunc func(<-chan *Command) (<-chan interface{}, error)
 
 type errStartingGame struct {
 	err error
 }
 
 func (e *errStartingGame) Error() string {
-	return "Starting game error: " + e.err.Error()
+	return "starting game error: " + e.err.Error()
 }
 
 type Object json.Marshaler
@@ -38,21 +38,40 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 
 	output := make(chan interface{})
 	go func() {
-		for range time.Tick(time.Second * 3) {
-			output <- "test"
+		defer close(output)
+		// all running objects work like this code:
+		for {
+			select {
+			case <-cxt.Done():
+				return
+			case <-time.Tick(time.Second * 3):
+				output <- "test"
+			}
 		}
-		<-cxt.Done()
-		close(output)
 	}()
 
 	return output,
-		func(input <-chan []byte) (<-chan interface{}, error) {
+		func(input <-chan *Command) (<-chan interface{}, error) {
+			if cxt.Err() != nil {
+				return nil, nil
+			}
 			output := make(chan interface{})
 			go func() {
-				for range input {
+				defer close(output)
+				for {
+					select {
+					case <-cxt.Done():
+						return
+					case <-input:
+						output <- "received cmd =)"
+					}
 				}
-				close(output)
 			}()
 			return output, nil
 		}, nil
+}
+
+type Command struct {
+	Command string          `json:"command"`
+	Params  json.RawMessage `json:"params"`
 }

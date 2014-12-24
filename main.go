@@ -25,7 +25,7 @@ type errStartingServer struct {
 }
 
 func (e *errStartingServer) Error() string {
-	return "Starting server error: " + e.err.Error()
+	return "starting server error: " + e.err.Error()
 }
 
 func main() {
@@ -59,17 +59,21 @@ func main() {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Preparing to start server")
-	}
+		glog.Infoln("preparing to start server")
 
-	if poolLimit == 0 {
-		glog.Warningln("Invalid pool limit")
-	}
-	if connLimit == 0 {
-		glog.Warningln("Invalid connection limit per pool")
-	}
-	if pgW*pgH == 0 {
-		glog.Warningln("Invalid playground proportions")
+		// Checking preferences
+		if len(hashSalt) == 0 {
+			glog.Infoln("empty hash salt")
+		}
+		if poolLimit == 0 {
+			glog.Warningln("invalid pool limit")
+		}
+		if connLimit == 0 {
+			glog.Warningln("invalid connection limit per pool")
+		}
+		if pgW*pgH == 0 {
+			glog.Warningln("invalid playground proportions")
+		}
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -80,7 +84,7 @@ func main() {
 	workingListener, err := net.Listen("tcp", host+":"+gamePort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
-			fmt.Errorf("Cannot create working listener: %s", err),
+			fmt.Errorf("cannot create working listener: %s", err),
 		})
 	}
 
@@ -88,12 +92,12 @@ func main() {
 	shutdownListener, err := net.Listen("tcp", "127.0.0.1:"+sdPort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
-			fmt.Errorf("Cannot create shutdown listener: %s", err),
+			fmt.Errorf("cannot create shutdown listener: %s", err),
 		})
 	}
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Listeners was created")
+		glog.Infoln("listeners was created")
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -113,7 +117,7 @@ func main() {
 		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Pool factory was created")
+		glog.Infoln("pool factory was created")
 	}
 
 	// Init pool manager which allocates connections on pools
@@ -122,19 +126,19 @@ func main() {
 		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Pool manager was created")
+		glog.Infoln("pool manager was created")
 	}
 
 	// Init connection manager
 	connManager := NewConnManager()
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Connection manager was created")
+		glog.Infoln("connection manager was created")
 	}
 
 	// Init request verifier
 	verifier := NewRequestVerifier(hashSalt)
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Request verifier was created")
+		glog.Infoln("request verifier was created")
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -145,44 +149,44 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Starting server")
+		glog.Infoln("starting server")
 	}
 
 	// Start goroutine looking for shutdown command
 	go func() {
 		// Waiting for shutdown command
 		if _, err := shutdownListener.Accept(); err != nil {
-			glog.Errorln("Accepting shutdown connection error:", err)
+			glog.Errorln("accepting shutdown connection error:", err)
 		}
 		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("Accepted shutdown command")
+			glog.Infoln("accepted shutdown connection")
 		}
 
 		// Closing shutdown listener
 		if err := shutdownListener.Close(); err != nil {
-			glog.Errorln("Closing shutdown listener error:", err)
+			glog.Errorln("closing shutdown listener error:", err)
 		}
 		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("Shutdown listener was closed")
+			glog.Infoln("shutdown listener was closed")
 		}
 
 		// Finishing all goroutines
 		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("Canceling root context")
+			glog.Infoln("finishing all goroutines on server")
 		}
 		cancel()
 		time.Sleep(time.Second)
 
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln(
-				"Closing working listener.",
-				"Server will shutdown with error:",
+				"closing working listener;",
+				"server will shutdown with error:",
 				"use of closed network connection",
 			)
 		}
 		// Closing working listener
 		if err := workingListener.Close(); err != nil {
-			glog.Errorln("Closing working listener error:", err)
+			glog.Errorln("closing working listener error:", err)
 		}
 	}()
 
@@ -192,13 +196,13 @@ func main() {
 		pwshandler.PoolHandler(poolManager, connManager, verifier),
 	)
 	if err != nil {
-		glog.Errorln("Servering error:", err)
+		glog.Errorln("servering error:", err)
 	}
 
 	// Flush log
 	glog.Flush()
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("Goodbye")
+		glog.Infoln("goodbye")
 	}
 }

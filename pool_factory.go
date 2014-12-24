@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
@@ -10,18 +11,10 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type errCreatingPoolFactory struct {
-	err error
-}
-
-func (e *errCreatingPoolFactory) Error() string {
-	return "Cannot create pool factory: " + e.err.Error()
-}
-
 func NewPGPoolFactory(rootCxt context.Context, connLimit,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := rootCxt.Err(); err != nil {
-		return nil, &errCreatingPoolFactory{err}
+		return nil, fmt.Errorf("cannot create pool factory: %s", err)
 	}
 
 	return func() (Pool, error) {
@@ -37,8 +30,6 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 type PGPool struct {
 	// conns is connections in the pool
 	conns []*websocket.Conn
-	// Pool context
-	cxt context.Context
 	// cancel stops all pool goroutines
 	cancel context.CancelFunc
 	// startStreamConn starts stream for passed websocket connection
@@ -54,7 +45,7 @@ type errCannotCreatePool struct {
 }
 
 func (e *errCannotCreatePool) Error() string {
-	return "Cannot create pool: " + e.err.Error()
+	return "cannot create pool: " + e.err.Error()
 }
 
 func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
@@ -64,7 +55,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	}
 	if connLimit == 0 {
 		return nil, &errCannotCreatePool{
-			errors.New("Invalid connection limit"),
+			errors.New("invalid connection limit"),
 		}
 	}
 
@@ -77,17 +68,16 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		return nil, &errCannotCreatePool{err}
 	}
 	if glog.V(INFOLOG_LEVEL_POOLS) {
-		glog.Infoln("Game was started")
+		glog.Infoln("game was started")
 	}
 
 	startStreamConn, stopStreamConn := StartGameStream(chStream)
 	if glog.V(INFOLOG_LEVEL_POOLS) {
-		glog.Infoln("Stream was started")
+		glog.Infoln("stream was started")
 	}
 
 	return &PGPool{
 		make([]*websocket.Conn, 0, connLimit),
-		pcxt,
 		cancel,
 		startStreamConn,
 		stopStreamConn,
@@ -110,7 +100,7 @@ type errCannotAddConnToPool struct {
 }
 
 func (e *errCannotAddConnToPool) Error() string {
-	return "Cannot add connection to pool: " + e.err.Error()
+	return "cannot add connection to pool: " + e.err.Error()
 }
 
 // Implementing Pool interface
@@ -118,26 +108,25 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 	pwshandler.Environment, error) {
 	if p.IsFull() {
 		return nil, &errCannotAddConnToPool{
-			errors.New("Pool is full"),
+			errors.New("pool is full"),
 		}
 	}
 	if p.HasConn(ws) {
 		return nil, &errCannotAddConnToPool{
-			errors.New("Passed connection already added in pool"),
+			errors.New("passed connection already added in pool"),
 		}
 	}
 
 	p.conns = append(p.conns, ws)
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Connection was created to the pool")
+		glog.Infoln("connection was created to the pool")
 	}
 
 	return &PoolFeatures{
 		p.startStreamConn,
 		p.stopStreamConn,
 		p.startPlayer,
-		p.cxt,
 	}, nil
 }
 
@@ -150,19 +139,19 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 			p.conns = append(p.conns[:i], p.conns[i+1:]...)
 
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("Connection was found and removed")
+				glog.Infoln("connection was found and removed")
 			}
 
 			if p.IsEmpty() {
 				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("Pool is empty")
+					glog.Infoln("pool is empty")
 				}
 
 				// Stop all pool goroutines
 				p.cancel()
 
 				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("Pool goroutines was canceled")
+					glog.Infoln("pool goroutines was canceled")
 				}
 			}
 
@@ -170,7 +159,7 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 		}
 	}
 
-	return errors.New("Cannot delete connection from pool: " +
+	return errors.New("cannot delete connection from pool: " +
 		"connection was not found in pool")
 }
 

@@ -2,7 +2,7 @@ package playground
 
 import "errors"
 
-var ErrInvalidDirection = errors.New("Invalid direction")
+var ErrInvalidDirection = errors.New("invalid direction")
 
 // Direction indicates movement direction
 type Direction uint8

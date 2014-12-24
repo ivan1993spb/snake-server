@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	ErrPGNotContainsDot = errors.New("Playground doesn't contain dot")
-	ErrInvalid_W_or_H   = errors.New("Invalid width or height")
-	ErrObjectNotLocated = errors.New("Passed object is not located")
+	ErrPGNotContainsDot = errors.New("playground doesn't contain dot")
+	ErrInvalid_W_or_H   = errors.New("invalid width or height")
+	ErrObjectNotLocated = errors.New("passed object is not located")
 )
 
 // Playground object contains all objects on map
@@ -20,7 +20,7 @@ type Playground struct {
 // NewPlayground returns new empty playground
 func NewPlayground(width, height uint8) (*Playground, error) {
 	if width*height == 0 {
-		return nil, fmt.Errorf("Cannot create playground: %s",
+		return nil, fmt.Errorf("cannot create playground: %s",
 			ErrInvalid_W_or_H)
 	}
 
@@ -57,7 +57,7 @@ type errCannotLocate struct {
 }
 
 func (e *errCannotLocate) Error() string {
-	return "Cannot locate object: " + e.err.Error()
+	return "cannot locate object: " + e.err.Error()
 }
 
 // Locate tries to create object on playground. If occupy=true object
@@ -66,7 +66,7 @@ func (pg *Playground) Locate(object Object, occupy bool) error {
 	// Return error if object is already located on playground
 	if pg.Located(object) {
 		return &errCannotLocate{
-			errors.New("Object is already located"),
+			errors.New("object is already located"),
 		}
 	}
 	// Check each dot of passed object
@@ -78,7 +78,7 @@ func (pg *Playground) Locate(object Object, occupy bool) error {
 		}
 		// ...or occupied
 		if occupy && pg.Occupied(dot) {
-			return &errCannotLocate{errors.New("Dot is occupied")}
+			return &errCannotLocate{errors.New("dot is occupied")}
 		}
 	}
 
@@ -117,7 +117,7 @@ func (pg *Playground) Delete(object Object) error {
 		}
 	}
 
-	return fmt.Errorf("Cannot delocate: %s", ErrObjectNotLocated)
+	return fmt.Errorf("cannot delocate: %s", ErrObjectNotLocated)
 }
 
 // RandomDot generates random dot located on playground

@@ -43,8 +43,8 @@ type (
 )
 
 var (
-	ErrRecognizingObject = errors.New("Cannot recognize object")
-	// ErrExecuteCommand    = errors.New("Cannot execute command")
+	ErrRecognizingObject = errors.New("cannot recognize object")
+	// ErrExecuteCommand    = errors.New("cannot execute command")
 )
 
 const _STRENGTH_FACTOR float32 = 1.3

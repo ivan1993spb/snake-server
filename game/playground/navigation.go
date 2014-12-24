@@ -5,7 +5,7 @@ type errNavigation struct {
 }
 
 func (e *errNavigation) Error() string {
-	return "Navigation error: " + e.err.Error()
+	return "navigation error: " + e.err.Error()
 }
 
 // CalculateDistance calculates distance between two dots

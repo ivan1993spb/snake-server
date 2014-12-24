@@ -4,14 +4,14 @@ import "errors"
 
 const _RETRIES_NUMBER = 35
 
-var errRetriesLimit = errors.New("Retries limit was reached")
+var errRetriesLimit = errors.New("retries limit was reached")
 
 type errEmptyField struct {
 	err error
 }
 
 func (e *errEmptyField) Error() string {
-	return "Cannot find empty field: " + e.err.Error()
+	return "cannot find empty field: " + e.err.Error()
 }
 
 // GetEmptyField finds empty field with passed width and height

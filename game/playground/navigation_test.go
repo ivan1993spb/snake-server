@@ -19,7 +19,7 @@ func TestCalculateDistance(t *testing.T) {
 
 	for i, test := range tests {
 		if CalculateDistance(test.from, test.to) != test.result {
-			t.Fatalf("Calculating distance error: test #%i", i+1)
+			t.Fatalf("calculating distance error: test #%i", i+1)
 		}
 	}
 }
@@ -39,7 +39,7 @@ func TestCalculateDirection(t *testing.T) {
 
 	for i, test := range tests {
 		if CalculateDirection(test.from, test.to) != test.result {
-			t.Fatalf("Calculating direction error: test #%i", i+1)
+			t.Fatalf("calculating direction error: test #%i", i+1)
 		}
 	}
 }
@@ -67,7 +67,7 @@ func TestNavigationOnPlayground(t *testing.T) {
 	for i, test := range tests {
 		if dot, _ := pg.Navigate(test.dot, test.dir,
 			test.dis); !dot.Equals(test.res) {
-			t.Fatalf("Navigation error: test #%i %s", i+1, dot)
+			t.Fatalf("navigation error: test #%i %s", i+1, dot)
 		}
 	}
 }

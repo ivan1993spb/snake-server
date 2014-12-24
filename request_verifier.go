@@ -11,11 +11,10 @@ type errConnVerifying struct {
 }
 
 func (e *errConnVerifying) Error() string {
-	return "Verifying connection error: " + e.err.Error()
+	return "cannot verify connection: " + e.err.Error()
 }
 
-// RequestVerifier verifies requests by hash sum of passed request
-// data
+// RequestVerifier verifies requests
 type RequestVerifier struct{}
 
 func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
@@ -25,11 +24,11 @@ func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 // Implementing pwshandler.RequestVerifier interface
 func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Verifying accepted connection")
+		glog.Infoln("verifying accepted connection")
 	}
 
 	err = websocket.JSON.Send(ws, &OutputMessage{
-		HEADER_INFO, "Verifying connection",
+		HEADER_INFO, "verifying connection",
 	})
 	if err != nil {
 		return &errConnVerifying{err}
@@ -40,7 +39,7 @@ func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 	// ...
 
 	err = websocket.JSON.Send(ws, &OutputMessage{
-		HEADER_INFO, "Connection was verified",
+		HEADER_INFO, "connection was verified",
 	})
 	if err != nil {
 		return &errConnVerifying{err}

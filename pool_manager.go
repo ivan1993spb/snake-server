@@ -27,7 +27,7 @@ type errCreatingPoolManager struct {
 }
 
 func (e *errCreatingPoolManager) Error() string {
-	return "Cannot create pool manager: " + e.err.Error()
+	return "cannot create pool manager: " + e.err.Error()
 }
 
 // PoolFactory must generate new pool
@@ -44,12 +44,12 @@ func NewGamePoolManager(factory PoolFactory, poolLimit uint8,
 ) (pwshandler.PoolManager, error) {
 	if factory == nil {
 		return nil, &errCreatingPoolManager{
-			errors.New("Passed nil pool factory"),
+			errors.New("passed nil pool factory"),
 		}
 	}
 	if poolLimit == 0 {
 		return nil, &errCreatingPoolManager{
-			errors.New("Invalid pool limit"),
+			errors.New("invalid pool limit"),
 		}
 	}
 
@@ -61,35 +61,35 @@ type errCannotAddConn struct {
 }
 
 func (e *errCannotAddConn) Error() string {
-	return "Cannot add connection: " + e.err.Error()
+	return "cannot add connection: " + e.err.Error()
 }
 
 // Implementing pwshandler.ConnManager interface
 func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 ) (pwshandler.Environment, error) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Try to add new connection in a pool")
-		glog.Infoln("Try to find not full pool")
+		glog.Infoln("try to add new connection in a pool")
+		glog.Infoln("try to find not full pool")
 	}
 	// Try to find not full pool
 	for i := range pm.pools {
 		if !pm.pools[i].IsFull() {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("Was found not full pool")
-				glog.Infoln("Creating connection to the pool")
+				glog.Infoln("was found not full pool")
+				glog.Infoln("creating connection to the pool")
 			}
 			return pm.pools[i].AddConn(ws)
 		}
 	}
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Cannot find not full pool")
+		glog.Infoln("cannot find not full pool")
 	}
 
 	// Try to create pool if server is not full
 	if len(pm.pools) != cap(pm.pools) {
 		if glog.V(INFOLOG_LEVEL_POOLS) {
-			glog.Infoln("Server is not full so create new pool")
+			glog.Infoln("server is not full so create new pool")
 		}
 
 		pool, err := pm.addPool()
@@ -99,10 +99,10 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			pm.pools = append(pm.pools, pool)
 
 			if glog.V(INFOLOG_LEVEL_POOLS) {
-				glog.Infoln("New pool was created")
+				glog.Infoln("new pool was created")
 			}
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("Creating connection to the pool")
+				glog.Infoln("creating connection to pool")
 			}
 
 			// Create connection to new pool
@@ -112,7 +112,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		return nil, &errCannotAddConn{err}
 	}
 
-	return nil, &errCannotAddConn{errors.New("Server is full")}
+	return nil, &errCannotAddConn{errors.New("server is full")}
 }
 
 type errCannotDelConn struct {
@@ -120,22 +120,22 @@ type errCannotDelConn struct {
 }
 
 func (e *errCannotDelConn) Error() string {
-	return "Cannot delete connection: " + e.err.Error()
+	return "cannot delete connection: " + e.err.Error()
 }
 
 // Implementing pwshandler.ConnManager interface
 func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Try to remove information about connection")
-		glog.Infoln("Try to find pool of closed connection")
+		glog.Infoln("try to remove information about connection")
+		glog.Infoln("try to find pool of closed connection")
 	}
 
 	for i := range pm.pools {
 		// If current pool has the connection...
 		if pm.pools[i].HasConn(ws) {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("Pool of closed connection was found")
-				glog.Infoln("Removing closed connection from pool")
+				glog.Infoln("pool of closed connection was found")
+				glog.Infoln("removing closed connection from pool")
 			}
 
 			if err := pm.pools[i].DelConn(ws); err != nil {
@@ -144,13 +144,13 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 
 			if pm.pools[i].IsEmpty() {
 				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("Removing empty pool")
+					glog.Infoln("removing empty pool")
 				}
 				// Delete pool
 				pm.pools = append(pm.pools[:i], pm.pools[i+1:]...)
 
 				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("Empty pool was removed")
+					glog.Infoln("empty pool was removed")
 				}
 			}
 
@@ -158,5 +158,5 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 		}
 	}
 
-	return &errCannotDelConn{errors.New("Connection was not found")}
+	return &errCannotDelConn{errors.New("connection was not found")}
 }

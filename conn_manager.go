@@ -1,13 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
 	"github.com/ivan1993spb/pwshandler"
-	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
 
@@ -16,7 +16,6 @@ type PoolFeatures struct {
 	stopStreamConn  StopStreamConnFunc
 	// startPlayer starts player
 	startPlayer game.StartPlayerFunc
-	poolContext context.Context
 }
 
 type errConnProcessing struct {
@@ -24,7 +23,7 @@ type errConnProcessing struct {
 }
 
 func (e *errConnProcessing) Error() string {
-	return "Error of connection processing in connection manager: " +
+	return "error of connection processing in connection manager: " +
 		e.err.Error()
 }
 
@@ -38,142 +37,57 @@ func NewConnManager() pwshandler.ConnManager {
 func (*ConnManager) Handle(ws *websocket.Conn,
 	data pwshandler.Environment) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Websocket handler was started")
-		defer glog.Infoln("Websocket handler was finished")
+		glog.Infoln("websocket handler was started")
+		defer glog.Infoln("websocket handler was finished")
 	}
 
 	poolFeatures, ok := data.(*PoolFeatures)
-	if !ok {
+	if !ok || poolFeatures == nil {
 		return &errConnProcessing{
-			errors.New("Pool data was not received"),
+			errors.New("pool data was not received"),
 		}
 	}
 
+	// Setup game stream
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Creating connection to common game stream")
+		glog.Infoln("creating connection to common game stream")
 	}
 	if err := poolFeatures.startStreamConn(ws); err != nil {
 		return &errConnProcessing{err}
 	}
-
-	// input is channel for transferring information from client to
-	// player goroutine, for example: player commands
-	input := make(chan []byte)
+	defer func() {
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("removing connection from common game stream")
+		}
+		if err := poolFeatures.stopStreamConn(ws); err != nil {
+			glog.Errorln(&errConnProcessing{err})
+		}
+	}()
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Starting player")
+		glog.Infoln("starting player commands listener")
+	}
+
+	// input is channel for transferring information from client to
+	// player goroutine. Player stops when this channel closes
+	input := acceptPlayerCommands(ws)
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("starting player")
 	}
 
 	// output is channel for transferring private game information
-	// for only one player. This information are useful only for
-	// current player
+	// that is useful only for current player
 	output, err := poolFeatures.startPlayer(input)
 	if err != nil {
 		return &errConnProcessing{err}
 	}
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Starting private game stream")
-	}
-	// Send game data which are useful only for current player
-	go func() {
-		for data := range output {
-			err := websocket.JSON.Send(ws, &OutputMessage{
-				HEADER_GAME, data,
-			})
-			if err != nil {
-				glog.Warningln("Cannot send private game data:", err)
-				break
-			}
-		}
-
-		// Wait for closing output channel
-		for range output {
-		}
-
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("Private game stream finished")
-		}
-	}()
-
-	stop := make(chan struct{})
-
-	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Starting player listener")
-	}
-	// Listen for player commands
-	go func() {
-		for {
-			var msg *InputMessage
-			if err := websocket.JSON.Receive(ws, &msg); err != nil {
-				if err != io.EOF {
-					glog.Errorln("Cannot read data:", err)
-				}
-				break
-			}
-
-			if glog.V(INFOLOG_LEVEL_CONNS) {
-				// glog.Infof("Received data: %+v", msg)
-			}
-
-			if len(msg.Header) == 0 {
-				if glog.V(INFOLOG_LEVEL_CONNS) {
-					glog.Warningln("Empty header")
-				}
-				continue
-			}
-
-			if msg.Header != HEADER_GAME {
-				if glog.V(INFOLOG_LEVEL_CONNS) {
-					glog.Warningln("Unexpected header:", msg.Header)
-				}
-				websocket.JSON.Send(ws, &OutputMessage{
-					HEADER_ERROR, "Unexpected header: " + msg.Header,
-				})
-				continue
-			}
-
-			input <- msg.Data
-		}
-
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("Player listener finished")
-		}
-
-		close(stop)
-	}()
-
-	select {
-	case <-stop:
-	case <-poolFeatures.poolContext.Done():
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infof(
-				"Forced connection closing [addr: %s]",
-				ws.Request().RemoteAddr,
-			)
-		}
-		if err = ws.Close(); err != nil {
-			glog.Warningln("Forced connection closing error:", err)
-		}
-		// Waiting for stopping player command listener
-		for range stop {
-		}
+		glog.Infoln("starting private game stream")
 	}
 
-	// Closing input channel calls stopping player and then closing
-	// output channel
-	close(input)
-
-	// Waiting for stopping private game stream
-	for range output {
-	}
-
-	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("Removing connection from common game stream")
-	}
-	if err := poolFeatures.stopStreamConn(ws); err != nil {
-		return &errConnProcessing{err}
-	}
+	startPrivateStream(ws, output)
 
 	return nil
 }
@@ -181,7 +95,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 // Implementing pwshandler.ConnManager interface
 func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 	if err == nil {
-		err = errors.New("Passed nil errer for reporting")
+		err = errors.New("passed nil errer for reporting")
 	}
 
 	glog.Errorln(err)
@@ -190,5 +104,85 @@ func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 
 	if err != nil {
 		glog.Error(err)
+	}
+}
+
+func acceptPlayerCommands(ws *websocket.Conn) <-chan *game.Command {
+	input := make(chan *game.Command)
+
+	go func() {
+		for {
+			var msg *InputMessage
+			if err := websocket.JSON.Receive(ws, &msg); err != nil {
+				if err != io.EOF {
+					glog.Errorln("cannot read data:", err)
+				}
+				break
+			}
+
+			if len(msg.Header) == 0 {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					glog.Warningln("empty header")
+				}
+				continue
+			}
+
+			if msg.Header != HEADER_GAME {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					glog.Warningln("unexpected header:", msg.Header)
+				}
+				websocket.JSON.Send(ws, &OutputMessage{
+					HEADER_ERROR, "unexpected header: " + msg.Header,
+				})
+				continue
+			}
+
+			var cmd *game.Command
+			if err := json.Unmarshal(msg.Data, &cmd); err != nil {
+				glog.Errorln("cannot parse command:", err)
+				continue
+			}
+
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Infoln("received command:", cmd.Command)
+			}
+
+			input <- cmd
+		}
+
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("player listener finished")
+		}
+
+		close(input)
+	}()
+
+	return input
+}
+
+func startPrivateStream(ws *websocket.Conn,
+	output <-chan interface{}) {
+	for data := range output {
+		buffer, err := json.Marshal(&OutputMessage{
+			HEADER_GAME, data,
+		})
+		if err != nil {
+			glog.Errorln("cannot marshal private game data:", err)
+			continue
+		}
+
+		_, err = ws.Write(buffer)
+		if err != nil {
+			glog.Errorln("cannot send private game data:", err)
+			break
+		}
+	}
+
+	// Wait for closing output channel
+	for range output {
+	}
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("private game stream finished")
 	}
 }
