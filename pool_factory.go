@@ -120,7 +120,7 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 	p.conns = append(p.conns, ws)
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("connection was created to the pool")
+		glog.Infoln("connection was created to pool")
 	}
 
 	return &PoolFeatures{

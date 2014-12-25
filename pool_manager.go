@@ -89,7 +89,8 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 	// Try to create pool if server is not full
 	if len(pm.pools) != cap(pm.pools) {
 		if glog.V(INFOLOG_LEVEL_POOLS) {
-			glog.Infoln("server is not full so create new pool")
+			glog.Infoln("server is not full")
+			glog.Infoln("creating pool")
 		}
 
 		pool, err := pm.addPool()
@@ -99,7 +100,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			pm.pools = append(pm.pools, pool)
 
 			if glog.V(INFOLOG_LEVEL_POOLS) {
-				glog.Infoln("new pool was created")
+				glog.Infoln("pool was created")
 			}
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("creating connection to pool")
@@ -127,15 +128,15 @@ func (e *errCannotDelConn) Error() string {
 func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("try to remove information about connection")
-		glog.Infoln("try to find pool of closed connection")
+		glog.Infoln("try to find pool of connection")
 	}
 
 	for i := range pm.pools {
 		// If current pool has the connection...
 		if pm.pools[i].HasConn(ws) {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("pool of closed connection was found")
-				glog.Infoln("removing closed connection from pool")
+				glog.Infoln("pool of connection was found")
+				glog.Infoln("removing connection from pool")
 			}
 
 			if err := pm.pools[i].DelConn(ws); err != nil {

@@ -25,6 +25,7 @@ func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("verifying accepted connection")
+		defer glog.Infoln("connection was verified")
 	}
 
 	err = websocket.JSON.Send(ws, &OutputMessage{

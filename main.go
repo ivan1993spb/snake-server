@@ -54,16 +54,10 @@ func main() {
 
 	flag.Parse()
 
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                   END PARSING PARAMETERS                    *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("preparing to start server")
-
-		// Checking preferences
+		glog.Infoln("checking parameters")
 		if len(hashSalt) == 0 {
-			glog.Infoln("empty hash salt")
+			glog.Warningln("empty hash salt")
 		}
 		if poolLimit == 0 {
 			glog.Warningln("invalid pool limit")
@@ -74,6 +68,13 @@ func main() {
 		if pgW*pgH == 0 {
 			glog.Warningln("invalid playground proportions")
 		}
+	}
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                   END PARSING PARAMETERS                    *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	if glog.V(INFOLOG_LEVEL_SERVER) {
+		glog.Infoln("preparing to start server")
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

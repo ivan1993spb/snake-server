@@ -21,7 +21,7 @@ func StartGameStream(stream <-chan interface{},
 
 	go func() {
 		for data := range stream {
-			if len(conns) == 0 {
+			if len(conns) == 0 || data == nil {
 				continue
 			}
 
@@ -47,11 +47,6 @@ func StartGameStream(stream <-chan interface{},
 					i++
 				}
 			}
-		}
-
-		if len(conns) > 0 {
-			conns = conns[:0]
-			conns = nil
 		}
 
 		if glog.V(INFOLOG_LEVEL_POOLS) {

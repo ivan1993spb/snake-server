@@ -62,7 +62,10 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 					select {
 					case <-cxt.Done():
 						return
-					case <-input:
+					case cmd := <-input:
+						if cmd == nil {
+							return
+						}
 						output <- "received cmd =)"
 					}
 				}

@@ -37,8 +37,8 @@ func NewConnManager() pwshandler.ConnManager {
 func (*ConnManager) Handle(ws *websocket.Conn,
 	data pwshandler.Environment) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("websocket handler was started")
-		defer glog.Infoln("websocket handler was finished")
+		glog.Infoln("connection handler was started")
+		defer glog.Infoln("connection handler was finished")
 	}
 
 	poolFeatures, ok := data.(*PoolFeatures)
@@ -65,20 +65,12 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	}()
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("starting player commands listener")
-	}
-
-	// input is channel for transferring information from client to
-	// player goroutine. Player stops when this channel closes
-	input := acceptPlayerCommands(ws)
-
-	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("starting player")
 	}
 
 	// output is channel for transferring private game information
 	// that is useful only for current player
-	output, err := poolFeatures.startPlayer(input)
+	output, err := poolFeatures.startPlayer(acceptPlayerCommands(ws))
 	if err != nil {
 		return &errConnProcessing{err}
 	}
@@ -111,6 +103,7 @@ func acceptPlayerCommands(ws *websocket.Conn) <-chan *game.Command {
 	input := make(chan *game.Command)
 
 	go func() {
+		defer close(input)
 		for {
 			var msg *InputMessage
 			if err := websocket.JSON.Receive(ws, &msg); err != nil {
@@ -131,9 +124,6 @@ func acceptPlayerCommands(ws *websocket.Conn) <-chan *game.Command {
 				if glog.V(INFOLOG_LEVEL_CONNS) {
 					glog.Warningln("unexpected header:", msg.Header)
 				}
-				websocket.JSON.Send(ws, &OutputMessage{
-					HEADER_ERROR, "unexpected header: " + msg.Header,
-				})
 				continue
 			}
 
@@ -144,7 +134,7 @@ func acceptPlayerCommands(ws *websocket.Conn) <-chan *game.Command {
 			}
 
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("received command:", cmd.Command)
+				glog.Infoln("accepted command:", cmd.Command)
 			}
 
 			input <- cmd
@@ -153,8 +143,6 @@ func acceptPlayerCommands(ws *websocket.Conn) <-chan *game.Command {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("player listener finished")
 		}
-
-		close(input)
 	}()
 
 	return input
