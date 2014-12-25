@@ -69,6 +69,7 @@ func main() {
 			glog.Warningln("invalid playground proportions")
 		}
 	}
+
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *                   END PARSING PARAMETERS                    *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -202,6 +203,8 @@ func main() {
 
 	// Flush log
 	glog.Flush()
+
+	time.Sleep(time.Millisecond * 100)
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("goodbye")

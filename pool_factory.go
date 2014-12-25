@@ -30,8 +30,8 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 type PGPool struct {
 	// conns is connections in the pool
 	conns []*websocket.Conn
-	// cancel stops all pool goroutines
-	cancel context.CancelFunc
+	// stopPool stops all pool goroutines
+	stopPool context.CancelFunc
 	// startStreamConn starts stream for passed websocket connection
 	startStreamConn StartStreamConnFunc
 	// stopStreamConn stops stream for passed websocket connection
@@ -148,7 +148,7 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 				}
 
 				// Stop all pool goroutines
-				p.cancel()
+				p.stopPool()
 
 				if glog.V(INFOLOG_LEVEL_POOLS) {
 					glog.Infoln("pool goroutines was canceled")

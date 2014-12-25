@@ -86,34 +86,32 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		glog.Infoln("cannot find not full pool")
 	}
 
-	// Try to create pool if server is not full
-	if len(pm.pools) != cap(pm.pools) {
-		if glog.V(INFOLOG_LEVEL_POOLS) {
-			glog.Infoln("server is not full")
-			glog.Infoln("creating pool")
-		}
+	if len(pm.pools) == cap(pm.pools) {
+		return nil, &errCannotAddConn{errors.New("server is full")}
+	}
 
-		pool, err := pm.addPool()
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("server is not full")
+		glog.Infoln("creating pool")
+	}
 
-		if err == nil {
-			// Save the pool
-			pm.pools = append(pm.pools, pool)
-
-			if glog.V(INFOLOG_LEVEL_POOLS) {
-				glog.Infoln("pool was created")
-			}
-			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("creating connection to pool")
-			}
-
-			// Create connection to new pool
-			return pool.AddConn(ws)
-		}
-
+	pool, err := pm.addPool()
+	if err != nil {
 		return nil, &errCannotAddConn{err}
 	}
 
-	return nil, &errCannotAddConn{errors.New("server is full")}
+	// Save the pool
+	pm.pools = append(pm.pools, pool)
+
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("pool was created")
+	}
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("creating connection to pool")
+	}
+
+	// Create connection to new pool
+	return pool.AddConn(ws)
 }
 
 type errCannotDelConn struct {

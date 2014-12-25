@@ -22,11 +22,13 @@ func NewRequestVerifier(HashSalt string) pwshandler.RequestVerifier {
 }
 
 // Implementing pwshandler.RequestVerifier interface
-func (*RequestVerifier) Verify(ws *websocket.Conn) (err error) {
+func (*RequestVerifier) Verify(ws *websocket.Conn) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("verifying accepted connection")
 		defer glog.Infoln("connection was verified")
 	}
+
+	var err error
 
 	err = websocket.JSON.Send(ws, &OutputMessage{
 		HEADER_INFO, "verifying connection",
