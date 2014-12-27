@@ -5,11 +5,12 @@ import (
 	"time"
 
 	// "bitbucket.org/pushkin_ivan/clever-snake/game/playground"
+	"github.com/golang/glog"
 	"golang.org/x/net/context"
 )
 
 //
-type StartPlayerFunc func(<-chan *Command) (<-chan interface{}, error)
+type StartPlayerFunc func(cxt context.Context, input <-chan *Command) (<-chan interface{}, error)
 
 type errStartingGame struct {
 	err error
@@ -35,10 +36,12 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 	// }
 
 	// objects := make(map[uint16]Object)
-
 	output := make(chan interface{})
 	go func() {
+
 		defer close(output)
+		defer glog.Infoln("finishing game")
+
 		// all running objects work like this code:
 		for {
 			select {
@@ -51,16 +54,22 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 	}()
 
 	return output,
-		func(input <-chan *Command) (<-chan interface{}, error) {
-			if cxt.Err() != nil {
+		func(pcxt context.Context, input <-chan *Command) (<-chan interface{}, error) {
+			if pcxt.Err() != nil {
 				return nil, nil
 			}
 			output := make(chan interface{})
 			go func() {
+
 				defer close(output)
+				defer glog.Infoln("finishing player")
+
+				for i := range countdown(pcxt, time.Second, 10) {
+					output <- i
+				}
 				for {
 					select {
-					case <-cxt.Done():
+					case <-pcxt.Done():
 						return
 					case cmd := <-input:
 						if cmd == nil {

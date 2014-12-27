@@ -76,7 +76,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		if !pm.pools[i].IsFull() {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("was found not full pool")
-				glog.Infoln("creating connection to the pool")
+				glog.Infoln("creating connection to pool")
 			}
 			return pm.pools[i].AddConn(ws)
 		}
