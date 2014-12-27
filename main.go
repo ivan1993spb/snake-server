@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/golang/glog"
@@ -56,6 +57,20 @@ func main() {
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("checking parameters")
+
+		if len(host) == 0 {
+			glog.Warningln("empty host")
+		}
+		if len(gamePort) == 0 {
+			glog.Warningln("empty game port")
+		} else if i, e := strconv.Atoi(gamePort); e != nil || i < 1 {
+			glog.Warningln("invalid game port")
+		}
+		if len(sdPort) == 0 {
+			glog.Warningln("empty shutdown port")
+		} else if i, e := strconv.Atoi(sdPort); e != nil || i < 1 {
+			glog.Warningln("invalid shutdown port")
+		}
 		if len(hashSalt) == 0 {
 			glog.Warningln("empty hash salt")
 		}
@@ -204,7 +219,7 @@ func main() {
 	// Flush log
 	glog.Flush()
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Second)
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("goodbye")

@@ -149,7 +149,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                   BEGIN PRIVATE STREAM                     *
+	 *                   BEGIN PRIVATE STREAM                      *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Starting private game stream
@@ -167,6 +167,10 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 			case <-cxt.Done():
 				return
 			case data := <-output:
+				if data == nil {
+					continue
+				}
+
 				buffer, err := json.Marshal(&OutputMessage{
 					HEADER_GAME, data,
 				})
@@ -188,11 +192,6 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 				}
 			}
 		}
-
-		// // Wait for closing output channel
-		// for range output {
-		// }
-
 	}()
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

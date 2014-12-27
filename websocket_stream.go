@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
 
@@ -14,43 +15,48 @@ type StartStreamConnFunc func(*websocket.Conn) error
 type StopStreamConnFunc func(*websocket.Conn) error
 
 // StartGameStream starts common pool game stream
-func StartGameStream(stream <-chan interface{},
+func StartGameStream(cxt context.Context, stream <-chan interface{},
 ) (StartStreamConnFunc, StopStreamConnFunc) {
 
 	conns := make([]*websocket.Conn, 0)
 
 	go func() {
-		for data := range stream {
-			if len(conns) == 0 || data == nil {
-				continue
-			}
-
-			// Send data for each websocket connection in conns
-			for i := 0; i < len(conns); {
-				err := websocket.JSON.Send(conns[i], &OutputMessage{
-					HEADER_GAME, data,
-				})
-				if err != nil {
-					// Remove connection on error
-					glog.Errorln(
-						"cannot send common game data:", err,
-					)
-
-					if glog.V(INFOLOG_LEVEL_CONNS) {
-						glog.Infoln(
-							"removing connection from game stream",
-						)
-					}
-
-					conns = append(conns[:i], conns[i+1:]...)
-				} else {
-					i++
-				}
-			}
+		if glog.V(INFOLOG_LEVEL_POOLS) {
+			defer glog.Infoln("common game stream finished")
 		}
 
-		if glog.V(INFOLOG_LEVEL_POOLS) {
-			glog.Infoln("common game stream finished")
+		for {
+			select {
+			case <-cxt.Done():
+				return
+			case data := <-stream:
+				if len(conns) == 0 || data == nil {
+					continue
+				}
+				// Send data for each websocket connection in conns
+				for i := 0; i < len(conns); {
+					err := websocket.JSON.Send(
+						conns[i],
+						&OutputMessage{HEADER_GAME, data},
+					)
+					if err != nil {
+						// Remove connection on error
+						glog.Errorln(
+							"cannot send common data:", err,
+						)
+
+						if glog.V(INFOLOG_LEVEL_CONNS) {
+							glog.Infoln(
+								"removing connection from stream",
+							)
+						}
+
+						conns = append(conns[:i], conns[i+1:]...)
+					} else {
+						i++
+					}
+				}
+			}
 		}
 	}()
 

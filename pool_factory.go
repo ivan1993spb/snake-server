@@ -11,14 +11,14 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func NewPGPoolFactory(rootCxt context.Context, connLimit,
+func NewPGPoolFactory(cxt context.Context, connLimit,
 	pgW, pgH uint8) (PoolFactory, error) {
-	if err := rootCxt.Err(); err != nil {
+	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("cannot create pool factory: %s", err)
 	}
 
 	return func() (Pool, error) {
-		pool, err := NewPGPool(rootCxt, connLimit, pgW, pgH)
+		pool, err := NewPGPool(cxt, connLimit, pgW, pgH)
 		if err != nil {
 			return nil, err
 		}
@@ -30,10 +30,10 @@ func NewPGPoolFactory(rootCxt context.Context, connLimit,
 type PGPool struct {
 	// conns is connections in the pool
 	conns []*websocket.Conn
-	// stopPool stops all pool goroutines
-	stopPool context.CancelFunc
 	// Pool context
 	cxt context.Context
+	// stopPool stops all pool goroutines
+	stopPool context.CancelFunc
 	// startStreamConn starts stream for passed websocket connection
 	startStreamConn StartStreamConnFunc
 	// stopStreamConn stops stream for passed websocket connection
@@ -73,15 +73,15 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 		glog.Infoln("game was started")
 	}
 
-	startStreamConn, stopStreamConn := StartGameStream(chStream)
+	startStreamConn, stopStreamConn := StartGameStream(pcxt, chStream)
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("stream was started")
 	}
 
 	return &PGPool{
 		make([]*websocket.Conn, 0, connLimit),
-		cancel,
 		pcxt,
+		cancel,
 		startStreamConn,
 		stopStreamConn,
 		startPlayer,
