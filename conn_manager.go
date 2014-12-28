@@ -211,7 +211,9 @@ func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 
 	glog.Errorln(err)
 
-	err = websocket.JSON.Send(ws, &OutputMessage{HEADER_ERROR, err})
+	err = websocket.JSON.Send(ws, &OutputMessage{
+		HEADER_ERROR, err.Error(),
+	})
 
 	if err != nil {
 		glog.Error(err)

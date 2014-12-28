@@ -10,7 +10,8 @@ import (
 )
 
 //
-type StartPlayerFunc func(cxt context.Context, input <-chan *Command) (<-chan interface{}, error)
+type StartPlayerFunc func(cxt context.Context, input <-chan *Command,
+) (<-chan interface{}, error)
 
 type errStartingGame struct {
 	err error
@@ -54,7 +55,8 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 	}()
 
 	return output,
-		func(pcxt context.Context, input <-chan *Command) (<-chan interface{}, error) {
+		func(pcxt context.Context, input <-chan *Command) (
+			<-chan interface{}, error) {
 			if pcxt.Err() != nil {
 				return nil, nil
 			}
@@ -64,9 +66,11 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 				defer close(output)
 				defer glog.Infoln("finishing player")
 
-				for i := range countdown(pcxt, time.Second, 10) {
-					output <- i
+				select {
+				case <-pcxt.Done():
+				case <-time.After(time.Second):
 				}
+
 				for {
 					select {
 					case <-pcxt.Done():
@@ -86,4 +90,7 @@ func StartGame(cxt context.Context, pgW, pgH uint8,
 type Command struct {
 	Command string          `json:"command"`
 	Params  json.RawMessage `json:"params"`
+}
+
+type Notice struct {
 }
