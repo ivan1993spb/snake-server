@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"runtime"
@@ -21,6 +22,27 @@ const (
 	INFOLOG_LEVEL_CONNS             // Connection level
 )
 
+// Paths
+const (
+	// Path to game websocket
+	PATH_TO_GAME = "/game.ws"
+
+	// Server settings
+
+	PATH_TO_LIMITS          = "/limits.json"
+	PATH_TO_PLAYGROUND_SIZE = "/playground_size.json"
+
+	// Working information
+
+	// Count of opened connections
+	PATH_TO_CONN_COUNT = "/conn_count.json"
+
+	// List of pool ids with counts of opened connection
+	PATH_TO_POOL_LIST = "/pool_list.json"
+	// Ids of opened connections in pool
+	PATH_TO_POOL_CONNS = "/pool_conns.json"
+)
+
 type errStartingServer struct {
 	err error
 }
@@ -35,23 +57,39 @@ func main() {
 	 *                  BEGIN PARSING PARAMETERS                   *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	var host, gamePort, sdPort, hashSalt string
+	var host, mainPort, sdPort, hashSalt string
+
 	flag.StringVar(&host, "host", "",
-		"host on which game server handles requests")
-	flag.StringVar(&gamePort, "game_port", "8081",
-		"port on which game server handles requests")
+		"host on which server handles requests")
+	flag.StringVar(&mainPort, "main_port", "8081",
+		"port on which server handles external requests")
 	flag.StringVar(&sdPort, "shutdown_port", "8082",
-		"port on which server accepts for shutdown request")
+		"port on which server accepts shutdown request")
 	flag.StringVar(&hashSalt, "hash_salt", "",
-		"salt for request verifier")
+		"salt for request verifying")
 
 	var poolLimit, connLimit, pgW, pgH uint
+
 	flag.UintVar(&poolLimit, "pool_limit", 10,
-		"max pool number on server")
+		"max pool count on server")
 	flag.UintVar(&connLimit, "conn_limit", 4,
-		"max connection number on pool")
+		"max connection count on pool")
 	flag.UintVar(&pgW, "pg_w", 40, "playground width")
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
+
+	var handleLimits, handlePlaygroundSize, handleConnCount,
+		handlePoolList, handlePoolConns bool
+
+	flag.BoolVar(&handleLimits, "handle_limits", false,
+		"true to enable access to server limits")
+	flag.BoolVar(&handlePlaygroundSize, "handle_pg_size", false,
+		"true to enable access to playground size")
+	flag.BoolVar(&handleConnCount, "handle_conn_count", false,
+		"true to enable access to connection count")
+	flag.BoolVar(&handlePoolList, "handle_pool_list", false,
+		"true to enable access to pool list")
+	flag.BoolVar(&handlePoolConns, "handle_pool_conns", false,
+		"true to enable access to connection ids on selected pool")
 
 	flag.Parse()
 
@@ -61,10 +99,10 @@ func main() {
 		if len(host) == 0 {
 			glog.Warningln("empty host")
 		}
-		if len(gamePort) == 0 {
-			glog.Warningln("empty game port")
-		} else if i, e := strconv.Atoi(gamePort); e != nil || i < 1 {
-			glog.Warningln("invalid game port")
+		if len(mainPort) == 0 {
+			glog.Warningln("empty main port")
+		} else if i, e := strconv.Atoi(mainPort); e != nil || i < 1 {
+			glog.Warningln("invalid main port")
 		}
 		if len(sdPort) == 0 {
 			glog.Warningln("empty shutdown port")
@@ -72,16 +110,29 @@ func main() {
 			glog.Warningln("invalid shutdown port")
 		}
 		if len(hashSalt) == 0 {
-			glog.Warningln("empty hash salt")
+			glog.Warningln("empty hash salt; protection is disabled")
 		}
+
 		if poolLimit == 0 {
 			glog.Warningln("invalid pool limit")
+		}
+		if poolLimit > math.MaxUint16 {
+			glog.Warningln("pool count limit overflows 2 bytes")
 		}
 		if connLimit == 0 {
 			glog.Warningln("invalid connection limit per pool")
 		}
+		if connLimit > math.MaxUint16 {
+			glog.Warningln("connection count limit overflows 2 bytes")
+		}
 		if pgW*pgH == 0 {
 			glog.Warningln("invalid playground proportions")
+		}
+		if pgW > math.MaxUint8 {
+			glog.Warningln("playground width overflows 1 byte")
+		}
+		if pgH > math.MaxUint8 {
+			glog.Warningln("playground height overflows 1 byte")
 		}
 	}
 
@@ -97,11 +148,10 @@ func main() {
 	 *                  BEGIN CREATING LISTENERS                   *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	// Working listener is used for game servering
-	workingListener, err := net.Listen("tcp", host+":"+gamePort)
+	mainListener, err := net.Listen("tcp", host+":"+mainPort)
 	if err != nil {
 		glog.Exitln(&errStartingServer{
-			fmt.Errorf("cannot create working listener: %s", err),
+			fmt.Errorf("cannot create main listener: %s", err),
 		})
 	}
 
@@ -124,11 +174,11 @@ func main() {
 	cxt, cancel := context.WithCancel(context.Background())
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                     BEGIN INIT MODULES                      *
+	 *                  BEGIN INIT GAME MODULES                    *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	// Init pool factory
-	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
+	factory, err := NewPGPoolFactory(cxt, uint16(connLimit),
 		uint8(pgW), uint8(pgH))
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
@@ -138,7 +188,7 @@ func main() {
 	}
 
 	// Init pool manager which allocates connections on pools
-	poolManager, err := NewGamePoolManager(factory, uint8(poolLimit))
+	poolManager, err := NewGamePoolManager(factory, uint16(poolLimit))
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
 	}
@@ -152,17 +202,71 @@ func main() {
 		glog.Infoln("connection manager was created")
 	}
 
-	// Init request verifier
-	verifier := NewRequestVerifier(hashSalt)
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                   END INIT GAME MODULES                     *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 *                    BEGIN INIT HANDLERS                      *
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+	var mux Mux
+	if len(hashSalt) > 0 {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("creating security handler mux")
+		}
+		if mux, err = NewSecurityMux(hashSalt); err != nil {
+			glog.Exitln(&errStartingServer{err})
+		}
+	} else {
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("creating plain handler mux")
+		}
+		// Plain mux
+		mux = http.NewServeMux()
+	}
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("request verifier was created")
+		glog.Infoln("handler mux was created")
+	}
+
+	// Game handler is main and always is available
+	mux.Handle(
+		PATH_TO_GAME,
+		pwshandler.PoolHandler(poolManager, connManager, nil),
+	)
+
+	// Server setting information handlers
+	if handleLimits {
+		mux.Handle(
+			PATH_TO_LIMITS,
+			LimitsHandler(poolLimit, connLimit),
+		)
+	}
+	if handlePlaygroundSize {
+		mux.Handle(
+			PATH_TO_PLAYGROUND_SIZE,
+			PlaygroundSizeHandler(uint8(pgW), uint8(pgH)),
+		)
+	}
+
+	// Working information handlers
+	if handleConnCount {
+		mux.Handle(
+			PATH_TO_CONN_COUNT,
+			ConnCountHandler(poolManager),
+		)
+	}
+	if handlePoolList {
+		mux.Handle(PATH_TO_POOL_LIST, PoolListHandler(poolManager))
+	}
+	if handlePoolConns {
+		mux.Handle(PATH_TO_POOL_CONNS, PoolConnsHandler(poolManager))
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                      END INIT MODULES                       *
+	 *                     END INIT HANDLERS                       *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	// Setup GOMAXPROCS
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
@@ -196,22 +300,19 @@ func main() {
 
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln(
-				"closing working listener;",
+				"closing main listener;",
 				"server will shutdown with error:",
 				"use of closed network connection",
 			)
 		}
-		// Closing working listener
-		if err := workingListener.Close(); err != nil {
-			glog.Errorln("closing working listener error:", err)
+		// Closing main listener
+		if err := mainListener.Close(); err != nil {
+			glog.Errorln("closing main listener error:", err)
 		}
 	}()
 
 	// Starting server
-	err = http.Serve(
-		workingListener,
-		pwshandler.PoolHandler(poolManager, connManager, verifier),
-	)
+	err = http.Serve(mainListener, mux)
 	if err != nil {
 		glog.Errorln("servering error:", err)
 	}

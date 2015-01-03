@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func NewPGPoolFactory(cxt context.Context, connLimit,
+func NewPGPoolFactory(cxt context.Context, connLimit uint16,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("cannot create pool factory: %s", err)
@@ -29,7 +29,9 @@ func NewPGPoolFactory(cxt context.Context, connLimit,
 
 type PGPool struct {
 	// conns is connections in the pool
-	conns []*websocket.Conn
+	conns map[uint16]*websocket.Conn
+	// Max connection count per pool
+	connLimit uint16
 	// Pool context
 	cxt context.Context
 	// stopPool stops all pool goroutines
@@ -50,7 +52,7 @@ func (e *errCannotCreatePool) Error() string {
 	return "cannot create pool: " + e.err.Error()
 }
 
-func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
+func NewPGPool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
 ) (*PGPool, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, &errCannotCreatePool{err}
@@ -79,7 +81,8 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 	}
 
 	return &PGPool{
-		make([]*websocket.Conn, 0, connLimit),
+		make(map[uint16]*websocket.Conn),
+		connLimit,
 		pcxt,
 		cancel,
 		startStreamConn,
@@ -90,7 +93,7 @@ func NewPGPool(cxt context.Context, connLimit uint8, pgW, pgH uint8,
 
 // Implementing Pool interface
 func (p *PGPool) IsFull() bool {
-	return cap(p.conns) == len(p.conns)
+	return len(p.conns) == int(p.connLimit)
 }
 
 // Implementing Pool interface
@@ -120,7 +123,18 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		}
 	}
 
-	p.conns = append(p.conns, ws)
+	for id := uint16(0); id <= uint16(len(p.conns)); id++ {
+		if _, occupied := p.conns[id]; !occupied {
+			p.conns[id] = ws
+			err := SendMessage(ws, HEADER_CONN_ID, id)
+			if err != nil {
+				return nil, &errCannotAddConn{
+					fmt.Errorf("cannot send connection id: %s", err),
+				}
+			}
+			break
+		}
+	}
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("connection was created to pool")
@@ -136,11 +150,11 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 
 // Implementing Pool interface
 func (p *PGPool) DelConn(ws *websocket.Conn) error {
-	for i := range p.conns {
+	for id := range p.conns {
 		// Find connection
-		if p.conns[i] == ws {
+		if p.conns[id] == ws {
 			// Remove connection
-			p.conns = append(p.conns[:i], p.conns[i+1:]...)
+			delete(p.conns, id)
 
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("connection was found and removed")
@@ -170,11 +184,19 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 
 // Implementing Pool interface
 func (p *PGPool) HasConn(ws *websocket.Conn) bool {
-	for i := range p.conns {
-		if p.conns[i] == ws {
+	for id := range p.conns {
+		if p.conns[id] == ws {
 			return true
 		}
 	}
 
 	return false
+}
+
+func (p *PGPool) ConnCount() uint16 {
+	return uint16(len(p.conns))
+}
+
+func (p *PGPool) Conns() []uint16 {
+	return make([]uint16, p.connLimit)
 }

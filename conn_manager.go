@@ -152,7 +152,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	 *                   BEGIN PRIVATE STREAM                      *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	// Starting private game stream
+	// Starting private stream
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("starting private game stream")
