@@ -38,9 +38,9 @@ const (
 	PATH_TO_CONN_COUNT = "/conn_count.json"
 
 	// List of pool ids with counts of opened connections on pool
-	PATH_TO_POOL_LIST = "/pool_list.json"
+	PATH_TO_POOL_INFO_LIST = "/pool_info_list.json"
 	// Ids of opened connections in pool
-	PATH_TO_POOL_CONNS = "/pool_conns.json"
+	PATH_TO_POOL_CONN_IDS = "/pool_conn_ids.json"
 )
 
 type errStartingServer struct {
@@ -78,7 +78,7 @@ func main() {
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
 
 	var handleLimits, handlePlaygroundSize, handleConnCount,
-		handlePoolList, handlePoolConns, checkUniqueConn bool
+		handlePoolInfoList, handlePoolConnIds, checkUniqueConn bool
 
 	flag.BoolVar(&handleLimits, "handle_limits", false,
 		"true to enable access to server limits")
@@ -86,9 +86,9 @@ func main() {
 		"true to enable access to playground size")
 	flag.BoolVar(&handleConnCount, "handle_conn_count", false,
 		"true to enable access to connection count")
-	flag.BoolVar(&handlePoolList, "handle_pool_list", false,
+	flag.BoolVar(&handlePoolInfoList, "handle_pool_info_list", false,
 		"true to enable access to pool list")
-	flag.BoolVar(&handlePoolConns, "handle_pool_conns", false,
+	flag.BoolVar(&handlePoolConnIds, "handle_pool_conn_ids", false,
 		"true to enable access to connection ids on selected pool")
 	flag.BoolVar(&checkUniqueConn, "check_unique_conn", false,
 		"true to enable verifying connection uniqueness")
@@ -122,7 +122,7 @@ func main() {
 			glog.Warningln("invalid connection limit per pool")
 		}
 		if pgW*pgH == 0 {
-			glog.Warningln("invalid playground proportions")
+			glog.Warningln("invalid playground size")
 		}
 		if pgW > math.MaxUint8 {
 			glog.Warningln("playground width must be <=",
@@ -270,11 +270,17 @@ func main() {
 			ConnCountHandler(poolManager),
 		)
 	}
-	if handlePoolList {
-		mux.Handle(PATH_TO_POOL_LIST, PoolListHandler(poolManager))
+	if handlePoolInfoList {
+		mux.Handle(
+			PATH_TO_POOL_INFO_LIST,
+			PoolInfoListHandler(poolManager),
+		)
 	}
-	if handlePoolConns {
-		mux.Handle(PATH_TO_POOL_CONNS, PoolConnsHandler(poolManager))
+	if handlePoolConnIds {
+		mux.Handle(
+			PATH_TO_POOL_CONN_IDS,
+			PoolConnIdsHandler(poolManager),
+		)
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

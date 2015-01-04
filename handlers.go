@@ -118,7 +118,6 @@ forbidden:
 
 	http.Error(w, http.StatusText(http.StatusForbidden),
 		http.StatusForbidden)
-
 }
 
 // UniqueRequestsHandler verifies connection uniqueness by token
@@ -129,9 +128,29 @@ func UniqueRequestsHandler(h http.Handler,
 			glog.Infoln("verifying connection uniqueness")
 		}
 
-		// ...
+		if token := r.FormValue(FORM_KEY_TOKEN); len(token) > 0 {
+			for _, request := range poolManager.GetRequests() {
+				if token == request.FormValue(FORM_KEY_TOKEN) {
+					if glog.V(INFOLOG_LEVEL_CONNS) {
+						glog.Warningln("found equal token")
+					}
+					goto forbidden
+				}
+			}
+		} else {
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Warningln("token was not received")
+			}
+			goto forbidden
+		}
 
 		h.ServeHTTP(w, r)
+		return
+
+	forbidden:
+
+		http.Error(w, http.StatusText(http.StatusForbidden),
+			http.StatusForbidden)
 	}
 }
 
@@ -199,20 +218,20 @@ func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 	})
 }
 
-func PoolListHandler(poolManager *GamePoolManager) http.Handler {
+func PoolInfoListHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for pool list")
+			glog.Infoln("received request for pool info list")
 		}
 
-		err := json.NewEncoder(w).Encode(poolManager.PoolList())
+		err := json.NewEncoder(w).Encode(poolManager.PoolInfoList())
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}
 	})
 }
 
-func PoolConnsHandler(poolManager *GamePoolManager) http.Handler {
+func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, r *http.Request) {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("received request for pool connection ids")
@@ -230,7 +249,7 @@ func PoolConnsHandler(poolManager *GamePoolManager) http.Handler {
 			if err != nil {
 				glog.Errorln("cannot get pool:", err)
 			} else {
-				ids = pool.Conns()
+				ids = pool.ConnIds()
 			}
 		}
 

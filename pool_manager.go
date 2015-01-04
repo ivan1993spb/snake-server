@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/golang/glog"
@@ -27,8 +28,10 @@ type Pool interface {
 	HasConn(ws *websocket.Conn) bool
 	// ConnCount returns connection count in pool
 	ConnCount() uint16
-	// Conns returns connection ids
-	Conns() []uint16
+	// ConnIds returns connection ids
+	ConnIds() []uint16
+	// GetRequests returns requests
+	GetRequests() []*http.Request
 }
 
 type errCreatingPoolManager struct {
@@ -238,7 +241,7 @@ type PoolInfo struct {
 	ConnCount uint16 `json:"conn_count"`
 }
 
-func (pm *GamePoolManager) PoolList() []*PoolInfo {
+func (pm *GamePoolManager) PoolInfoList() []*PoolInfo {
 	info := make([]*PoolInfo, 0)
 	for id, pool := range pm.pools {
 		if !pool.IsFull() {
@@ -263,4 +266,12 @@ func (pm *GamePoolManager) GetPool(id uint16) (Pool, error) {
 		return pool, nil
 	}
 	return nil, errors.New("pool was not found")
+}
+
+func (pm *GamePoolManager) GetRequests() []*http.Request {
+	requests := make([]*http.Request, 0)
+	for _, pool := range pm.pools {
+		requests = append(requests, pool.GetRequests()...)
+	}
+	return requests
 }

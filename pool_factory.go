@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
@@ -197,6 +198,18 @@ func (p *PGPool) ConnCount() uint16 {
 	return uint16(len(p.conns))
 }
 
-func (p *PGPool) Conns() []uint16 {
-	return make([]uint16, p.connLimit)
+func (p *PGPool) ConnIds() []uint16 {
+	ids := make([]uint16, 0, len(p.conns))
+	for id := range p.conns {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func (p *PGPool) GetRequests() []*http.Request {
+	requests := make([]*http.Request, 0, len(p.conns))
+	for _, ws := range p.conns {
+		requests = append(requests, ws.Request())
+	}
+	return requests
 }
