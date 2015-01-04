@@ -30,6 +30,7 @@ type Token struct {
 	Part string `json:"part"`
 }
 
+// SecurityMux verifies each accepted connection by passed token
 type SecurityMux struct {
 	*http.ServeMux
 	hashSalt string
@@ -55,7 +56,7 @@ func (e *errConnNotTrusted) Error() string {
 func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 	r *http.Request) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("verifying accepted connection")
+		glog.Infoln("verifying connection token")
 	}
 
 	if data := r.FormValue(FORM_KEY_TOKEN); len(data) > 0 {
@@ -73,6 +74,7 @@ func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("token was received and parsed")
+			glog.Infoln("checking sum")
 		}
 
 		// Checking token
@@ -101,6 +103,9 @@ func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 			}
 		}
 
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("token is valid")
+		}
 	} else if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Warningln("token was not received")
 		goto forbidden
@@ -116,6 +121,21 @@ forbidden:
 
 }
 
+// UniqueRequestsHandler verifies connection uniqueness by token
+func UniqueRequestsHandler(h http.Handler,
+	poolManager *GamePoolManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("verifying connection uniqueness")
+		}
+
+		// ...
+
+		h.ServeHTTP(w, r)
+	}
+}
+
+// JsonHandler inserts json content-type in response
 func JsonHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add(
@@ -144,7 +164,7 @@ func LimitsHandler(poolLimit, connLimit uint) http.Handler {
 		_, err := fmt.Fprintf(w, `{"pool_limit":%d,"conn_limit":%d}`,
 			poolLimit, connLimit)
 		if err != nil {
-			glog.Errorln()
+			glog.Errorln(&errHandleRequest{err})
 		}
 	})
 }
@@ -195,7 +215,7 @@ func PoolListHandler(poolManager *GamePoolManager) http.Handler {
 func PoolConnsHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, r *http.Request) {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for pool connections")
+			glog.Infoln("received request for pool connection ids")
 		}
 
 		// Connection ids

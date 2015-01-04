@@ -27,17 +27,17 @@ const (
 	// Path to game websocket
 	PATH_TO_GAME = "/game.ws"
 
-	// Server settings
+	// Server settings:
 
 	PATH_TO_LIMITS          = "/limits.json"
 	PATH_TO_PLAYGROUND_SIZE = "/playground_size.json"
 
-	// Working information
+	// Working information:
 
-	// Count of opened connections
+	// Count of opened connections on server
 	PATH_TO_CONN_COUNT = "/conn_count.json"
 
-	// List of pool ids with counts of opened connection
+	// List of pool ids with counts of opened connections on pool
 	PATH_TO_POOL_LIST = "/pool_list.json"
 	// Ids of opened connections in pool
 	PATH_TO_POOL_CONNS = "/pool_conns.json"
@@ -78,7 +78,7 @@ func main() {
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
 
 	var handleLimits, handlePlaygroundSize, handleConnCount,
-		handlePoolList, handlePoolConns bool
+		handlePoolList, handlePoolConns, checkUniqueConn bool
 
 	flag.BoolVar(&handleLimits, "handle_limits", false,
 		"true to enable access to server limits")
@@ -90,6 +90,8 @@ func main() {
 		"true to enable access to pool list")
 	flag.BoolVar(&handlePoolConns, "handle_pool_conns", false,
 		"true to enable access to connection ids on selected pool")
+	flag.BoolVar(&checkUniqueConn, "check_unique_conn", false,
+		"true to enable verifying connection uniqueness")
 
 	flag.Parse()
 
@@ -113,26 +115,22 @@ func main() {
 			glog.Warningln("empty hash salt; protection is disabled")
 		}
 
-		if poolLimit == 0 {
+		if poolLimit == 0 || poolLimit > math.MaxUint16 {
 			glog.Warningln("invalid pool limit")
 		}
-		if poolLimit > math.MaxUint16 {
-			glog.Warningln("pool count limit overflows 2 bytes")
-		}
-		if connLimit == 0 {
+		if connLimit == 0 || connLimit > math.MaxUint16 {
 			glog.Warningln("invalid connection limit per pool")
-		}
-		if connLimit > math.MaxUint16 {
-			glog.Warningln("connection count limit overflows 2 bytes")
 		}
 		if pgW*pgH == 0 {
 			glog.Warningln("invalid playground proportions")
 		}
 		if pgW > math.MaxUint8 {
-			glog.Warningln("playground width overflows 1 byte")
+			glog.Warningln("playground width must be <=",
+				math.MaxUint8)
 		}
 		if pgH > math.MaxUint8 {
-			glog.Warningln("playground height overflows 1 byte")
+			glog.Warningln("playground height must be <=",
+				math.MaxUint8)
 		}
 	}
 
@@ -171,6 +169,7 @@ func main() {
 	 *                   END CREATING LISTENERS                    *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+	// Root context
 	cxt, cancel := context.WithCancel(context.Background())
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -211,10 +210,13 @@ func main() {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	var mux Mux
+
+	// If hash salt is empty protection will disabled
 	if len(hashSalt) > 0 {
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("creating security handler mux")
 		}
+		// Try to init security mux with token verifying
 		if mux, err = NewSecurityMux(hashSalt); err != nil {
 			glog.Exitln(&errStartingServer{err})
 		}
@@ -222,18 +224,30 @@ func main() {
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("creating plain handler mux")
 		}
-		// Plain mux
+		// Plain mux without token verifying
 		mux = http.NewServeMux()
 	}
+
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("handler mux was created")
 	}
 
 	// Game handler is main and always is available
-	mux.Handle(
-		PATH_TO_GAME,
-		pwshandler.PoolHandler(poolManager, connManager, nil),
-	)
+
+	if checkUniqueConn {
+		mux.Handle(
+			PATH_TO_GAME,
+			UniqueRequestsHandler(
+				pwshandler.PoolHandler(poolManager, connManager, nil),
+				poolManager,
+			),
+		)
+	} else {
+		mux.Handle(
+			PATH_TO_GAME,
+			pwshandler.PoolHandler(poolManager, connManager, nil),
+		)
+	}
 
 	// Server setting information handlers
 	if handleLimits {
