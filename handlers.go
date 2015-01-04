@@ -174,7 +174,7 @@ func (e *errHandleRequest) Error() string {
 	return "cannot handle request: " + e.err.Error()
 }
 
-func LimitsHandler(poolLimit, connLimit uint) http.Handler {
+func ServerLimitsHandler(poolLimit, connLimit uint) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("received request for limits")

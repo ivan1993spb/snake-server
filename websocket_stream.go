@@ -33,16 +33,14 @@ func StartGameStream(cxt context.Context, stream <-chan interface{},
 				if len(conns) == 0 || data == nil {
 					continue
 				}
+
 				// Send data for each websocket connection in conns
 				for i := 0; i < len(conns); {
-					err := websocket.JSON.Send(
-						conns[i],
-						&OutputMessage{HEADER_GAME, data},
-					)
+					err := SendMessage(conns[i], HEADER_GAME, data)
 					if err != nil {
 						// Remove connection on error
 						glog.Errorln(
-							"cannot send common data:", err,
+							"cannot send common game data:", err,
 						)
 
 						if glog.V(INFOLOG_LEVEL_CONNS) {

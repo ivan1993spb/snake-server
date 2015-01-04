@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"io"
+	"fmt"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
@@ -12,12 +12,10 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type PoolFeatures struct {
-	startStreamConn StartStreamConnFunc
-	stopStreamConn  StopStreamConnFunc
-	// startPlayer starts player
-	startPlayer game.StartPlayerFunc
-	cxt         context.Context
+type ConnManager struct{}
+
+func NewConnManager() pwshandler.ConnManager {
+	return new(ConnManager)
 }
 
 type errConnProcessing struct {
@@ -27,12 +25,6 @@ type errConnProcessing struct {
 func (e *errConnProcessing) Error() string {
 	return "error of connection processing in connection manager: " +
 		e.err.Error()
-}
-
-type ConnManager struct{}
-
-func NewConnManager() pwshandler.ConnManager {
-	return &ConnManager{}
 }
 
 // Implementing pwshandler.ConnManager interface
@@ -84,27 +76,13 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 
 	go func() {
 		for {
-			var msg *InputMessage
-			if err := websocket.JSON.Receive(ws, &msg); err != nil {
-				if err != io.EOF {
+			msg, err := ReceiveMessage(ws, HEADER_GAME)
+			if err != nil {
+				if err != ErrConnStop { // like err != EOF
 					glog.Errorln("connection error:", err)
 				}
-				break
-			}
-
-			if len(msg.Header) == 0 {
-				if glog.V(INFOLOG_LEVEL_CONNS) {
-					glog.Warningln("input message with empty header")
-				}
-				continue
-			}
-
-			if msg.Header != HEADER_GAME {
-				if glog.V(INFOLOG_LEVEL_CONNS) {
-					glog.Warningln(
-						"input message with unexpected header:",
-						msg.Header,
-					)
+				if err == ErrConnFatal || err == ErrConnStop {
+					break
 				}
 				continue
 			}
@@ -171,23 +149,10 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 					continue
 				}
 
-				buffer, err := json.Marshal(&OutputMessage{
-					HEADER_GAME, data,
-				})
-				if err != nil {
-					glog.Errorln(
-						"cannot marshal private game data:",
-						err,
-					)
-					continue
-				}
-
-				_, err = ws.Write(buffer)
-				if err != nil {
-					glog.Errorln(
-						"cannot send private game data:",
-						err,
-					)
+				if err :=
+					SendMessage(ws, HEADER_GAME, data); err != nil {
+					glog.Errorln(&errConnProcessing{fmt.Errorf(
+						"cannot send private game data: %s", err)})
 					return
 				}
 			}
@@ -203,19 +168,25 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	return nil
 }
 
+type errErrorHandling struct {
+	err error
+}
+
+func (e *errErrorHandling) Error() string {
+	return "error of error handling: " + e.err.Error()
+}
+
 // Implementing pwshandler.ConnManager interface
 func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
 	if err == nil {
-		err = errors.New("passed nil errer for reporting")
+		err = &errErrorHandling{
+			errors.New("passed nil errer for reporting"),
+		}
 	}
 
 	glog.Errorln(err)
 
-	err = websocket.JSON.Send(ws, &OutputMessage{
-		HEADER_ERROR, err.Error(),
-	})
-
-	if err != nil {
-		glog.Error(err)
+	if err = SendMessage(ws, HEADER_ERROR, err.Error()); err != nil {
+		glog.Errorln(&errErrorHandling{err})
 	}
 }

@@ -29,7 +29,7 @@ const (
 
 	// Server settings:
 
-	PATH_TO_LIMITS          = "/limits.json"
+	PATH_TO_SERVER_LIMITS   = "/server_limits.json"
 	PATH_TO_PLAYGROUND_SIZE = "/playground_size.json"
 
 	// Working information:
@@ -252,8 +252,8 @@ func main() {
 	// Server setting information handlers
 	if handleLimits {
 		mux.Handle(
-			PATH_TO_LIMITS,
-			LimitsHandler(poolLimit, connLimit),
+			PATH_TO_SERVER_LIMITS,
+			ServerLimitsHandler(poolLimit, connLimit),
 		)
 	}
 	if handlePlaygroundSize {

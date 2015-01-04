@@ -107,8 +107,8 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 				glog.Infoln("creating connection in selected pool")
 			}
 
-			err := SendMessage(ws, HEADER_POOL_ID, id)
-			if err != nil {
+			if err :=
+				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					fmt.Errorf("cannot send pool id: %s", err),
 				}
@@ -117,9 +117,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			return pm.pools[id].AddConn(ws)
 		}
 
-		return nil, &errCannotAddConn{
-			errors.New("received invalid pool index"),
-		}
+		return nil, &errCannotAddConn{errors.New("invalid pool id")}
 	}
 
 	// Try to add connection in first not full pool
@@ -135,8 +133,8 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 				glog.Infoln("creating connection to pool")
 			}
 
-			err := SendMessage(ws, HEADER_POOL_ID, id)
-			if err != nil {
+			if err :=
+				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					fmt.Errorf("cannot send pool id: %s", err),
 				}
@@ -156,7 +154,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("server is not full")
-		glog.Infoln("creating pool")
+		glog.Infoln("creating new pool")
 	}
 
 	pool, err := pm.addPool()
@@ -165,7 +163,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 	}
 
 	// Save the pool
-	for id := uint16(0); id <= uint16(len(pm.pools)); id++ {
+	for id := uint16(0); int(id) <= len(pm.pools); id++ {
 		if _, occupied := pm.pools[id]; !occupied {
 			pm.pools[id] = pool
 
@@ -175,6 +173,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 					fmt.Errorf("cannot send pool id: %s", err),
 				}
 			}
+
 			break
 		}
 	}
@@ -242,15 +241,14 @@ type PoolInfo struct {
 }
 
 func (pm *GamePoolManager) PoolInfoList() []*PoolInfo {
-	info := make([]*PoolInfo, 0)
+	var info = make([]*PoolInfo, 0, len(pm.pools))
+
 	for id, pool := range pm.pools {
 		if !pool.IsFull() {
-			info = append(info, &PoolInfo{
-				id,
-				pool.ConnCount(),
-			})
+			info = append(info, &PoolInfo{id, pool.ConnCount()})
 		}
 	}
+
 	return info
 }
 
@@ -258,6 +256,7 @@ func (pm *GamePoolManager) ConnCount() (connCount uint32) {
 	for i := range pm.pools {
 		connCount += uint32(pm.pools[i].ConnCount())
 	}
+
 	return
 }
 
@@ -265,13 +264,16 @@ func (pm *GamePoolManager) GetPool(id uint16) (Pool, error) {
 	if pool, found := pm.pools[id]; found {
 		return pool, nil
 	}
-	return nil, errors.New("pool was not found")
+
+	return nil, errors.New("cannot get pool: pool was not found")
 }
 
 func (pm *GamePoolManager) GetRequests() []*http.Request {
-	requests := make([]*http.Request, 0)
+	var requests = make([]*http.Request, 0)
+
 	for _, pool := range pm.pools {
 		requests = append(requests, pool.GetRequests()...)
 	}
+
 	return requests
 }

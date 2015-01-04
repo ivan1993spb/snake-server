@@ -102,6 +102,14 @@ func (p *PGPool) IsEmpty() bool {
 	return len(p.conns) == 0
 }
 
+type PoolFeatures struct {
+	startStreamConn StartStreamConnFunc
+	stopStreamConn  StopStreamConnFunc
+	// startPlayer starts player
+	startPlayer game.StartPlayerFunc
+	cxt         context.Context
+}
+
 type errCannotAddConnToPool struct {
 	err error
 }
@@ -124,15 +132,17 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		}
 	}
 
-	for id := uint16(0); id <= uint16(len(p.conns)); id++ {
+	for id := uint16(0); int(id) <= len(p.conns); id++ {
 		if _, occupied := p.conns[id]; !occupied {
 			p.conns[id] = ws
+
 			err := SendMessage(ws, HEADER_CONN_ID, id)
 			if err != nil {
 				return nil, &errCannotAddConn{
 					fmt.Errorf("cannot send connection id: %s", err),
 				}
 			}
+
 			break
 		}
 	}
@@ -194,22 +204,29 @@ func (p *PGPool) HasConn(ws *websocket.Conn) bool {
 	return false
 }
 
+// Implementing Pool interface
 func (p *PGPool) ConnCount() uint16 {
 	return uint16(len(p.conns))
 }
 
+// Implementing Pool interface
 func (p *PGPool) ConnIds() []uint16 {
-	ids := make([]uint16, 0, len(p.conns))
+	var ids = make([]uint16, 0, len(p.conns))
+
 	for id := range p.conns {
 		ids = append(ids, id)
 	}
+
 	return ids
 }
 
+// Implementing Pool interface
 func (p *PGPool) GetRequests() []*http.Request {
-	requests := make([]*http.Request, 0, len(p.conns))
+	var requests = make([]*http.Request, 0, len(p.conns))
+
 	for _, ws := range p.conns {
 		requests = append(requests, ws.Request())
 	}
+
 	return requests
 }
