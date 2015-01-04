@@ -77,10 +77,10 @@ func main() {
 	flag.UintVar(&pgW, "pg_w", 40, "playground width")
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
 
-	var handleLimits, handlePlaygroundSize, handleConnCount,
+	var handleServerLimits, handlePlaygroundSize, handleConnCount,
 		handlePoolInfoList, handlePoolConnIds, checkUniqueConn bool
 
-	flag.BoolVar(&handleLimits, "handle_limits", false,
+	flag.BoolVar(&handleServerLimits, "handle_server_limits", false,
 		"true to enable access to server limits")
 	flag.BoolVar(&handlePlaygroundSize, "handle_pg_size", false,
 		"true to enable access to playground size")
@@ -242,25 +242,37 @@ func main() {
 				poolManager,
 			),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("unique request handler was created")
+		}
 	} else {
 		mux.Handle(
 			PATH_TO_GAME,
 			pwshandler.PoolHandler(poolManager, connManager, nil),
 		)
 	}
+	if glog.V(INFOLOG_LEVEL_SERVER) {
+		glog.Infoln("game handler was created")
+	}
 
 	// Server setting information handlers
-	if handleLimits {
+	if handleServerLimits {
 		mux.Handle(
 			PATH_TO_SERVER_LIMITS,
 			ServerLimitsHandler(poolLimit, connLimit),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("server limits handler was created")
+		}
 	}
 	if handlePlaygroundSize {
 		mux.Handle(
 			PATH_TO_PLAYGROUND_SIZE,
 			PlaygroundSizeHandler(uint8(pgW), uint8(pgH)),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("playgound size handler was created")
+		}
 	}
 
 	// Working information handlers
@@ -269,18 +281,27 @@ func main() {
 			PATH_TO_CONN_COUNT,
 			ConnCountHandler(poolManager),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("connection count handler was created")
+		}
 	}
 	if handlePoolInfoList {
 		mux.Handle(
 			PATH_TO_POOL_INFO_LIST,
 			PoolInfoListHandler(poolManager),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("pool info list handler was created")
+		}
 	}
 	if handlePoolConnIds {
 		mux.Handle(
 			PATH_TO_POOL_CONN_IDS,
 			PoolConnIdsHandler(poolManager),
 		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("pool connection ids handler was created")
+		}
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

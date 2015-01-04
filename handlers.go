@@ -137,6 +137,10 @@ func UniqueRequestsHandler(h http.Handler,
 					goto forbidden
 				}
 			}
+
+			if glog.V(INFOLOG_LEVEL_CONNS) {
+				glog.Infoln("connection is unique")
+			}
 		} else {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Warningln("token was not received")

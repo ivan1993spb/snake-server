@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -81,6 +80,14 @@ func (e *errCannotAddConn) Error() string {
 	return "cannot add connection: " + e.err.Error()
 }
 
+type errCannotSendPoolId struct {
+	err error
+}
+
+func (e *errCannotSendPoolId) Error() string {
+	return "cannot send pool id: " + e.err.Error()
+}
+
 // Implementing pwshandler.ConnManager interface
 func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 ) (pwshandler.Environment, error) {
@@ -91,7 +98,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 	// Try to add connection in selected pool if passed pool id
 	if id := ws.Request().FormValue(FORM_KEY_POOL_ID); len(id) > 0 {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("pool id was received")
+			glog.Infoln("received pool id")
 		}
 
 		if id, err := strconv.Atoi(id); err == nil && id > -1 {
@@ -110,7 +117,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			if err :=
 				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
-					fmt.Errorf("cannot send pool id: %s", err),
+					&errCannotSendPoolId{err},
 				}
 			}
 
@@ -136,7 +143,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			if err :=
 				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
-					fmt.Errorf("cannot send pool id: %s", err),
+					&errCannotSendPoolId{err},
 				}
 			}
 
@@ -170,7 +177,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 			err := SendMessage(ws, HEADER_POOL_ID, id)
 			if err != nil {
 				return nil, &errCannotAddConn{
-					fmt.Errorf("cannot send pool id: %s", err),
+					&errCannotSendPoolId{err},
 				}
 			}
 
