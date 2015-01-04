@@ -251,9 +251,9 @@ func (pm *GamePoolManager) PoolList() []*PoolInfo {
 	return info
 }
 
-func (pm *GamePoolManager) ConnCount() (connCount uint64) {
+func (pm *GamePoolManager) ConnCount() (connCount uint32) {
 	for i := range pm.pools {
-		connCount += uint64(pm.pools[i].ConnCount())
+		connCount += uint32(pm.pools[i].ConnCount())
 	}
 	return
 }
