@@ -1,9 +1,14 @@
+// Copyright 2015 Pushkin Ivan. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
@@ -78,13 +83,11 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 		for {
 			msg, err := ReceiveMessage(ws, HEADER_GAME)
 			if err != nil {
-				if err != ErrConnStop { // like err != EOF
-					glog.Errorln("connection error:", err)
+				if err != io.EOF {
+					glog.Errorln("cannot receive player command:",
+						err)
 				}
-				if err == ErrConnFatal || err == ErrConnStop {
-					break
-				}
-				continue
+				break
 			}
 
 			var cmd *game.Command

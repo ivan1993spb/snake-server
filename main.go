@@ -1,3 +1,7 @@
+// Copyright 2015 Pushkin Ivan. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
@@ -57,17 +61,27 @@ func main() {
 	 *                  BEGIN PARSING PARAMETERS                   *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	var host, mainPort, sdPort, hashSalt string
+	// Networking
+	var host, mainPort, sdPort string
 
-	flag.StringVar(&host, "host", "",
-		"host on which server handles requests")
+	flag.StringVar(&host, "host", "", "server host")
 	flag.StringVar(&mainPort, "main_port", "8081",
 		"port on which server handles external requests")
 	flag.StringVar(&sdPort, "shutdown_port", "8082",
 		"port on which server accepts shutdown request")
-	flag.StringVar(&hashSalt, "hash_salt", "",
-		"salt for request verifying")
 
+	// Security
+	var (
+		hashSalt        string
+		checkUniqueConn bool
+	)
+
+	flag.StringVar(&hashSalt, "hash_salt", "",
+		"hash salt for request verifying")
+	flag.BoolVar(&checkUniqueConn, "check_unique_conn", false,
+		"true to enable verifying connection uniqueness")
+
+	// Server limits and playground size
 	var poolLimit, connLimit, pgW, pgH uint
 
 	flag.UintVar(&poolLimit, "pool_limit", 10,
@@ -77,8 +91,9 @@ func main() {
 	flag.UintVar(&pgW, "pg_w", 40, "playground width")
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
 
+	// Handlers
 	var handleServerLimits, handlePlaygroundSize, handleConnCount,
-		handlePoolInfoList, handlePoolConnIds, checkUniqueConn bool
+		handlePoolInfoList, handlePoolConnIds bool
 
 	flag.BoolVar(&handleServerLimits, "handle_server_limits", false,
 		"true to enable access to server limits")
@@ -90,8 +105,6 @@ func main() {
 		"true to enable access to pool list")
 	flag.BoolVar(&handlePoolConnIds, "handle_pool_conn_ids", false,
 		"true to enable access to connection ids on selected pool")
-	flag.BoolVar(&checkUniqueConn, "check_unique_conn", false,
-		"true to enable verifying connection uniqueness")
 
 	flag.Parse()
 
@@ -111,6 +124,7 @@ func main() {
 		} else if i, e := strconv.Atoi(sdPort); e != nil || i < 1 {
 			glog.Warningln("invalid shutdown port")
 		}
+
 		if len(hashSalt) == 0 {
 			glog.Warningln("empty hash salt; protection is disabled")
 		}
@@ -209,31 +223,29 @@ func main() {
 	 *                    BEGIN INIT HANDLERS                      *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	var mux Mux
+	var mux Mux = http.NewServeMux()
 
 	// If hash salt is empty protection will disabled
 	if len(hashSalt) > 0 {
-		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("creating security handler mux")
-		}
 		// Try to init security mux with token verifying
 		if mux, err = NewSecurityMux(hashSalt); err != nil {
 			glog.Exitln(&errStartingServer{err})
 		}
-	} else {
 		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("creating plain handler mux")
+			glog.Infoln("security handler mux was created")
 		}
-		// Plain mux without token verifying
-		mux = http.NewServeMux()
+	}
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		mux = &ReportMux{mux}
+		glog.Infoln("report mux was created")
 	}
 
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("handler mux was created")
+		glog.Infoln("root mux was created")
 	}
 
 	// Game handler is main and always is available
-
 	if checkUniqueConn {
 		mux.Handle(
 			PATH_TO_GAME,

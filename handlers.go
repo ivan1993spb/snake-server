@@ -1,3 +1,7 @@
+// Copyright 2015 Pushkin Ivan. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
@@ -32,7 +36,7 @@ type Token struct {
 
 // SecurityMux verifies each accepted connection by passed token
 type SecurityMux struct {
-	*http.ServeMux
+	Mux
 	hashSalt string
 }
 
@@ -111,7 +115,7 @@ func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 		goto forbidden
 	}
 
-	sm.ServeMux.ServeHTTP(w, r)
+	sm.Mux.ServeHTTP(w, r)
 	return
 
 forbidden:
@@ -180,10 +184,6 @@ func (e *errHandleRequest) Error() string {
 
 func ServerLimitsHandler(poolLimit, connLimit uint) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for limits")
-		}
-
 		_, err := fmt.Fprintf(w, `{"pool_limit":%d,"conn_limit":%d}`,
 			poolLimit, connLimit)
 		if err != nil {
@@ -194,10 +194,6 @@ func ServerLimitsHandler(poolLimit, connLimit uint) http.Handler {
 
 func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for playground size")
-		}
-
 		_, err := fmt.Fprintf(
 			w, `{"playground_width":%d,"playground_height":%d}`,
 			pgW, pgH,
@@ -210,10 +206,6 @@ func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 
 func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for count of opened conns")
-		}
-
 		_, err := fmt.Fprintf(w, `{"conn_count":%d}`,
 			poolManager.ConnCount())
 		if err != nil {
@@ -224,10 +216,6 @@ func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 
 func PoolInfoListHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for pool info list")
-		}
-
 		err := json.NewEncoder(w).Encode(poolManager.PoolInfoList())
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
@@ -237,10 +225,6 @@ func PoolInfoListHandler(poolManager *GamePoolManager) http.Handler {
 
 func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, r *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("received request for pool connection ids")
-		}
-
 		// Connection ids
 		var ids []uint16
 
@@ -261,4 +245,21 @@ func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
 			glog.Errorln(&errHandleRequest{err})
 		}
 	})
+}
+
+type ReportMux struct {
+	Mux
+}
+
+func (rm *ReportMux) ServeHTTP(w http.ResponseWriter, r *http.Request,
+) {
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("received request:", r.URL.Path)
+	}
+
+	rm.Mux.ServeHTTP(w, r)
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("closing connection:", r.URL.Path)
+	}
 }
