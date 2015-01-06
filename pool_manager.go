@@ -263,6 +263,10 @@ func (pm *GamePoolManager) PoolInfoList() []*PoolInfo {
 	return info
 }
 
+func (pm *GamePoolManager) PoolCount() uint16 {
+	return uint16(len(pm.pools))
+}
+
 func (pm *GamePoolManager) ConnCount() (connCount uint32) {
 	for i := range pm.pools {
 		connCount += uint32(pm.pools[i].ConnCount())

@@ -204,6 +204,16 @@ func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 	})
 }
 
+func PoolCountHandler(poolManager *GamePoolManager) http.Handler {
+	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
+		_, err := fmt.Fprintf(w, `{"pool_count":%d}`,
+			poolManager.PoolCount())
+		if err != nil {
+			glog.Errorln(&errHandleRequest{err})
+		}
+	})
+}
+
 func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
 		_, err := fmt.Fprintf(w, `{"conn_count":%d}`,

@@ -38,6 +38,8 @@ const (
 
 	// Working information:
 
+	// Count of opened pools
+	PATH_TO_POOL_COUNT = "/pool_count.json"
 	// Count of opened connections on server
 	PATH_TO_CONN_COUNT = "/conn_count.json"
 
@@ -92,13 +94,15 @@ func main() {
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
 
 	// Handlers
-	var handleServerLimits, handlePlaygroundSize, handleConnCount,
-		handlePoolInfoList, handlePoolConnIds bool
+	var handleServerLimits, handlePlaygroundSize, handlePoolCount,
+		handleConnCount, handlePoolInfoList, handlePoolConnIds bool
 
 	flag.BoolVar(&handleServerLimits, "handle_server_limits", false,
 		"true to enable access to server limits")
 	flag.BoolVar(&handlePlaygroundSize, "handle_pg_size", false,
 		"true to enable access to playground size")
+	flag.BoolVar(&handlePoolCount, "handle_pool_count", false,
+		"true to enable access to pool count")
 	flag.BoolVar(&handleConnCount, "handle_conn_count", false,
 		"true to enable access to connection count")
 	flag.BoolVar(&handlePoolInfoList, "handle_pool_info_list", false,
@@ -288,6 +292,15 @@ func main() {
 	}
 
 	// Working information handlers
+	if handlePoolCount {
+		mux.Handle(
+			PATH_TO_POOL_COUNT,
+			PoolCountHandler(poolManager),
+		)
+		if glog.V(INFOLOG_LEVEL_SERVER) {
+			glog.Infoln("pool count handler was created")
+		}
+	}
 	if handleConnCount {
 		mux.Handle(
 			PATH_TO_CONN_COUNT,
