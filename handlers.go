@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -34,19 +33,38 @@ type Token struct {
 	Part string `json:"part"`
 }
 
-// SecurityMux verifies each accepted connection by passed token
-type SecurityMux struct {
+// TokenVerifierMux verifies each accepted connection by passed token
+type TokenVerifierMux struct {
 	Mux
-	hashSalt string
+	poolManager *GamePoolManager
+	hashSalt    string
 }
 
-func NewSecurityMux(hashSalt string) (Mux, error) {
-	if len(hashSalt) > 0 {
-		return &SecurityMux{http.NewServeMux(), hashSalt}, nil
+type errCannotCreateTokenVerifierMux struct {
+	errStr string
+}
+
+func (e *errCannotCreateTokenVerifierMux) Error() string {
+	return "cannot create token verifier mux: " + e.errStr
+}
+
+func NewTokenVerifierMux(m Mux, pm *GamePoolManager, hs string,
+) (*TokenVerifierMux, error) {
+	if m == nil {
+		return nil, &errCannotCreateTokenVerifierMux{"mux is nil"}
+	}
+	if pm == nil {
+		return nil, &errCannotCreateTokenVerifierMux{
+			"pool manager is nil",
+		}
+	}
+	if len(hs) == 0 {
+		return nil, &errCannotCreateTokenVerifierMux{
+			"empty hash salt",
+		}
 	}
 
-	return nil,
-		errors.New("cannot create security mux: empty hash salt")
+	return &TokenVerifierMux{m, pm, hs}, nil
 }
 
 type errConnNotTrusted struct {
@@ -57,14 +75,14 @@ func (e *errConnNotTrusted) Error() string {
 	return "connection is not trusted: " + e.err.Error()
 }
 
-func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
+func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 	r *http.Request) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("verifying connection token")
+		glog.Infoln("verifying token hash sum")
 	}
 
-	if data := r.FormValue(FORM_KEY_TOKEN); len(data) > 0 {
-		data, err := base64.StdEncoding.DecodeString(data)
+	if tokenStr := r.FormValue(FORM_KEY_TOKEN); len(tokenStr) > 0 {
+		data, err := base64.StdEncoding.DecodeString(tokenStr)
 		if err != nil {
 			glog.Errorln(&errConnNotTrusted{err})
 			goto forbidden
@@ -96,7 +114,7 @@ func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 			goto forbidden
 		}
 
-		validSum := sha256.Sum256([]byte(sm.hashSalt + token.Part))
+		validSum := sha256.Sum256([]byte(v.hashSalt + token.Part))
 
 		for i := 0; i < sha256.Size; i++ {
 			if validSum[i] != sum[i] {
@@ -108,58 +126,35 @@ func (sm *SecurityMux) ServeHTTP(w http.ResponseWriter,
 		}
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("token is valid")
+			glog.Infoln("token hash sum is valid")
+			glog.Infoln("verifying token uniqueness")
+		}
+
+		for _, request := range v.poolManager.GetRequests() {
+			// tokenStr is encoded token
+			if tokenStr == request.FormValue(FORM_KEY_TOKEN) {
+				if glog.V(INFOLOG_LEVEL_CONNS) {
+					glog.Warningln("found equal token")
+				}
+				goto forbidden
+			}
+		}
+
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Infoln("token is unique")
 		}
 	} else if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Warningln("token was not received")
 		goto forbidden
 	}
 
-	sm.Mux.ServeHTTP(w, r)
+	v.Mux.ServeHTTP(w, r)
 	return
 
 forbidden:
 
 	http.Error(w, http.StatusText(http.StatusForbidden),
 		http.StatusForbidden)
-}
-
-// UniqueRequestsHandler verifies connection uniqueness by token
-func UniqueRequestsHandler(h http.Handler,
-	poolManager *GamePoolManager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("verifying connection uniqueness")
-		}
-
-		if token := r.FormValue(FORM_KEY_TOKEN); len(token) > 0 {
-			for _, request := range poolManager.GetRequests() {
-				if token == request.FormValue(FORM_KEY_TOKEN) {
-					if glog.V(INFOLOG_LEVEL_CONNS) {
-						glog.Warningln("found equal token")
-					}
-					goto forbidden
-				}
-			}
-
-			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("connection is unique")
-			}
-		} else {
-			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Warningln("token was not received")
-			}
-			goto forbidden
-		}
-
-		h.ServeHTTP(w, r)
-		return
-
-	forbidden:
-
-		http.Error(w, http.StatusText(http.StatusForbidden),
-			http.StatusForbidden)
-	}
 }
 
 // JsonHandler inserts json content-type in response
@@ -184,8 +179,10 @@ func (e *errHandleRequest) Error() string {
 
 func ServerLimitsHandler(poolLimit, connLimit uint) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		_, err := fmt.Fprintf(w, `{"pool_limit":%d,"conn_limit":%d}`,
-			poolLimit, connLimit)
+		err := json.NewEncoder(w).Encode(map[string]uint{
+			"pool_limit": poolLimit,
+			"conn_limit": connLimit,
+		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}
@@ -194,10 +191,10 @@ func ServerLimitsHandler(poolLimit, connLimit uint) http.Handler {
 
 func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		_, err := fmt.Fprintf(
-			w, `{"playground_width":%d,"playground_height":%d}`,
-			pgW, pgH,
-		)
+		err := json.NewEncoder(w).Encode(map[string]uint8{
+			"playground_width":  pgW,
+			"playground_height": pgH,
+		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}
@@ -206,8 +203,9 @@ func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 
 func PoolCountHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		_, err := fmt.Fprintf(w, `{"pool_count":%d}`,
-			poolManager.PoolCount())
+		err := json.NewEncoder(w).Encode(map[string]uint16{
+			"pool_count": poolManager.PoolCount(),
+		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}
@@ -216,8 +214,9 @@ func PoolCountHandler(poolManager *GamePoolManager) http.Handler {
 
 func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		_, err := fmt.Fprintf(w, `{"conn_count":%d}`,
-			poolManager.ConnCount())
+		err := json.NewEncoder(w).Encode(map[string]uint32{
+			"conn_count": poolManager.ConnCount(),
+		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}

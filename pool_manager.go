@@ -255,9 +255,7 @@ func (pm *GamePoolManager) PoolInfoList() []*PoolInfo {
 	var info = make([]*PoolInfo, 0, len(pm.pools))
 
 	for id, pool := range pm.pools {
-		if !pool.IsFull() {
-			info = append(info, &PoolInfo{id, pool.ConnCount()})
-		}
+		info = append(info, &PoolInfo{id, pool.ConnCount()})
 	}
 
 	return info

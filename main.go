@@ -74,14 +74,14 @@ func main() {
 
 	// Security
 	var (
-		hashSalt        string
-		checkUniqueConn bool
+		verifyRequestToken bool
+		hashSalt           string
 	)
 
+	flag.BoolVar(&verifyRequestToken, "verify_req_token", false,
+		"true to enable request token verifying")
 	flag.StringVar(&hashSalt, "hash_salt", "",
-		"hash salt for request verifying")
-	flag.BoolVar(&checkUniqueConn, "check_unique_conn", false,
-		"true to enable verifying connection uniqueness")
+		"hash salt for request token verifying")
 
 	// Server limits and playground size
 	var poolLimit, connLimit, pgW, pgH uint
@@ -129,8 +129,8 @@ func main() {
 			glog.Warningln("invalid shutdown port")
 		}
 
-		if len(hashSalt) == 0 {
-			glog.Warningln("empty hash salt; protection is disabled")
+		if verifyRequestToken && len(hashSalt) == 0 {
+			glog.Warningln("empty hash salt")
 		}
 
 		if poolLimit == 0 || poolLimit > math.MaxUint16 {
@@ -229,14 +229,13 @@ func main() {
 
 	var mux Mux = http.NewServeMux()
 
-	// If hash salt is empty protection will disabled
-	if len(hashSalt) > 0 {
-		// Try to init security mux with token verifying
-		if mux, err = NewSecurityMux(hashSalt); err != nil {
+	if verifyRequestToken {
+		mux, err = NewTokenVerifierMux(mux, poolManager, hashSalt)
+		if err != nil {
 			glog.Exitln(&errStartingServer{err})
 		}
 		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("security handler mux was created")
+			glog.Infoln("token verifier mux was created")
 		}
 	}
 
@@ -250,23 +249,10 @@ func main() {
 	}
 
 	// Game handler is main and always is available
-	if checkUniqueConn {
-		mux.Handle(
-			PATH_TO_GAME,
-			UniqueRequestsHandler(
-				pwshandler.PoolHandler(poolManager, connManager, nil),
-				poolManager,
-			),
-		)
-		if glog.V(INFOLOG_LEVEL_SERVER) {
-			glog.Infoln("unique request handler was created")
-		}
-	} else {
-		mux.Handle(
-			PATH_TO_GAME,
-			pwshandler.PoolHandler(poolManager, connManager, nil),
-		)
-	}
+	mux.Handle(
+		PATH_TO_GAME,
+		pwshandler.PoolHandler(poolManager, connManager, nil),
+	)
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("game handler was created")
 	}
