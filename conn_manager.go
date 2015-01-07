@@ -97,7 +97,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 			}
 
 			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("accepted command:", cmd.Command)
+				glog.Infoln("accepted command")
 			}
 
 			input <- cmd
