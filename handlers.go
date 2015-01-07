@@ -64,7 +64,9 @@ func NewTokenVerifierMux(m Mux, pm *GamePoolManager, hs string,
 		}
 	}
 
-	return &TokenVerifierMux{m, pm, hs}, nil
+	hashSalt := sha256.Sum256([]byte(hs))
+	return &TokenVerifierMux{m, pm, hex.EncodeToString(hashSalt[:])},
+		nil
 }
 
 type errConnNotTrusted struct {
@@ -152,6 +154,8 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 	return
 
 forbidden:
+
+	glog.Warningln("forbidden")
 
 	http.Error(w, http.StatusText(http.StatusForbidden),
 		http.StatusForbidden)
