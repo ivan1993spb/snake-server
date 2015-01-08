@@ -1,3 +1,7 @@
+// Copyright 2015 Pushkin Ivan. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package logic
 
 import (
@@ -18,11 +22,8 @@ type (
 	Living interface {
 		Object
 		Resistant
-
-		// Every living thing ever dies
-		Die()
-		// Living things are hungry
-		Feed(int8)
+		Die()      // Every living thing ever dies
+		Feed(int8) // Living things are hungry
 	}
 
 	Notalive interface {
@@ -32,20 +33,11 @@ type (
 
 	Food interface {
 		Object
-		// Nutritional value
-		NutritionalValue(*playground.Dot) int8
+		NutritionalValue(*playground.Dot) int8 // Nutritional value
 	}
-
-	// Controlled interface {
-	// 	Object
-	// 	Command(string) error
-	// }
 )
 
-var (
-	ErrRecognizingObject = errors.New("cannot recognize object")
-	// ErrExecuteCommand    = errors.New("cannot execute command")
-)
+var ErrRecognizingObject = errors.New("cannot recognize object")
 
 const _STRENGTH_FACTOR float32 = 1.3
 

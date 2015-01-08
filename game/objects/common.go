@@ -1,11 +1,13 @@
+// Copyright 2015 Pushkin Ivan. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package objects
 
 import (
 	"errors"
 	"math/rand"
 	"time"
-
-	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 )
 
 type errCreateObject struct {
@@ -24,13 +26,11 @@ func (e *errStartingObject) Error() string {
 	return "cannot start object: " + e.err.Error()
 }
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 type GameProcessor interface {
-	OccurredError(err error)
-	OccurredCreating(object playground.Object)
-	OccurredDeleting(object playground.Object)
-	OccurredUpdating(object playground.Object)
+	OccurredError(object interface{}, err error)
+	OccurredCreating(object interface{})
+	OccurredDeleting(object interface{})
+	OccurredUpdating(object interface{})
 }
 
 var (
@@ -38,3 +38,5 @@ var (
 	errNilGameProcessor = errors.New("game processor is nil")
 	errEmptyDotList     = errors.New("empty dot list")
 )
+
+var random = rand.New(rand.NewSource(time.Now().UnixNano()))
