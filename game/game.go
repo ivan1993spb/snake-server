@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	// "bitbucket.org/pushkin_ivan/clever-snake/game/playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 )
 
 type Game struct {
 	cxt context.Context
+	pg  *playground.Playground
 }
 
 type errStartingGame struct {
@@ -27,7 +28,12 @@ func NewGame(cxt context.Context, pgW, pgH uint8) (*Game, error) {
 		return nil, &errStartingGame{err}
 	}
 
-	return &Game{cxt}, nil
+	pg, err := playground.NewPlayground(pgW, pgH)
+	if err != nil {
+		return nil, &errStartingGame{err}
+	}
+
+	return &Game{cxt, pg}, nil
 }
 
 func (g *Game) StartGame() chan interface{} {
