@@ -3,7 +3,7 @@ package objects
 import (
 	"time"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"golang.org/x/net/context"
 )
 
@@ -12,36 +12,35 @@ const _CORPSE_MAX_EXPERIENCE = time.Second * 15
 
 // Snakes can eat corpses
 type Corpse struct {
+	p  GameProcessor
 	pg *playground.Playground
 
-	dots playground.DotList
-
-	updated time.Time
-
-	// last nipped piece
-	nippedPiece *playground.Dot
+	dots        playground.DotList
+	nippedPiece *playground.Dot // last nipped piece
 
 	stop context.CancelFunc
 }
 
 // Corpses are created when a snake dies
-func CreateCorpse(pg *playground.Playground, cxt context.Context,
-	dots playground.DotList) (*Corpse, error) {
-
+func CreateCorpse(p GameProcessor, pg *playground.Playground,
+	cxt context.Context, dots playground.DotList) (*Corpse, error) {
+	if p == nil {
+		return nil, &errCreateObject{errNilGameProcessor}
+	}
 	if pg == nil {
-		return nil, &errCreateObject{playground.ErrNilPlayground}
+		return nil, &errCreateObject{errNilPlayground}
 	}
 	if len(dots) == 0 {
-		return nil, &errCreateObject{playground.ErrEmptyDotList}
+		return nil, &errCreateObject{errEmptyDotList}
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, &errCreateObject{err}
 	}
 
-	ccxt, cancel := context.WithCancel(cxt)
-	corpse := &Corpse{pg, dots, time.Now(), nil, cancel}
+	ccxt, cancel := context.WithTimeout(cxt, _CORPSE_MAX_EXPERIENCE)
+	corpse := &Corpse{p, pg, dots, nil, cancel}
 
-	if err := pg.Locate(corpse); err != nil {
+	if err := pg.Locate(corpse, true); err != nil {
 		return nil, &errCreateObject{err}
 	}
 
@@ -49,6 +48,8 @@ func CreateCorpse(pg *playground.Playground, cxt context.Context,
 		pg.Delete(corpse)
 		return nil, &errCreateObject{err}
 	}
+
+	p.OccurredCreating(corpse)
 
 	return corpse, nil
 }
@@ -66,25 +67,6 @@ func (c *Corpse) Dot(i uint16) *playground.Dot {
 	return nil
 }
 
-// Implementing playground.Object interface
-func (c *Corpse) Pack() string {
-	return c.dots.Pack()
-}
-
-// Implementing playground.Shifting interface. Updated returns last
-// time when a piece of corpse was eaten
-func (c *Corpse) Updated() time.Time {
-	return c.updated
-}
-
-// Implementing playground.Shifting interface
-func (c *Corpse) PackChanges() string {
-	if c.nippedPiece != nil {
-		return "nip" + c.nippedPiece.Pack()
-	}
-	return c.Pack()
-}
-
 // Implementing logic.Food interface
 func (c *Corpse) NutritionalValue(dot *playground.Dot) int8 {
 	if c.dots.Contains(dot) {
@@ -92,13 +74,9 @@ func (c *Corpse) NutritionalValue(dot *playground.Dot) int8 {
 
 		if len(c.dots) > 0 {
 			c.nippedPiece = dot
-			c.updated = time.Now()
+			c.p.OccurredUpdating(c)
 		} else {
-			// Remove corpse if it was eaten
-			c.pg.Delete(c)
-			if c.stop != nil {
-				c.stop()
-			}
+			c.stop()
 		}
 
 		return 2
@@ -113,15 +91,13 @@ func (c *Corpse) run(cxt context.Context) error {
 	}
 
 	go func() {
-		select {
-		case <-cxt.Done():
-			// If pool are closed or corpse was eaten
-		case <-time.After(_CORPSE_MAX_EXPERIENCE):
-			// If corpse lies too long
-		}
+		<-cxt.Done()
+
 		if c.pg.Located(c) {
 			c.pg.Delete(c)
 		}
+
+		c.p.OccurredDeleting(c)
 	}()
 
 	return nil

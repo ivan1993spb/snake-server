@@ -3,7 +3,7 @@ package objects
 import (
 	"time"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"golang.org/x/net/context"
 )
 
@@ -23,36 +23,40 @@ const (
 )
 
 type Watermelon struct {
-	pg      *playground.Playground
-	dots    [_WATERMELON_AREA]*playground.Dot
-	updated time.Time
-	cancel  context.CancelFunc
+	p  GameProcessor
+	pg *playground.Playground
+
+	dots [_WATERMELON_AREA]*playground.Dot
+	stop context.CancelFunc
 }
 
-func CreateWatermelon(pg *playground.Playground, cxt context.Context,
-) (*Watermelon, error) {
-
+func CreateWatermelon(p GameProcessor, pg *playground.Playground,
+	cxt context.Context) (*Watermelon, error) {
+	if p == nil {
+		return nil, &errCreateObject{errNilGameProcessor}
+	}
 	if pg == nil {
-		return nil, &errCreateObject{playground.ErrNilPlayground}
+		return nil, &errCreateObject{errNilPlayground}
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, &errCreateObject{err}
 	}
 
-	dots, err := pg.GetEmptyField(_WATERMELON_W, _WATERMELON_H)
+	e, err := pg.GetRandomEmptyRect(_WATERMELON_W, _WATERMELON_H)
 	if err != nil {
 		return nil, &errCreateObject{err}
 	}
+	dots := playground.EntityToDotList(e)
 
-	wcxt, cncl := context.WithCancel(cxt)
+	wcxt, cncl := context.WithTimeout(cxt, _WATERMELON_MAX_EXPERIENCE)
 	watermelon := &Watermelon{
-		pg:      pg,
-		updated: time.Now(),
-		cancel:  cncl,
+		p:    p,
+		pg:   pg,
+		stop: cncl,
 	}
 	copy(watermelon.dots[:], dots[:_WATERMELON_AREA])
 
-	if err := pg.Locate(watermelon); err != nil {
+	if err := pg.Locate(watermelon, true); err != nil {
 		return nil, &errCreateObject{err}
 	}
 
@@ -60,6 +64,8 @@ func CreateWatermelon(pg *playground.Playground, cxt context.Context,
 		pg.Delete(watermelon)
 		return nil, &errCreateObject{err}
 	}
+
+	p.OccurredCreating(watermelon)
 
 	return watermelon, nil
 }
@@ -71,6 +77,7 @@ func (w *Watermelon) DotCount() (c uint16) {
 			c++
 		}
 	}
+
 	return
 }
 
@@ -90,52 +97,34 @@ func (w *Watermelon) Dot(i uint16) (dot *playground.Dot) {
 	return
 }
 
-// Implementing playground.Object interface
-func (w *Watermelon) Pack() (res string) {
-	for _, dot := range w.dots {
-		if dot != nil {
-			res += ";" + dot.Pack()
-		} else {
-			res += ";_"
-		}
-	}
-	if len(res) > 0 {
-		res = res[1:]
-	}
-	return
-}
-
-// Implementing playground.Shifting interface
-func (w *Watermelon) PackChanges() string {
-	var output string
-	for _, dot := range w.dots {
-		if dot != nil {
-			output += "1"
-		} else {
-			output += "0"
-		}
-	}
-	return output
-}
-
-// Implementing playground.Shifting interface
-func (w *Watermelon) Updated() time.Time {
-	return w.updated
-}
-
 // Implementing logic.Food interface
 func (w *Watermelon) NutritionalValue(dot *playground.Dot) int8 {
 	for i := range w.dots {
 		if w.dots[i].Equals(dot) {
-			w.updated = time.Now()
 			w.dots[i] = nil
+
+			w.p.OccurredUpdating(w)
 
 			return _WATERMELON_MIN_NUTR_VALUE +
 				int8(random.Intn(_WATERMELON_NUTR_VAR))
 		}
 	}
 
+	if w.isEaten() {
+		w.stop()
+	}
+
 	return 0
+}
+
+func (w *Watermelon) isEaten() bool {
+	for i := 0; i < _WATERMELON_AREA; i++ {
+		if w.dots[i] != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (w *Watermelon) run(cxt context.Context) error {
@@ -144,13 +133,13 @@ func (w *Watermelon) run(cxt context.Context) error {
 	}
 
 	go func() {
-		select {
-		case <-cxt.Done():
-		case <-time.After(_WATERMELON_MAX_EXPERIENCE):
-		}
+		<-cxt.Done()
+
 		if w.pg.Located(w) {
 			w.pg.Delete(w)
 		}
+
+		w.p.OccurredUpdating(w)
 	}()
 
 	return nil

@@ -1,13 +1,13 @@
 package objects
 
 import (
+	"errors"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
 
-	"bitbucket.org/pushkin_ivan/clever-snake/logic"
-	"bitbucket.org/pushkin_ivan/clever-snake/playground"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/logic"
+	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"golang.org/x/net/context"
 )
 
@@ -20,6 +20,7 @@ const (
 
 // Snake object
 type Snake struct {
+	p  GameProcessor
 	pg *playground.Playground
 
 	dots   playground.DotList
@@ -28,23 +29,19 @@ type Snake struct {
 	// Next motion direction
 	nextDirection playground.Direction
 
-	// Time of last movement
-	lastMove time.Time
-
-	// parentCxt is used to create corpse when snake dies
-	parentCxt context.Context
-
 	// stop is CancelFunc of child context of parentCxt which belonges
 	// to snake. Calling stop() stops snake
 	stop context.CancelFunc
 }
 
 // CreateSnake creates new snake
-func CreateSnake(pg *playground.Playground, cxt context.Context,
-) (*Snake, error) {
-
+func CreateSnake(p GameProcessor, pg *playground.Playground,
+	cxt context.Context) (*Snake, error) {
+	if p == nil {
+		return nil, &errCreateObject{errNilGameProcessor}
+	}
 	if pg == nil {
-		return nil, &errCreateObject{playground.ErrNilPlayground}
+		return nil, &errCreateObject{errNilPlayground}
 	}
 	if err := cxt.Err(); err != nil {
 		return nil, &errCreateObject{err}
@@ -56,29 +53,29 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 		err  error
 	)
 
+	var e playground.Entity
 	switch dir {
 	case playground.DIR_NORTH, playground.DIR_SOUTH:
-		dots, err = pg.GetEmptyField(1, uint8(_SNAKE_START_LENGTH))
+		e, err = pg.GetRandomEmptyRect(1, uint8(_SNAKE_START_LENGTH))
 	case playground.DIR_EAST, playground.DIR_WEST:
-		dots, err = pg.GetEmptyField(uint8(_SNAKE_START_LENGTH), 1)
+		e, err = pg.GetRandomEmptyRect(uint8(_SNAKE_START_LENGTH), 1)
 	}
 
 	if err != nil {
 		return nil, &errCreateObject{err}
 	}
 
+	dots = playground.EntityToDotList(e)
+
 	if dir == playground.DIR_SOUTH || dir == playground.DIR_EAST {
 		dots = dots.Reverse()
 	}
 
-	// Parent context stores in snake to pass it to corpse when snake
-	// will be died. Snakes context are passed in run func
 	scxt, cncl := context.WithCancel(cxt)
 
-	snake := &Snake{pg, dots, _SNAKE_START_LENGTH, dir, time.Now(),
-		cxt, cncl}
+	snake := &Snake{p, pg, dots, _SNAKE_START_LENGTH, dir, cncl}
 
-	if err = pg.Locate(snake); err != nil {
+	if err = pg.Locate(snake, true); err != nil {
 		return nil, &errCreateObject{err}
 	}
 
@@ -86,6 +83,8 @@ func CreateSnake(pg *playground.Playground, cxt context.Context,
 		pg.Delete(snake)
 		return nil, &errCreateObject{err}
 	}
+
+	p.OccurredCreating(snake)
 
 	return snake, nil
 }
@@ -103,29 +102,12 @@ func (s *Snake) Dot(i uint16) *playground.Dot {
 	return nil
 }
 
-// Implementing playground.Object interface
-func (s *Snake) Pack() string {
-	return strconv.Itoa(int(s.length)) + "%" + s.dots.Pack()
-}
-
-// Implementing playground.Shifting interface
-func (s *Snake) Updated() time.Time {
-	return s.lastMove
-}
-
-// Implementing playground.Shifting interface
-func (s *Snake) PackChanges() string {
-	return strconv.Itoa(int(s.length)) + "%" + s.dots[0].Pack() +
-		"-" + s.dots[len(s.dots)-1].Pack()
-}
-
 // Implementing logic.Living interface
 func (s *Snake) Die() {
 	s.pg.Delete(s)
 	if s.stop != nil {
 		s.stop()
 	}
-	CreateCorpse(s.pg, s.parentCxt, s.dots)
 }
 
 // Implementing logic.Living interface
@@ -146,19 +128,21 @@ func (s *Snake) run(cxt context.Context) error {
 	}
 
 	go func() {
+		var ticker = time.NewTicker(s.calculateDelay())
+
 		defer func() {
 			if s.pg.Located(s) {
 				s.Die()
 			}
+			ticker.Stop()
+			s.p.OccurredDeleting(s)
 		}()
-
-		var ticker = time.Tick(s.calculateDelay())
 
 		for {
 			select {
 			case <-cxt.Done():
 				return
-			case <-ticker:
+			case <-ticker.C:
 			}
 
 			if !s.pg.Located(s) {
@@ -168,11 +152,13 @@ func (s *Snake) run(cxt context.Context) error {
 			// Calculate next position
 			dot, err := s.getNextHeadDot()
 			if err != nil {
+				s.p.OccurredError(err)
 				return
 			}
 
 			if object := s.pg.GetObjectByDot(dot); object != nil {
 				if err = logic.Clash(s, object, dot); err != nil {
+					s.p.OccurredError(err)
 					return
 				}
 
@@ -180,7 +166,7 @@ func (s *Snake) run(cxt context.Context) error {
 					return
 				}
 
-				ticker = time.Tick(s.calculateDelay())
+				ticker = time.NewTicker(s.calculateDelay())
 			}
 
 			tmpDots := make(playground.DotList, len(s.dots)+1)
@@ -191,8 +177,6 @@ func (s *Snake) run(cxt context.Context) error {
 			if s.length < s.DotCount() {
 				s.dots = s.dots[:len(s.dots)-1]
 			}
-
-			s.lastMove = time.Now()
 		}
 	}()
 
@@ -211,7 +195,7 @@ func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
 		return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
 	}
 	return nil, fmt.Errorf("Cannot get next head dot: %s",
-		playground.ErrEmptyDotList)
+		errEmptyDotList)
 }
 
 // Implementing logic.Controlled interface
@@ -226,17 +210,29 @@ func (s *Snake) Command(cmd string) error {
 	case "w":
 		s.setMovementDirection(playground.DIR_WEST)
 	default:
-		return logic.ErrExecuteCommand
+		return errors.New("cannot execute command")
 	}
 	return nil
 }
 
-func (s *Snake) setMovementDirection(nextDir playground.Direction) {
+func (s *Snake) setMovementDirection(nextDir playground.Direction,
+) error {
 	if playground.ValidDirection(nextDir) {
 		currDir := playground.CalculateDirection(s.dots[1], s.dots[0])
+		rNextDir, err := playground.ReverseDirection(nextDir)
+		if err != nil {
+			return fmt.Errorf("cannot set movement direction: %s",
+				err)
+		}
+
 		// Next direction cannot be opposite to current direction
-		if playground.ReverseDirection(nextDir) != currDir {
+		if rNextDir == currDir {
+			return errors.New("next direction cannot be opposite to" +
+				" current direction")
+		} else {
 			s.nextDirection = nextDir
 		}
 	}
+
+	return nil
 }

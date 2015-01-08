@@ -32,6 +32,10 @@ func (pg *Playground) GetArea() uint16 {
 	return uint16(pg.width) * uint16(pg.height)
 }
 
+func (pg *Playground) GetSize() (uint8, uint8) {
+	return pg.width, pg.height
+}
+
 // Occupied returns true if passed dot already used by any object
 // located on playground
 func (pg *Playground) Occupied(dot *Dot) bool {

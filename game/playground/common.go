@@ -10,6 +10,16 @@ type Entity interface {
 	DotCount() uint16  // DotCount must return dot count
 }
 
+func EntityToDotList(e Entity) DotList {
+	dots := make(DotList, 0, e.DotCount())
+
+	for i := uint16(0); i < e.DotCount(); i++ {
+		dots = append(dots, e.Dot(0))
+	}
+
+	return dots
+}
+
 type Object interface {
 	Entity
 }
