@@ -48,24 +48,22 @@ func CreateSnake(p GameProcessor, pg *playground.Playground,
 	}
 
 	var (
-		dir  = playground.RandomDirection()
-		dots playground.DotList
-		err  error
+		dir = playground.RandomDirection()
+		err error
+		e   playground.Entity
 	)
 
-	var e playground.Entity
 	switch dir {
 	case playground.DIR_NORTH, playground.DIR_SOUTH:
 		e, err = pg.GetRandomEmptyRect(1, uint8(_SNAKE_START_LENGTH))
 	case playground.DIR_EAST, playground.DIR_WEST:
 		e, err = pg.GetRandomEmptyRect(uint8(_SNAKE_START_LENGTH), 1)
 	}
-
 	if err != nil {
 		return nil, &errCreateObject{err}
 	}
 
-	dots = playground.EntityToDotList(e)
+	dots := playground.EntityToDotList(e)
 
 	if dir == playground.DIR_SOUTH || dir == playground.DIR_EAST {
 		dots = dots.Reverse()
@@ -99,6 +97,7 @@ func (s *Snake) Dot(i uint16) *playground.Dot {
 	if uint16(len(s.dots)) > i {
 		return s.dots[i]
 	}
+
 	return nil
 }
 
@@ -184,8 +183,8 @@ func (s *Snake) run(cxt context.Context) error {
 }
 
 func (s *Snake) calculateDelay() time.Duration {
-	k := math.Pow(_SNAKE_SPEED_FACTOR, float64(s.length))
-	return time.Duration(k * float64(_SNAKE_START_SPEED))
+	return time.Duration(math.Pow(_SNAKE_SPEED_FACTOR,
+		float64(s.length)) * float64(_SNAKE_START_SPEED))
 }
 
 // getNextHeadDot calculates new position of snake's head by its
@@ -194,7 +193,8 @@ func (s *Snake) getNextHeadDot() (*playground.Dot, error) {
 	if len(s.dots) > 0 {
 		return s.pg.Navigate(s.dots[0], s.nextDirection, 1)
 	}
-	return nil, fmt.Errorf("Cannot get next head dot: %s",
+
+	return nil, fmt.Errorf("cannot get next head dot: %s",
 		errEmptyDotList)
 }
 

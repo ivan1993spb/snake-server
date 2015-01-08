@@ -44,6 +44,7 @@ func (a *Apple) Dot(i uint16) *playground.Dot {
 	if i == 0 {
 		return a.dot
 	}
+
 	return nil
 }
 

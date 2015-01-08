@@ -24,7 +24,7 @@ func NewPlayground(width, height uint8) (*Playground, error) {
 			ErrInvalid_W_or_H)
 	}
 
-	return &Playground{width, height, make([]Object, 0, 0)}, nil
+	return &Playground{width, height, make([]Object, 0)}, nil
 }
 
 // GetArea returns playground area

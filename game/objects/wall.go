@@ -22,7 +22,7 @@ func CreateWall(p GameProcessor, pg *playground.Playground,
 		return nil, &errCreateObject{errEmptyDotList}
 	}
 
-	var wall *Wall = &Wall{p, pg, dots}
+	wall := &Wall{p, pg, dots}
 
 	if err := pg.Locate(wall, true); err != nil {
 		return nil, &errCreateObject{err}
@@ -38,9 +38,9 @@ func CreateLongWall(p GameProcessor, pg *playground.Playground,
 	var (
 		pgW, pgH = pg.GetSize()
 		err      error
+		e        playground.Entity
 	)
 
-	var e playground.Entity
 	switch playground.RandomDirection() {
 	case playground.DIR_NORTH, playground.DIR_SOUTH:
 		e, err = pg.GetRandomEmptyRect(1, pgH)
@@ -49,14 +49,11 @@ func CreateLongWall(p GameProcessor, pg *playground.Playground,
 	default:
 		err = playground.ErrInvalidDirection
 	}
-
 	if err != nil {
 		return nil, err
 	}
 
-	dots := playground.EntityToDotList(e)
-
-	return CreateWall(p, pg, dots)
+	return CreateWall(p, pg, playground.EntityToDotList(e))
 }
 
 // Implementing playground.Object interface
