@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -88,7 +87,7 @@ func (s *Stream) AddConn(ww *WebsocketWrapper) {
 	s.conns = append(s.conns, ww)
 }
 
-func (s *Stream) DelConn(ww *WebsocketWrapper) error {
+func (s *Stream) DelConn(ww *WebsocketWrapper) {
 	for i := range s.conns {
 		if s.conns[i] == ww {
 			s.conns = append(s.conns[:i], s.conns[i+1:]...)
