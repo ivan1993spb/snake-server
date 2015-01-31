@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Stream is common pool data stream
 type Stream struct {
 	cxt   context.Context
 	conns []*WebsocketWrapper
@@ -26,16 +27,18 @@ func NewStream(cxt context.Context, src <-chan *OutputMessage) (
 		return nil, fmt.Errorf("cannot create stream: %s", err)
 	}
 
-	wg := new(sync.WaitGroup)
-
 	scxt, cancel := context.WithCancel(cxt)
 
-	s := &Stream{scxt, make([]*WebsocketWrapper, 0),
-		make(chan *OutputMessage), wg}
+	s := &Stream{
+		scxt,
+		make([]*WebsocketWrapper, 0),
+		make(chan *OutputMessage),
+		new(sync.WaitGroup),
+	}
 	s.AddSource(src)
 
 	go func() {
-		wg.Wait()
+		s.wg.Wait()
 		cancel()
 	}()
 
@@ -75,29 +78,23 @@ func NewStream(cxt context.Context, src <-chan *OutputMessage) (
 	return s, nil
 }
 
-func (s *Stream) AddConn(ww *WebsocketWrapper) error {
+func (s *Stream) AddConn(ww *WebsocketWrapper) {
 	for i := range s.conns {
 		if s.conns[i] == ww {
-			return errors.New("cannot create connection to common" +
-				" pool stream: passed connection already exists")
+			return
 		}
 	}
 
 	s.conns = append(s.conns, ww)
-
-	return nil
 }
 
 func (s *Stream) DelConn(ww *WebsocketWrapper) error {
 	for i := range s.conns {
 		if s.conns[i] == ww {
 			s.conns = append(s.conns[:i], s.conns[i+1:]...)
-			return nil
+			return
 		}
 	}
-
-	return errors.New("cannot delete connection from common pool" +
-		" stream: passed connection was not found")
 }
 
 func (s *Stream) AddSource(src <-chan *OutputMessage) {

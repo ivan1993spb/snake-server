@@ -14,19 +14,6 @@ import (
 
 type GameConnManager struct{}
 
-func NewGameConnManager() *GameConnManager {
-	return new(GameConnManager)
-}
-
-type errConnProcessing struct {
-	err error
-}
-
-func (e *errConnProcessing) Error() string {
-	return "error of connection processing in connection manager: " +
-		e.err.Error()
-}
-
 func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	poolFeatures *PoolFeatures) error {
 
@@ -36,19 +23,17 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	}
 
 	// Setup game stream
+
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("creating connection to common game stream")
 	}
-	if err := poolFeatures.stream.AddConn(ww); err != nil {
-		return &errConnProcessing{err}
-	}
+	poolFeatures.stream.AddConn(ww)
+
 	defer func() {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("removing connection from common game stream")
 		}
-		if err := poolFeatures.stream.DelConn(ww); err != nil {
-			glog.Errorln(&errConnProcessing{err})
-		}
+		poolFeatures.stream.DelConn(ww)
 	}()
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -57,6 +42,7 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 
 	// Channel for player commands
 	input := make(chan *game.Command)
+	defer close(input)
 
 	// Starting command accepter
 
@@ -92,7 +78,7 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	// that is useful only for current player
 	output, err := poolFeatures.startPlayer(poolFeatures.cxt, input)
 	if err != nil {
-		return &errConnProcessing{err}
+		return fmt.Errorf("connection processing error: %s", err)
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -109,6 +95,7 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			defer glog.Infoln("private game stream finished")
 		}
+
 		for {
 			select {
 			case <-poolFeatures.cxt.Done():
@@ -119,9 +106,10 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 				}
 
 				if err := ww.Send(HEADER_GAME, data); err != nil {
-					glog.Errorln(&errConnProcessing{fmt.Errorf(
-						"cannot send private game data: %s", err,
-					)})
+					glog.Errorln(
+						"cannot send private game data:",
+						err,
+					)
 					return
 				}
 			}
@@ -133,11 +121,9 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	select {
-	case <-ww.Closed:
-	case <-poolFeatures.cxt.Done():
+	case <-ww.Closed: // Waiting for connection closing
+	case <-poolFeatures.cxt.Done(): // Waiting for pool finishing
 	}
-
-	close(input)
 
 	return nil
 }

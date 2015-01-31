@@ -216,7 +216,7 @@ func main() {
 	}
 
 	// Init game connection manager
-	gameConnManager := NewGameConnManager()
+	gameConnManager := new(GameConnManager)
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("game connection manager was created")
 	}

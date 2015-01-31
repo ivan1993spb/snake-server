@@ -22,7 +22,8 @@ type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-// TokenVerifierMux verifies each accepted connection by passed token
+// TokenVerifierMux verifies each accepted connection by passed token.
+// Tokens must be valid and unique
 type TokenVerifierMux struct {
 	Mux
 	poolManager *GamePoolManager
@@ -80,10 +81,10 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("token was received and parsed")
-			glog.Infoln("checking sum")
+			glog.Infoln("checking hash sum")
 		}
 
-		// Checking token
+		// Checking token hash sum
 
 		sum, err := hex.DecodeString(token.Sum)
 		if err != nil {
@@ -93,11 +94,12 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 
 		if len(sum) != sha256.Size {
 			glog.Errorln(&errConnNotTrusted{
-				errors.New("ivalid sum size")},
+				errors.New("ivalid hash size")},
 			)
 			goto forbidden
 		}
 
+		// Calculate valid hash sum and compare
 		validSum := sha256.Sum256([]byte(v.hashSalt + token.Part))
 
 		for i := 0; i < sha256.Size; i++ {
@@ -114,11 +116,12 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 			glog.Infoln("verifying token uniqueness")
 		}
 
+		// Check token uniqueness
 		for _, request := range v.poolManager.GetRequests() {
 			// tokenStr is encoded token
 			if tokenStr == request.FormValue(FORM_KEY_TOKEN) {
 				if glog.V(INFOLOG_LEVEL_CONNS) {
-					glog.Warningln("found equal token")
+					glog.Warningln("token is not unique")
 				}
 				goto forbidden
 			}
@@ -141,7 +144,7 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 forbidden:
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Warningln("forbidden")
+		glog.Warningln("access forbidden")
 	}
 
 	http.Error(w, http.StatusText(http.StatusForbidden),

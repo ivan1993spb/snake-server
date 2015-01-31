@@ -3,11 +3,12 @@
 // license that can be found in the LICENSE file.
 
 /*
-Input and output data is JSON objects:
+Input and output data in websocket is JSON objects with format:
 
 	{"header": HEADER, "data": DATA}
 
 */
+
 package main
 
 import "encoding/json"

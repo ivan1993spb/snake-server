@@ -15,7 +15,7 @@ import (
 // Form key for passing pool id
 const FORM_KEY_POOL_ID = "pool_id"
 
-// PoolFactory must generate new pool
+// PoolFactory generates new pool
 type PoolFactory func() (*GamePool, error)
 
 type GamePoolManager struct {
@@ -104,7 +104,7 @@ func (pm *GamePoolManager) AddConn(ww *WebsocketWrapper,
 		if !pm.pools[id].IsFull() {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("was found not full pool")
-				glog.Infoln("creating connection to pool")
+				glog.Infoln("creating connection to found pool")
 			}
 
 			if err := ww.Send(HEADER_POOL_ID, id); err != nil {
@@ -135,7 +135,7 @@ func (pm *GamePoolManager) AddConn(ww *WebsocketWrapper,
 		return nil, &errCannotAddConn{err}
 	}
 
-	// Save the pool
+	// Save the pool with first free id
 	for id := uint16(0); int(id) <= len(pm.pools); id++ {
 		if _, occupied := pm.pools[id]; !occupied {
 			pm.pools[id] = pool
@@ -170,7 +170,6 @@ func (e *errCannotDelConn) Error() string {
 
 func (pm *GamePoolManager) DelConn(ww *WebsocketWrapper) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("try to remove information about connection")
 		glog.Infoln("try to find pool of connection")
 	}
 
@@ -207,8 +206,8 @@ func (pm *GamePoolManager) DelConn(ww *WebsocketWrapper) error {
 }
 
 type PoolInfo struct {
-	PoolId    uint16 `json:"pool_id"`
-	ConnCount uint16 `json:"conn_count"`
+	PoolId    uint16 `json:"pool_id"`    // Pool id
+	ConnCount uint16 `json:"conn_count"` // Connection number in pool
 }
 
 func (pm *GamePoolManager) PoolInfoList() []*PoolInfo {

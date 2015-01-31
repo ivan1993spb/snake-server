@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// NewGamePoolFactory creates new game pool with passed params
 func NewGamePoolFactory(cxt context.Context, connLimit uint16,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := cxt.Err(); err != nil {
@@ -35,15 +36,17 @@ type GamePool struct {
 	conns map[uint16]*WebsocketWrapper
 	// Max connection count per pool
 	connLimit uint16
+
 	// Pool context
 	cxt context.Context
 	// stopPool stops all pool goroutines
 	stopPool context.CancelFunc
+
 	// stream is pool stream
 	stream *Stream
 	// game is game of pool
 	game *game.Game
-
+	// noticeC channel for pool notifications
 	noticeC chan *OutputMessage
 }
 
@@ -55,8 +58,8 @@ func (e *errCannotCreatePool) Error() string {
 	return "cannot create pool: " + e.err.Error()
 }
 
-func NewGamePool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
-) (*GamePool, error) {
+func NewGamePool(cxt context.Context, connLimit uint16,
+	pgW, pgH uint8) (*GamePool, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -69,36 +72,33 @@ func NewGamePool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
-	game, err := game.NewGame(pcxt, pgW, pgH)
-	if err != nil {
-		return nil, &errCannotCreatePool{err}
-	}
-
+	// Channel for pool notifications
 	noticeC := make(chan *OutputMessage)
-	stream, err := NewStream(
-		// Pool context
-		pcxt,
-		// Common game channel for common game data of pool
-		noticeC,
-	)
+
+	// Common pool data stream
+	stream, err := NewStream(pcxt, noticeC)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
-	stream.AddSourceHeader(HEADER_GAME, game.StartGame())
-
 	if glog.V(INFOLOG_LEVEL_POOLS) {
-		glog.Infoln("game was started")
 		glog.Infoln("stream was started")
 	}
 
+	game, err := game.NewGame(pcxt, pgW, pgH)
+	if err != nil {
+		// Close pool notification channel
+		close(noticeC)
+		return nil, &errCannotCreatePool{err}
+	}
+	stream.AddSourceHeader(HEADER_GAME, game.StartGame())
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("game was started")
+	}
+
 	return &GamePool{
-		make(map[uint16]*WebsocketWrapper),
-		connLimit,
-		pcxt,
-		cancel,
-		stream,
-		game,
-		noticeC,
+		make(map[uint16]*WebsocketWrapper), connLimit,
+		pcxt, cancel,
+		stream, game, noticeC,
 	}, nil
 }
 
@@ -136,7 +136,7 @@ func (p *GamePool) AddConn(ww *WebsocketWrapper,
 	}
 	if p.HasConn(ww) {
 		return nil, &errCannotAddConnToPool{
-			errors.New("passed connection already added in pool"),
+			errors.New("passed connection already added to pool"),
 		}
 	}
 
@@ -158,7 +158,7 @@ func (p *GamePool) AddConn(ww *WebsocketWrapper,
 		glog.Infoln("connection was created to pool")
 	}
 
-	p.Send(HEADER_INFO, "user created in pool")
+	p.Send(HEADER_INFO, "user created to pool")
 
 	return &PoolFeatures{
 		p.cxt,
@@ -201,8 +201,7 @@ func (p *GamePool) DelConn(ww *WebsocketWrapper) error {
 		}
 	}
 
-	return errors.New("cannot delete connection from pool: " +
-		"connection was not found in pool")
+	return errors.New("cannot delete connection from pool: connection was not found")
 }
 
 // HasConn returns true if passed connection belongs to current pool
