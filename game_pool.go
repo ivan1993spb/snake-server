@@ -11,19 +11,17 @@ import (
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
-	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/context"
-	"golang.org/x/net/websocket"
 )
 
-func NewPGPoolFactory(cxt context.Context, connLimit uint16,
+func NewGamePoolFactory(cxt context.Context, connLimit uint16,
 	pgW, pgH uint8) (PoolFactory, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("cannot create pool factory: %s", err)
 	}
 
-	return func() (Pool, error) {
-		pool, err := NewPGPool(cxt, connLimit, pgW, pgH)
+	return func() (*GamePool, error) {
+		pool, err := NewGamePool(cxt, connLimit, pgW, pgH)
 		if err != nil {
 			return nil, err
 		}
@@ -32,21 +30,21 @@ func NewPGPoolFactory(cxt context.Context, connLimit uint16,
 	}, nil
 }
 
-type PGPool struct {
+type GamePool struct {
 	// conns is connections in the pool
-	conns map[uint16]*websocket.Conn
+	conns map[uint16]*WebsocketWrapper
 	// Max connection count per pool
 	connLimit uint16
 	// Pool context
 	cxt context.Context
 	// stopPool stops all pool goroutines
 	stopPool context.CancelFunc
-	// startStreamConn starts stream for passed websocket connection
-	startStreamConn StartStreamConnFunc
-	// stopStreamConn stops stream for passed websocket connection
-	stopStreamConn StopStreamConnFunc
+	// stream is pool stream
+	stream *Stream
 	// game is game of pool
 	game *game.Game
+
+	noticeC chan *OutputMessage
 }
 
 type errCannotCreatePool struct {
@@ -57,8 +55,8 @@ func (e *errCannotCreatePool) Error() string {
 	return "cannot create pool: " + e.err.Error()
 }
 
-func NewPGPool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
-) (*PGPool, error) {
+func NewGamePool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
+) (*GamePool, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
@@ -76,44 +74,48 @@ func NewPGPool(cxt context.Context, connLimit uint16, pgW, pgH uint8,
 		return nil, &errCannotCreatePool{err}
 	}
 
-	startStreamConn, stopStreamConn := StartGameStream(
+	noticeC := make(chan *OutputMessage)
+	stream, err := NewStream(
 		// Pool context
 		pcxt,
 		// Common game channel for common game data of pool
-		game.StartGame(),
+		noticeC,
 	)
+	if err != nil {
+		return nil, &errCannotCreatePool{err}
+	}
+	stream.AddSourceHeader(HEADER_GAME, game.StartGame())
+
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("game was started")
 		glog.Infoln("stream was started")
 	}
 
-	return &PGPool{
-		make(map[uint16]*websocket.Conn),
+	return &GamePool{
+		make(map[uint16]*WebsocketWrapper),
 		connLimit,
 		pcxt,
 		cancel,
-		startStreamConn,
-		stopStreamConn,
+		stream,
 		game,
+		noticeC,
 	}, nil
 }
 
-// Implementing Pool interface
-func (p *PGPool) IsFull() bool {
+// IsFull returns true if game pool is full
+func (p *GamePool) IsFull() bool {
 	return len(p.conns) == int(p.connLimit)
 }
 
-// Implementing Pool interface
-func (p *PGPool) IsEmpty() bool {
+// IsEmpty returns true if game pool is empty
+func (p *GamePool) IsEmpty() bool {
 	return len(p.conns) == 0
 }
 
 type PoolFeatures struct {
-	startStreamConn StartStreamConnFunc
-	stopStreamConn  StopStreamConnFunc
-	// startPlayer starts player
-	startPlayer game.StartPlayerFunc
 	cxt         context.Context
+	startPlayer game.StartPlayerFunc
+	stream      *Stream
 }
 
 type errCannotAddConnToPool struct {
@@ -124,15 +126,15 @@ func (e *errCannotAddConnToPool) Error() string {
 	return "cannot add connection to pool: " + e.err.Error()
 }
 
-// Implementing Pool interface
-func (p *PGPool) AddConn(ws *websocket.Conn) (
-	pwshandler.Environment, error) {
+// AddConn creates connection in game pool
+func (p *GamePool) AddConn(ww *WebsocketWrapper,
+) (*PoolFeatures, error) {
 	if p.IsFull() {
 		return nil, &errCannotAddConnToPool{
 			errors.New("pool is full"),
 		}
 	}
-	if p.HasConn(ws) {
+	if p.HasConn(ww) {
 		return nil, &errCannotAddConnToPool{
 			errors.New("passed connection already added in pool"),
 		}
@@ -140,10 +142,9 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 
 	for id := uint16(0); int(id) <= len(p.conns); id++ {
 		if _, occupied := p.conns[id]; !occupied {
-			p.conns[id] = ws
+			p.conns[id] = ww
 
-			err := SendMessage(ws, HEADER_CONN_ID, id)
-			if err != nil {
+			if err := ww.Send(HEADER_CONN_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					fmt.Errorf("cannot send connection id: %s", err),
 				}
@@ -157,25 +158,28 @@ func (p *PGPool) AddConn(ws *websocket.Conn) (
 		glog.Infoln("connection was created to pool")
 	}
 
+	p.Send(HEADER_INFO, "user created in pool")
+
 	return &PoolFeatures{
-		p.startStreamConn,
-		p.stopStreamConn,
-		p.game.StartPlayer,
 		p.cxt,
+		p.game.StartPlayer,
+		p.stream,
 	}, nil
 }
 
-// Implementing Pool interface
-func (p *PGPool) DelConn(ws *websocket.Conn) error {
+// DelConn removes connection from game pool
+func (p *GamePool) DelConn(ww *WebsocketWrapper) error {
 	for id := range p.conns {
 		// Find connection
-		if p.conns[id] == ws {
+		if p.conns[id] == ww {
 			// Remove connection
 			delete(p.conns, id)
 
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("connection was found and removed")
 			}
+
+			p.Send(HEADER_INFO, "user deleted from pool")
 
 			if p.IsEmpty() {
 				if glog.V(INFOLOG_LEVEL_POOLS) {
@@ -188,6 +192,8 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 					if glog.V(INFOLOG_LEVEL_POOLS) {
 						glog.Infoln("pool goroutines was canceled")
 					}
+
+					close(p.noticeC)
 				}
 			}
 
@@ -199,10 +205,10 @@ func (p *PGPool) DelConn(ws *websocket.Conn) error {
 		"connection was not found in pool")
 }
 
-// Implementing Pool interface
-func (p *PGPool) HasConn(ws *websocket.Conn) bool {
+// HasConn returns true if passed connection belongs to current pool
+func (p *GamePool) HasConn(ww *WebsocketWrapper) bool {
 	for id := range p.conns {
-		if p.conns[id] == ws {
+		if p.conns[id] == ww {
 			return true
 		}
 	}
@@ -210,13 +216,13 @@ func (p *PGPool) HasConn(ws *websocket.Conn) bool {
 	return false
 }
 
-// Implementing Pool interface
-func (p *PGPool) ConnCount() uint16 {
+// ConnCount returns connection count in game pool
+func (p *GamePool) ConnCount() uint16 {
 	return uint16(len(p.conns))
 }
 
-// Implementing Pool interface
-func (p *PGPool) ConnIds() []uint16 {
+// ConnIds returns connection ids
+func (p *GamePool) ConnIds() []uint16 {
 	var ids = make([]uint16, 0, len(p.conns))
 
 	for id := range p.conns {
@@ -226,13 +232,17 @@ func (p *PGPool) ConnIds() []uint16 {
 	return ids
 }
 
-// Implementing Pool interface
-func (p *PGPool) GetRequests() []*http.Request {
+// GetRequests returns requests
+func (p *GamePool) GetRequests() []*http.Request {
 	var requests = make([]*http.Request, 0, len(p.conns))
 
-	for _, ws := range p.conns {
-		requests = append(requests, ws.Request())
+	for _, ww := range p.conns {
+		requests = append(requests, ww.Request())
 	}
 
 	return requests
+}
+
+func (p *GamePool) Send(header string, data interface{}) {
+	p.noticeC <- &OutputMessage{header, data}
 }

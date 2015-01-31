@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/ivan1993spb/pwshandler"
 	"golang.org/x/net/context"
 )
 
@@ -63,8 +62,21 @@ func main() {
 	 *                  BEGIN PARSING PARAMETERS                   *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	// Networking
-	var host, mainPort, sdPort string
+	var (
+		// Networking
+		host, mainPort, sdPort string
+
+		// Security
+		verifyRequestToken bool
+		hashSalt           string
+
+		// Server limits and playground size
+		poolLimit, connLimit, pgW, pgH uint
+
+		// Handlers
+		handleServerLimits, handlePlaygroundSize, handlePoolCount,
+		handleConnCount, handlePoolInfoList, handlePoolConnIds bool
+	)
 
 	flag.StringVar(&host, "host", "", "server host")
 	flag.StringVar(&mainPort, "main_port", "8081",
@@ -72,19 +84,10 @@ func main() {
 	flag.StringVar(&sdPort, "shutdown_port", "8082",
 		"port on which server accepts shutdown request")
 
-	// Security
-	var (
-		verifyRequestToken bool
-		hashSalt           string
-	)
-
 	flag.BoolVar(&verifyRequestToken, "verify_req_token", false,
 		"true to enable request token verifying")
 	flag.StringVar(&hashSalt, "hash_salt", "",
 		"hash salt for request token verifying")
-
-	// Server limits and playground size
-	var poolLimit, connLimit, pgW, pgH uint
 
 	flag.UintVar(&poolLimit, "pool_limit", 10,
 		"max pool count on server")
@@ -92,10 +95,6 @@ func main() {
 		"max connection count on pool")
 	flag.UintVar(&pgW, "pg_w", 40, "playground width")
 	flag.UintVar(&pgH, "pg_h", 28, "playground height")
-
-	// Handlers
-	var handleServerLimits, handlePlaygroundSize, handlePoolCount,
-		handleConnCount, handlePoolInfoList, handlePoolConnIds bool
 
 	flag.BoolVar(&handleServerLimits, "handle_server_limits", false,
 		"true to enable access to server limits")
@@ -194,29 +193,32 @@ func main() {
 	 *                  BEGIN INIT GAME MODULES                    *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	// Init pool factory
-	factory, err := NewPGPoolFactory(cxt, uint16(connLimit),
+	// Init game pool factory
+	gamePoolFactory, err := NewGamePoolFactory(cxt, uint16(connLimit),
 		uint8(pgW), uint8(pgH))
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("pool factory was created")
+		glog.Infoln("game pool factory was created")
 	}
 
-	// Init pool manager which allocates connections on pools
-	poolManager, err := NewGamePoolManager(factory, uint16(poolLimit))
+	// Init game pool manager which allocates connections on pools
+	gamePoolManager, err := NewGamePoolManager(
+		gamePoolFactory,
+		uint16(poolLimit),
+	)
 	if err != nil {
 		glog.Exitln(&errStartingServer{err})
 	}
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("pool manager was created")
+		glog.Infoln("game pool manager was created")
 	}
 
-	// Init connection manager
-	connManager := NewConnManager()
+	// Init game connection manager
+	gameConnManager := NewGameConnManager()
 	if glog.V(INFOLOG_LEVEL_SERVER) {
-		glog.Infoln("connection manager was created")
+		glog.Infoln("game connection manager was created")
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -230,7 +232,7 @@ func main() {
 	var mux Mux = http.NewServeMux()
 
 	if verifyRequestToken {
-		mux, err = NewTokenVerifierMux(mux, poolManager, hashSalt)
+		mux, err = NewTokenVerifierMux(mux, gamePoolManager, hashSalt)
 		if err != nil {
 			glog.Exitln(&errStartingServer{err})
 		}
@@ -249,10 +251,10 @@ func main() {
 	}
 
 	// Game handler is main and always is available
-	mux.Handle(
-		PATH_TO_GAME,
-		pwshandler.PoolHandler(poolManager, connManager, nil),
-	)
+	mux.Handle(PATH_TO_GAME, GameHandler(
+		gamePoolManager,
+		gameConnManager,
+	))
 	if glog.V(INFOLOG_LEVEL_SERVER) {
 		glog.Infoln("game handler was created")
 	}
@@ -281,7 +283,7 @@ func main() {
 	if handlePoolCount {
 		mux.Handle(
 			PATH_TO_POOL_COUNT,
-			PoolCountHandler(poolManager),
+			PoolCountHandler(gamePoolManager),
 		)
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("pool count handler was created")
@@ -290,7 +292,7 @@ func main() {
 	if handleConnCount {
 		mux.Handle(
 			PATH_TO_CONN_COUNT,
-			ConnCountHandler(poolManager),
+			ConnCountHandler(gamePoolManager),
 		)
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("connection count handler was created")
@@ -299,7 +301,7 @@ func main() {
 	if handlePoolInfoList {
 		mux.Handle(
 			PATH_TO_POOL_INFO_LIST,
-			PoolInfoListHandler(poolManager),
+			PoolInfoListHandler(gamePoolManager),
 		)
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("pool info list handler was created")
@@ -308,7 +310,7 @@ func main() {
 	if handlePoolConnIds {
 		mux.Handle(
 			PATH_TO_POOL_CONN_IDS,
-			PoolConnIdsHandler(poolManager),
+			PoolConnIdsHandler(gamePoolManager),
 		)
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("pool connection ids handler was created")
@@ -328,9 +330,12 @@ func main() {
 	// Start goroutine looking for shutdown command
 	go func() {
 		// Waiting for shutdown command
-		if _, err := shutdownListener.Accept(); err != nil {
+		if conn, err := shutdownListener.Accept(); err != nil {
 			glog.Errorln("accepting shutdown connection error:", err)
+		} else if err = conn.Close(); err != nil {
+			glog.Errorln("closing shutdown connection error:", err)
 		}
+
 		if glog.V(INFOLOG_LEVEL_SERVER) {
 			glog.Infoln("accepted shutdown connection")
 		}

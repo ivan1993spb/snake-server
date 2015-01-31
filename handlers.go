@@ -14,23 +14,12 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
+	"golang.org/x/net/websocket"
 )
 
 type Mux interface {
 	http.Handler
 	Handle(pattern string, handler http.Handler)
-	HandleFunc(pattern string, handler func(
-		http.ResponseWriter,
-		*http.Request,
-	))
-	Handler(r *http.Request) (h http.Handler, pattern string)
-}
-
-const FORM_KEY_TOKEN = "token"
-
-type Token struct {
-	Sum  string `json:"sum"`
-	Part string `json:"part"`
 }
 
 // TokenVerifierMux verifies each accepted connection by passed token
@@ -40,33 +29,19 @@ type TokenVerifierMux struct {
 	hashSalt    string
 }
 
-type errCannotCreateTokenVerifierMux struct {
-	errStr string
-}
-
-func (e *errCannotCreateTokenVerifierMux) Error() string {
-	return "cannot create token verifier mux: " + e.errStr
-}
-
 func NewTokenVerifierMux(m Mux, pm *GamePoolManager, hs string,
 ) (*TokenVerifierMux, error) {
-	if m == nil {
-		return nil, &errCannotCreateTokenVerifierMux{"mux is nil"}
-	}
-	if pm == nil {
-		return nil, &errCannotCreateTokenVerifierMux{
-			"pool manager is nil",
-		}
-	}
 	if len(hs) == 0 {
-		return nil, &errCannotCreateTokenVerifierMux{
-			"empty hash salt",
-		}
+		return nil, errors.New(
+			"cannot create token verifier mux: empty hash salt",
+		)
 	}
 
+	// Using sha256 sum of hs to prevent using of easy hash salts
 	hashSalt := sha256.Sum256([]byte(hs))
-	return &TokenVerifierMux{m, pm, hex.EncodeToString(hashSalt[:])},
-		nil
+	return &TokenVerifierMux{
+		m, pm, hex.EncodeToString(hashSalt[:]),
+	}, nil
 }
 
 type errConnNotTrusted struct {
@@ -76,6 +51,13 @@ type errConnNotTrusted struct {
 func (e *errConnNotTrusted) Error() string {
 	return "connection is not trusted: " + e.err.Error()
 }
+
+type Token struct {
+	Sum  string `json:"sum"`
+	Part string `json:"part"`
+}
+
+const FORM_KEY_TOKEN = "token"
 
 func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 	r *http.Request) {
@@ -145,8 +127,11 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("token is unique")
 		}
-	} else if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Warningln("token was not received")
+	} else {
+		if glog.V(INFOLOG_LEVEL_CONNS) {
+			glog.Warningln("token was not received")
+		}
+
 		goto forbidden
 	}
 
@@ -155,13 +140,15 @@ func (v *TokenVerifierMux) ServeHTTP(w http.ResponseWriter,
 
 forbidden:
 
-	glog.Warningln("forbidden")
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Warningln("forbidden")
+	}
 
 	http.Error(w, http.StatusText(http.StatusForbidden),
 		http.StatusForbidden)
 }
 
-// JsonHandler inserts json content-type in response
+// JsonHandler inserts json content-type header in response
 func JsonHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add(
@@ -205,10 +192,10 @@ func PlaygroundSizeHandler(pgW, pgH uint8) http.Handler {
 	})
 }
 
-func PoolCountHandler(poolManager *GamePoolManager) http.Handler {
+func PoolCountHandler(gamePoolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
 		err := json.NewEncoder(w).Encode(map[string]uint16{
-			"pool_count": poolManager.PoolCount(),
+			"pool_count": gamePoolManager.PoolCount(),
 		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
@@ -216,10 +203,10 @@ func PoolCountHandler(poolManager *GamePoolManager) http.Handler {
 	})
 }
 
-func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
+func ConnCountHandler(gamePoolManager *GamePoolManager) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
 		err := json.NewEncoder(w).Encode(map[string]uint32{
-			"conn_count": poolManager.ConnCount(),
+			"conn_count": gamePoolManager.ConnCount(),
 		})
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
@@ -227,16 +214,20 @@ func ConnCountHandler(poolManager *GamePoolManager) http.Handler {
 	})
 }
 
-func PoolInfoListHandler(poolManager *GamePoolManager) http.Handler {
+func PoolInfoListHandler(gamePoolManager *GamePoolManager,
+) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, _ *http.Request) {
-		err := json.NewEncoder(w).Encode(poolManager.PoolInfoList())
+		err := json.NewEncoder(w).Encode(
+			gamePoolManager.PoolInfoList(),
+		)
 		if err != nil {
 			glog.Errorln(&errHandleRequest{err})
 		}
 	})
 }
 
-func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
+func PoolConnIdsHandler(gamePoolManager *GamePoolManager,
+) http.Handler {
 	return JsonHandler(func(w http.ResponseWriter, r *http.Request) {
 		// Connection ids
 		var ids []uint16
@@ -246,7 +237,7 @@ func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
 			glog.Errorln("cannot get pool id:", err)
 		} else {
 			id := uint16(id)
-			pool, err := poolManager.GetPool(id)
+			pool, err := gamePoolManager.GetPool(id)
 			if err != nil {
 				glog.Errorln("cannot get pool:", err)
 			} else {
@@ -260,6 +251,7 @@ func PoolConnIdsHandler(poolManager *GamePoolManager) http.Handler {
 	})
 }
 
+// ReportMux reports about accepting and closing connections
 type ReportMux struct {
 	Mux
 }
@@ -275,4 +267,52 @@ func (rm *ReportMux) ServeHTTP(w http.ResponseWriter, r *http.Request,
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("closing connection:", r.URL.Path)
 	}
+}
+
+type errGameConnHandling struct {
+	err error
+}
+
+func (e *errGameConnHandling) Error() string {
+	return "game connection handling error: " + e.err.Error()
+}
+
+func GameHandler(poolMgr *GamePoolManager, connMgr *GameConnManager,
+) http.Handler {
+	return websocket.Handler(func(ws *websocket.Conn) {
+		ww := WrapWebsocket(ws)
+
+		var (
+			data *PoolFeatures
+			err  error
+		)
+
+		if data, err = poolMgr.AddConn(ww); err != nil {
+			glog.Errorln(&errGameConnHandling{err})
+			err = ww.Send(HEADER_ERROR, err)
+			if err != nil {
+				glog.Errorln(&errGameConnHandling{err})
+			}
+			return
+		}
+
+		// Handle connection
+		if err = connMgr.Handle(ww, data); err != nil {
+			glog.Errorln(&errGameConnHandling{err})
+			err = ww.Send(HEADER_ERROR, err)
+			if err != nil {
+				glog.Errorln(&errGameConnHandling{err})
+			}
+			return
+		}
+
+		// Delete connection from a pool
+		if err = poolMgr.DelConn(ww); err != nil {
+			glog.Errorln(&errGameConnHandling{err})
+			err = ww.Send(HEADER_ERROR, err)
+			if err != nil {
+				glog.Errorln(&errGameConnHandling{err})
+			}
+		}
+	})
 }

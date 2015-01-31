@@ -10,47 +10,17 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/ivan1993spb/pwshandler"
-	"golang.org/x/net/websocket"
 )
 
 // Form key for passing pool id
 const FORM_KEY_POOL_ID = "pool_id"
 
-// Pool interface represents pool with connections
-type Pool interface {
-	// IsFull returns true if pool is full
-	IsFull() bool
-	// IsEmpty returns true if pool is empty
-	IsEmpty() bool
-	// AddConn creates connection in the pool
-	AddConn(ws *websocket.Conn) (pwshandler.Environment, error)
-	// DelConn removes connection from the pool
-	DelConn(ws *websocket.Conn) error
-	// HasConn returns true if passed connection belongs to the pool
-	HasConn(ws *websocket.Conn) bool
-	// ConnCount returns connection count in pool
-	ConnCount() uint16
-	// ConnIds returns connection ids
-	ConnIds() []uint16
-	// GetRequests returns requests
-	GetRequests() []*http.Request
-}
-
-type errCreatingPoolManager struct {
-	err error
-}
-
-func (e *errCreatingPoolManager) Error() string {
-	return "cannot create pool manager: " + e.err.Error()
-}
-
 // PoolFactory must generate new pool
-type PoolFactory func() (Pool, error)
+type PoolFactory func() (*GamePool, error)
 
 type GamePoolManager struct {
 	addPool   PoolFactory
-	pools     map[uint16]Pool
+	pools     map[uint16]*GamePool
 	poolLimit uint16
 }
 
@@ -58,20 +28,15 @@ type GamePoolManager struct {
 // number of pools specified by poolLimit
 func NewGamePoolManager(factory PoolFactory, poolLimit uint16,
 ) (*GamePoolManager, error) {
-	if factory == nil {
-		return nil, &errCreatingPoolManager{
-			errors.New("passed nil pool factory"),
-		}
-	}
 	if poolLimit == 0 {
-		return nil, &errCreatingPoolManager{
-			errors.New("invalid pool limit"),
-		}
+		return nil, errors.New(
+			"cannot create pool manager: invalid pool limit",
+		)
 	}
 
 	return &GamePoolManager{
 		factory,
-		make(map[uint16]Pool),
+		make(map[uint16]*GamePool),
 		poolLimit,
 	}, nil
 }
@@ -92,15 +57,14 @@ func (e *errCannotSendPoolId) Error() string {
 	return "cannot send pool id: " + e.err.Error()
 }
 
-// Implementing pwshandler.ConnManager interface
-func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
-) (pwshandler.Environment, error) {
+func (pm *GamePoolManager) AddConn(ww *WebsocketWrapper,
+) (*PoolFeatures, error) {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("try to add connection in a pool")
 	}
 
 	// Try to add connection in selected pool if passed pool id
-	if id := ws.Request().FormValue(FORM_KEY_POOL_ID); len(id) > 0 {
+	if id := ww.Request().FormValue(FORM_KEY_POOL_ID); len(id) > 0 {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("received pool id")
 		}
@@ -118,14 +82,13 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 				glog.Infoln("creating connection in selected pool")
 			}
 
-			if err :=
-				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
+			if err := ww.Send(HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					&errCannotSendPoolId{err},
 				}
 			}
 
-			return pm.pools[id].AddConn(ws)
+			return pm.pools[id].AddConn(ww)
 		}
 
 		return nil, &errCannotAddConn{errors.New("invalid pool id")}
@@ -144,14 +107,13 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 				glog.Infoln("creating connection to pool")
 			}
 
-			if err :=
-				SendMessage(ws, HEADER_POOL_ID, id); err != nil {
+			if err := ww.Send(HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					&errCannotSendPoolId{err},
 				}
 			}
 
-			return pm.pools[id].AddConn(ws)
+			return pm.pools[id].AddConn(ww)
 		}
 	}
 
@@ -178,8 +140,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		if _, occupied := pm.pools[id]; !occupied {
 			pm.pools[id] = pool
 
-			err := SendMessage(ws, HEADER_POOL_ID, id)
-			if err != nil {
+			if err := ww.Send(HEADER_POOL_ID, id); err != nil {
 				return nil, &errCannotAddConn{
 					&errCannotSendPoolId{err},
 				}
@@ -196,7 +157,7 @@ func (pm *GamePoolManager) AddConn(ws *websocket.Conn,
 		glog.Infoln("creating connection to pool")
 	}
 
-	return pool.AddConn(ws)
+	return pool.AddConn(ww)
 }
 
 type errCannotDelConn struct {
@@ -207,8 +168,7 @@ func (e *errCannotDelConn) Error() string {
 	return "cannot delete connection: " + e.err.Error()
 }
 
-// Implementing pwshandler.ConnManager interface
-func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
+func (pm *GamePoolManager) DelConn(ww *WebsocketWrapper) error {
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("try to remove information about connection")
 		glog.Infoln("try to find pool of connection")
@@ -216,13 +176,13 @@ func (pm *GamePoolManager) DelConn(ws *websocket.Conn) error {
 
 	for id := range pm.pools {
 		// If current pool has the connection...
-		if pm.pools[id].HasConn(ws) {
+		if pm.pools[id].HasConn(ww) {
 			if glog.V(INFOLOG_LEVEL_CONNS) {
 				glog.Infoln("pool of connection was found")
 				glog.Infoln("removing connection from pool")
 			}
 
-			if err := pm.pools[id].DelConn(ws); err != nil {
+			if err := pm.pools[id].DelConn(ww); err != nil {
 				return &errCannotDelConn{err}
 			}
 
@@ -273,7 +233,7 @@ func (pm *GamePoolManager) ConnCount() (connCount uint32) {
 	return
 }
 
-func (pm *GamePoolManager) GetPool(id uint16) (Pool, error) {
+func (pm *GamePoolManager) GetPool(id uint16) (*GamePool, error) {
 	if pool, found := pm.pools[id]; found {
 		return pool, nil
 	}

@@ -6,21 +6,16 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 
 	"bitbucket.org/pushkin_ivan/clever-snake/game"
 	"github.com/golang/glog"
-	"github.com/ivan1993spb/pwshandler"
-	"golang.org/x/net/context"
-	"golang.org/x/net/websocket"
 )
 
-type ConnManager struct{}
+type GameConnManager struct{}
 
-func NewConnManager() pwshandler.ConnManager {
-	return new(ConnManager)
+func NewGameConnManager() *GameConnManager {
+	return new(GameConnManager)
 }
 
 type errConnProcessing struct {
@@ -32,39 +27,29 @@ func (e *errConnProcessing) Error() string {
 		e.err.Error()
 }
 
-// Implementing pwshandler.ConnManager interface
-func (*ConnManager) Handle(ws *websocket.Conn,
-	data pwshandler.Environment) error {
+func (*GameConnManager) Handle(ww *WebsocketWrapper,
+	poolFeatures *PoolFeatures) error {
+
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("connection handler was started")
 		defer glog.Infoln("connection handler was finished")
-	}
-
-	poolFeatures, ok := data.(*PoolFeatures)
-	if !ok || poolFeatures == nil {
-		return &errConnProcessing{
-			errors.New("pool data was not received"),
-		}
 	}
 
 	// Setup game stream
 	if glog.V(INFOLOG_LEVEL_CONNS) {
 		glog.Infoln("creating connection to common game stream")
 	}
-	if err := poolFeatures.startStreamConn(ws); err != nil {
+	if err := poolFeatures.stream.AddConn(ww); err != nil {
 		return &errConnProcessing{err}
 	}
 	defer func() {
 		if glog.V(INFOLOG_LEVEL_CONNS) {
 			glog.Infoln("removing connection from common game stream")
 		}
-		if err := poolFeatures.stopStreamConn(ws); err != nil {
+		if err := poolFeatures.stream.DelConn(ww); err != nil {
 			glog.Errorln(&errConnProcessing{err})
 		}
 	}()
-
-	// Pool context is parent of connection context
-	cxt, cancel := context.WithCancel(poolFeatures.cxt)
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *                   BEGIN COMMAND ACCEPTER                    *
@@ -79,38 +64,19 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 		glog.Infoln("starting command accepter")
 	}
 
-	go func() {
-		for {
-			msg, err := ReceiveMessage(ws, HEADER_GAME)
-			if err != nil {
-				if err != io.EOF {
-					glog.Errorln("cannot receive player command:",
-						err)
-				}
-				break
-			}
-
-			var cmd *game.Command
-			if err := json.Unmarshal(msg.Data, &cmd); err != nil {
-				glog.Errorln("cannot parse player command:", err)
-				continue
-			}
-
-			if glog.V(INFOLOG_LEVEL_CONNS) {
-				glog.Infoln("accepted command")
-			}
-
-			input <- cmd
+	ww.BindHandler(HEADER_GAME, func(msg *InputMessage) {
+		var cmd *game.Command
+		if err := json.Unmarshal(msg.Data, &cmd); err != nil {
+			glog.Errorln("cannot parse player command:", err)
+			return
 		}
 
 		if glog.V(INFOLOG_LEVEL_CONNS) {
-			glog.Infoln("command accepter finished")
+			glog.Infoln("accepted command")
 		}
 
-		close(input)
-		// Canceling connection context
-		cancel()
-	}()
+		input <- cmd
+	})
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *                    END COMMAND ACCEPTER                     *
@@ -124,7 +90,7 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 
 	// output is channel for transferring private game information
 	// that is useful only for current player
-	output, err := poolFeatures.startPlayer(cxt, input)
+	output, err := poolFeatures.startPlayer(poolFeatures.cxt, input)
 	if err != nil {
 		return &errConnProcessing{err}
 	}
@@ -145,17 +111,17 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 		}
 		for {
 			select {
-			case <-cxt.Done():
+			case <-poolFeatures.cxt.Done():
 				return
 			case data := <-output:
 				if data == nil {
 					continue
 				}
 
-				if err :=
-					SendMessage(ws, HEADER_GAME, data); err != nil {
+				if err := ww.Send(HEADER_GAME, data); err != nil {
 					glog.Errorln(&errConnProcessing{fmt.Errorf(
-						"cannot send private game data: %s", err)})
+						"cannot send private game data: %s", err,
+					)})
 					return
 				}
 			}
@@ -166,30 +132,12 @@ func (*ConnManager) Handle(ws *websocket.Conn,
 	 *                     END PRIVATE STREAM                      *
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-	<-cxt.Done()
+	select {
+	case <-ww.Closed:
+	case <-poolFeatures.cxt.Done():
+	}
+
+	close(input)
 
 	return nil
-}
-
-type errErrorHandling struct {
-	err error
-}
-
-func (e *errErrorHandling) Error() string {
-	return "error of error handling: " + e.err.Error()
-}
-
-// Implementing pwshandler.ConnManager interface
-func (m *ConnManager) HandleError(ws *websocket.Conn, err error) {
-	if err == nil {
-		err = &errErrorHandling{
-			errors.New("passed nil errer for reporting"),
-		}
-	}
-
-	glog.Errorln(err)
-
-	if err = SendMessage(ws, HEADER_ERROR, err.Error()); err != nil {
-		glog.Errorln(&errErrorHandling{err})
-	}
 }
