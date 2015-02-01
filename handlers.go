@@ -17,6 +17,10 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                              MUXES                              *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 type Mux interface {
 	http.Handler
 	Handle(pattern string, handler http.Handler)
@@ -151,6 +155,28 @@ forbidden:
 		http.StatusForbidden)
 }
 
+// ReportMux reports about accepting and closing connections
+type ReportMux struct {
+	Mux
+}
+
+func (rm *ReportMux) ServeHTTP(w http.ResponseWriter, r *http.Request,
+) {
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("received request:", r.URL.Path)
+	}
+
+	rm.Mux.ServeHTTP(w, r)
+
+	if glog.V(INFOLOG_LEVEL_CONNS) {
+		glog.Infoln("closing connection:", r.URL.Path)
+	}
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                            HANDLERS                             *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 // JsonHandler inserts json content-type header in response
 func JsonHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -252,24 +278,6 @@ func PoolConnIdsHandler(gamePoolManager *GamePoolManager,
 			glog.Errorln(&errHandleRequest{err})
 		}
 	})
-}
-
-// ReportMux reports about accepting and closing connections
-type ReportMux struct {
-	Mux
-}
-
-func (rm *ReportMux) ServeHTTP(w http.ResponseWriter, r *http.Request,
-) {
-	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("received request:", r.URL.Path)
-	}
-
-	rm.Mux.ServeHTTP(w, r)
-
-	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("closing connection:", r.URL.Path)
-	}
 }
 
 type errGameConnHandling struct {

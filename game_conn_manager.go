@@ -44,10 +44,10 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	input := make(chan *game.Command)
 	defer close(input)
 
-	// Starting command accepter
+	// Binding command accepter
 
 	if glog.V(INFOLOG_LEVEL_CONNS) {
-		glog.Infoln("starting command accepter")
+		glog.Infoln("binding command accepter")
 	}
 
 	ww.BindHandler(HEADER_GAME, func(msg *InputMessage) {
@@ -63,6 +63,7 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 
 		input <- cmd
 	})
+	defer ww.UnbindHandler(HEADER_GAME)
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 *                    END COMMAND ACCEPTER                     *
@@ -121,8 +122,8 @@ func (*GameConnManager) Handle(ww *WebsocketWrapper,
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 	select {
-	case <-ww.Closed: // Waiting for connection closing
-	case <-poolFeatures.cxt.Done(): // Waiting for pool finishing
+	case <-ww.Closed: // Waiting for closing connection
+	case <-poolFeatures.cxt.Done(): // Waiting for finishing pool
 	}
 
 	return nil

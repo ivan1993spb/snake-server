@@ -20,35 +20,27 @@ type Stream struct {
 	wg    *sync.WaitGroup
 }
 
-func NewStream(cxt context.Context, src <-chan *OutputMessage) (
-	*Stream, error) {
+func NewStream(cxt context.Context) (*Stream, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("cannot create stream: %s", err)
 	}
 
-	scxt, cancel := context.WithCancel(cxt)
-
 	s := &Stream{
-		scxt,
+		cxt,
 		make([]*WebsocketWrapper, 0),
 		make(chan *OutputMessage),
 		new(sync.WaitGroup),
 	}
-	s.AddSource(src)
-
-	go func() {
-		s.wg.Wait()
-		cancel()
-	}()
 
 	go func() {
 		if glog.V(INFOLOG_LEVEL_POOLS) {
-			defer glog.Infoln("common game stream finished")
+			glog.Infoln("starting pool stream")
+			defer glog.Infoln("finishing pool stream")
 		}
 
 		for msg := range s.src {
 			select {
-			case <-scxt.Done():
+			case <-cxt.Done():
 				return
 			default:
 			}
@@ -129,4 +121,9 @@ func (s *Stream) AddSourceHeader(header string,
 			}
 		}
 	}()
+}
+
+func (s *Stream) Stop() {
+	s.wg.Wait()
+	close(s.src)
 }

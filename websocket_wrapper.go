@@ -91,3 +91,7 @@ func (ww *WebsocketWrapper) BindHandler(header string,
 	handler InputMessageHandler) {
 	ww.handlers[header] = handler
 }
+
+func (ww *WebsocketWrapper) UnbindHandler(header string) {
+	delete(ww.handlers, header)
+}

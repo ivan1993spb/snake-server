@@ -44,8 +44,7 @@ type GamePool struct {
 
 	// stream is pool stream
 	stream *Stream
-	// game is game of pool
-	game *game.Game
+	game   *game.Game
 	// noticeC channel for pool notifications
 	noticeC chan *OutputMessage
 }
@@ -72,25 +71,29 @@ func NewGamePool(cxt context.Context, connLimit uint16,
 	// Pool context
 	pcxt, cancel := context.WithCancel(cxt)
 
-	// Channel for pool notifications
-	noticeC := make(chan *OutputMessage)
-
-	// Common pool data stream
-	stream, err := NewStream(pcxt, noticeC)
+	// Pool game
+	game, err := game.NewGame(pcxt, pgW, pgH)
 	if err != nil {
 		return nil, &errCannotCreatePool{err}
 	}
+
+	// Pool stream
+	stream, err := NewStream(pcxt)
+	if err != nil {
+		return nil, &errCannotCreatePool{err}
+	}
+
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("stream was started")
 	}
 
-	game, err := game.NewGame(pcxt, pgW, pgH)
-	if err != nil {
-		// Close pool notification channel
-		close(noticeC)
-		return nil, &errCannotCreatePool{err}
-	}
+	// Create stream data sources:
+	// Create channel for pool notifications
+	noticeC := make(chan *OutputMessage)
+	stream.AddSource(noticeC)
+	// Create game data channel
 	stream.AddSourceHeader(HEADER_GAME, game.StartGame())
+
 	if glog.V(INFOLOG_LEVEL_POOLS) {
 		glog.Infoln("game was started")
 	}
@@ -192,8 +195,16 @@ func (p *GamePool) DelConn(ww *WebsocketWrapper) error {
 					if glog.V(INFOLOG_LEVEL_POOLS) {
 						glog.Infoln("pool goroutines was canceled")
 					}
+				}
 
-					close(p.noticeC)
+				// Close pool notification channel
+				close(p.noticeC)
+
+				// Stop pool data stream
+				p.stream.Stop()
+
+				if glog.V(INFOLOG_LEVEL_POOLS) {
+					glog.Infoln("pool data stream was stopped")
 				}
 			}
 
