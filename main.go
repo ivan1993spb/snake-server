@@ -48,6 +48,8 @@ const (
 	PATH_TO_POOL_CONN_IDS = "/pool_conn_ids.json"
 )
 
+const DESCRIPTION = "Clever snake server"
+
 type errStartingServer struct {
 	err error
 }
@@ -108,6 +110,12 @@ func main() {
 		"true to enable access to pool list")
 	flag.BoolVar(&handlePoolConnIds, "handle_pool_conn_ids", false,
 		"true to enable access to connection ids on selected pool")
+
+	flag.Usage = func() {
+		fmt.Println(DESCRIPTION)
+		fmt.Println("Usage:")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
