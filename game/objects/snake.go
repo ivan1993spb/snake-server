@@ -138,7 +138,9 @@ func (s *Snake) run(cxt context.Context) error {
 				s.Die()
 			}
 			ticker.Stop()
-			s.p.OccurredDeleting(s)
+			if cxt.Err() == nil {
+				s.p.OccurredDeleting(s)
+			}
 		}()
 
 		for {
@@ -155,13 +157,13 @@ func (s *Snake) run(cxt context.Context) error {
 			// Calculate next position
 			dot, err := s.getNextHeadDot()
 			if err != nil {
-				s.p.OccurredError(err)
+				s.p.OccurredError(s, err)
 				return
 			}
 
 			if object := s.pg.GetObjectByDot(dot); object != nil {
 				if err = logic.Clash(s, object, dot); err != nil {
-					s.p.OccurredError(err)
+					s.p.OccurredError(s, err)
 					return
 				}
 
@@ -180,6 +182,8 @@ func (s *Snake) run(cxt context.Context) error {
 			if s.length < s.DotCount() {
 				s.dots = s.dots[:len(s.dots)-1]
 			}
+
+			s.p.OccurredUpdating(s)
 		}
 	}()
 

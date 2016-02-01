@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/pushkin_ivan/clever-snake/game/objects"
 	"bitbucket.org/pushkin_ivan/clever-snake/game/playground"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -16,6 +17,7 @@ import (
 
 type Game struct {
 	cxt context.Context
+	p   GameProcessor
 	pg  *playground.Playground
 }
 
@@ -37,11 +39,13 @@ func NewGame(cxt context.Context, pgW, pgH uint8) (*Game, error) {
 		return nil, &errStartingGame{err}
 	}
 
-	return &Game{cxt, pg}, nil
+	return &Game{cxt, NewGameProcessor(), pg}, nil
 }
 
-func (g *Game) StartGame() chan interface{} {
+func (g *Game) StartGame() <-chan interface{} {
 	output := make(chan interface{})
+
+	objects.CreateApple(g.p, g.pg)
 
 	go func() {
 		defer close(output)
@@ -64,12 +68,13 @@ func (g *Game) StartGame() chan interface{} {
 type StartPlayerFunc func(cxt context.Context, input <-chan *Command,
 ) (<-chan interface{}, error)
 
-func (*Game) StartPlayer(cxt context.Context, input <-chan *Command,
+func (g *Game) StartPlayer(cxt context.Context, input <-chan *Command,
 ) (<-chan interface{}, error) {
 	if err := cxt.Err(); err != nil {
 		return nil, fmt.Errorf("cannot start player: %s", err)
 	}
 
+	objects.CreateSnake(g.p, g.pg, g.cxt)
 	output := make(chan interface{})
 
 	go func() {
@@ -90,7 +95,7 @@ func (*Game) StartPlayer(cxt context.Context, input <-chan *Command,
 				if cmd == nil {
 					return
 				}
-				output <- "received cmd =)"
+				output <- json.RawMessage("received cmd =)")
 			}
 		}
 	}()
@@ -123,3 +128,5 @@ type Notice struct {
 // }
 
 // func (*Game) API_CMD()
+
+type GameObjectCollection map[uint16]interface{}

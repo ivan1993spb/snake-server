@@ -26,13 +26,6 @@ func (e *errStartingObject) Error() string {
 	return "cannot start object: " + e.err.Error()
 }
 
-type GameProcessor interface {
-	OccurredError(object interface{}, err error)
-	OccurredCreating(object interface{})
-	OccurredDeleting(object interface{})
-	OccurredUpdating(object interface{})
-}
-
 var (
 	errNilPlayground    = errors.New("playground is nil")
 	errNilGameProcessor = errors.New("game processor is nil")

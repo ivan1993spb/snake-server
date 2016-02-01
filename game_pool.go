@@ -39,8 +39,8 @@ type GamePool struct {
 
 	// Pool context
 	cxt context.Context
-	// stopPool stops all pool goroutines
-	stopPool context.CancelFunc
+	// cancel stops all pool goroutines
+	cancel context.CancelFunc
 
 	// stream is pool stream
 	stream *Stream
@@ -103,6 +103,26 @@ func NewGamePool(cxt context.Context, connLimit uint16,
 		pcxt, cancel,
 		stream, game, noticeC,
 	}, nil
+}
+
+func (p *GamePool) Stop() {
+	if p.cxt.Err() == nil {
+		p.cancel()
+
+		if glog.V(INFOLOG_LEVEL_POOLS) {
+			glog.Infoln("pool goroutines was canceled")
+		}
+	}
+
+	// Close pool notification channel
+	close(p.noticeC)
+
+	// Stop pool data stream
+	p.stream.Stop()
+
+	if glog.V(INFOLOG_LEVEL_POOLS) {
+		glog.Infoln("pool data stream was stopped")
+	}
 }
 
 // IsFull returns true if game pool is full
@@ -189,23 +209,7 @@ func (p *GamePool) DelConn(ww *WebsocketWrapper) error {
 					glog.Infoln("pool is empty")
 				}
 
-				if p.cxt.Err() == nil {
-					p.stopPool()
-
-					if glog.V(INFOLOG_LEVEL_POOLS) {
-						glog.Infoln("pool goroutines was canceled")
-					}
-				}
-
-				// Close pool notification channel
-				close(p.noticeC)
-
-				// Stop pool data stream
-				p.stream.Stop()
-
-				if glog.V(INFOLOG_LEVEL_POOLS) {
-					glog.Infoln("pool data stream was stopped")
-				}
+				p.Stop()
 			}
 
 			return nil

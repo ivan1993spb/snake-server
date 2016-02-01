@@ -64,3 +64,8 @@ func (a *Apple) NutritionalValue(dot *playground.Dot) int8 {
 
 	return 0
 }
+
+// Implementing Object interface
+func (a *Apple) Pack() interface{} {
+	return "apple"
+}
