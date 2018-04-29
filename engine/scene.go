@@ -22,13 +22,12 @@ func (e *ErrObjectLocated) Error() string {
 	return "object is located"
 }
 
-type ErrDotOccupied struct {
-	Object DotList
-	Dot    *Dot
+type ErrDotsOccupied struct {
+	Dots []*Dot // Occupied dots
 }
 
-func (e *ErrDotOccupied) Error() string {
-	return fmt.Sprintf("dot is occupied by an object: %s", e.Dot)
+func (e *ErrDotsOccupied) Error() string {
+	return fmt.Sprintf("dots is occupied by an objects: %s", e.Dots)
 }
 
 // Scene object contains all objects on map
@@ -122,6 +121,7 @@ func (s *Scene) unsafeLocateObject(object DotList) *ErrLocateObject {
 	}
 
 	object = object.Copy()
+	occupiedDots := make([]*Dot, 0)
 
 	// Check each dot of passed object
 	for i := uint16(0); i < object.DotCount(); i++ {
@@ -137,13 +137,17 @@ func (s *Scene) unsafeLocateObject(object DotList) *ErrLocateObject {
 
 		for i := range s.objects {
 			if s.objects[i].Contains(dot) {
-				return &ErrLocateObject{
-					Err: &ErrDotOccupied{
-						Object: s.objects[i].Copy(),
-						Dot:    dot,
-					},
-				}
+				occupiedDots = append(occupiedDots, dot)
+				break
 			}
+		}
+	}
+
+	if len(occupiedDots) > 0 {
+		return &ErrLocateObject{
+			Err: &ErrDotsOccupied{
+				Dots: occupiedDots,
+			},
 		}
 	}
 
@@ -166,10 +170,11 @@ func (s *Scene) unsafeLocateAvailableObjectDots(object DotList) DotList {
 	}
 
 	object = object.Copy()
+	objectMirror := object.Copy()
 
 	// Check each dot of passed object
-	for i := uint16(0); i < object.DotCount(); i++ {
-		var dot = object.Dot(i)
+	for i := uint16(0); i < objectMirror.DotCount(); i++ {
+		var dot = objectMirror.Dot(i)
 
 		if !s.area.Contains(dot) {
 			object = object.Delete(dot)
@@ -297,20 +302,20 @@ func (s *Scene) LocateRandomDot() (*Dot, error) {
 	return s.unsafeLocateRandomDot()
 }
 
-func (s *Scene) unsafeLocateRandomRect(rw, rh uint8) (*Rect, error) {
-	locateRandomRect := func() (*Rect, error) {
-		if rect, err := s.area.NewRandomRect(rw, rh, 0, 0); err == nil {
-			if err := s.unsafeLocateObject(rect.DotList()); err != nil {
-				return nil, err
-			}
-			return rect, nil
-		} else {
+func (s *Scene) unsafeLocateRandomRectTryOnce(rw, rh uint8) (*Rect, error) {
+	if rect, err := s.area.NewRandomRect(rw, rh, 0, 0); err == nil {
+		if err := s.unsafeLocateObject(rect.DotList()); err != nil {
 			return nil, err
 		}
+		return rect, nil
+	} else {
+		return nil, err
 	}
+}
 
+func (s *Scene) unsafeLocateRandomRect(rw, rh uint8) (*Rect, error) {
 	for count := 0; count < FindRetriesNumber; count++ {
-		if rect, err := locateRandomRect(); err == nil {
+		if rect, err := s.unsafeLocateRandomRectTryOnce(rw, rh); err == nil {
 			return rect, nil
 		}
 	}
