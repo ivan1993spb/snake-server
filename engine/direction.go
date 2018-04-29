@@ -1,36 +1,41 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 )
 
-var ErrInvalidDirection = errors.New("invalid direction")
+type ErrInvalidDirection struct {
+	Direction Direction
+}
+
+func (e *ErrInvalidDirection) Error() string {
+	return "invalid direction"
+}
 
 // Direction indicates movement direction
 type Direction uint8
 
 const (
-	DirNorth = iota
-	DirEast
-	DirSouth
-	DirWest
-	dirCount
+	DirectionNorth = iota
+	DirectionEast
+	DirectionSouth
+	DirectionWest
+	directionCount
 )
 
 var directionsJSON = map[Direction][]byte{
-	DirNorth: []byte(`"n"`),
-	DirEast:  []byte(`"e"`),
-	DirSouth: []byte(`"s"`),
-	DirWest:  []byte(`"w"`),
+	DirectionNorth: []byte(`"n"`),
+	DirectionEast:  []byte(`"e"`),
+	DirectionSouth: []byte(`"s"`),
+	DirectionWest:  []byte(`"w"`),
 }
 
 var unknownDirectionJSON = []byte(`"-"`)
 
 // RandomDirection returns random direction
 func RandomDirection() Direction {
-	return Direction(rand.Intn(dirCount))
+	return Direction(rand.Intn(directionCount))
 }
 
 // CalculateDirection calculates direction by two passed dots
@@ -51,16 +56,16 @@ func CalculateDirection(from, to *Dot) Direction {
 
 		if diffX > diffY {
 			if to.x > from.x {
-				return DirEast
+				return DirectionEast
 			}
-			return DirWest
+			return DirectionWest
 		}
 
 		if diffY > diffX {
 			if to.y > from.y {
-				return DirSouth
+				return DirectionSouth
 			}
-			return DirNorth
+			return DirectionNorth
 		}
 	}
 
@@ -69,7 +74,7 @@ func CalculateDirection(from, to *Dot) Direction {
 
 // ValidDirection returns true if passed direction is valid
 func ValidDirection(dir Direction) bool {
-	return dirCount > dir
+	return directionCount > dir
 }
 
 // Implementing json.Marshaler interface
@@ -79,21 +84,21 @@ func (dir Direction) MarshalJSON() ([]byte, error) {
 	}
 
 	// Invalid direction
-	return unknownDirectionJSON, fmt.Errorf("cannot marshal direction: %s", ErrInvalidDirection)
+	return unknownDirectionJSON, fmt.Errorf("cannot marshal direction: %s", &ErrInvalidDirection{dir})
 }
 
 // Reverse reverses direction
 func (dir Direction) Reverse() (Direction, error) {
 	switch dir {
-	case DirNorth:
-		return DirSouth, nil
-	case DirEast:
-		return DirWest, nil
-	case DirSouth:
-		return DirNorth, nil
-	case DirWest:
-		return DirEast, nil
+	case DirectionNorth:
+		return DirectionSouth, nil
+	case DirectionEast:
+		return DirectionWest, nil
+	case DirectionSouth:
+		return DirectionNorth, nil
+	case DirectionWest:
+		return DirectionEast, nil
 	}
 
-	return 0, fmt.Errorf("cannot reverse direction: %s", ErrInvalidDirection)
+	return 0, fmt.Errorf("cannot reverse direction: %s", &ErrInvalidDirection{dir})
 }

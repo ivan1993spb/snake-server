@@ -98,13 +98,13 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 	}
 
 	switch dir {
-	case DirNorth, DirSouth:
+	case DirectionNorth, DirectionSouth:
 		if dis > a.height {
 			dis %= a.height
 		}
 
 		// North
-		if dir == DirNorth {
+		if dir == DirectionNorth {
 			if dis > dot.y {
 				return &Dot{dot.x, a.height - dis + dot.y}, nil
 			}
@@ -117,13 +117,13 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 		}
 		return &Dot{dot.x, dot.y + dis}, nil
 
-	case DirWest, DirEast:
+	case DirectionWest, DirectionEast:
 		if dis > a.width {
 			dis %= a.width
 		}
 
 		// East
-		if dir == DirEast {
+		if dir == DirectionEast {
 			if a.width > dot.x+dis {
 				return &Dot{dot.x + dis, dot.y}, nil
 			}
@@ -137,7 +137,11 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 		return &Dot{dot.x - dis, dot.y}, nil
 	}
 
-	return nil, &ErrNavigation{ErrInvalidDirection}
+	return nil, &ErrNavigation{
+		Err: &ErrInvalidDirection{
+			Direction: dir,
+		},
+	}
 }
 
 // Implementing json.Marshaler interface
