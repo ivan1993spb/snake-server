@@ -2,7 +2,6 @@ package engine
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
@@ -27,7 +26,7 @@ type ErrDotsOccupied struct {
 }
 
 func (e *ErrDotsOccupied) Error() string {
-	return fmt.Sprintf("dots is occupied: %s", e.Dots)
+	return "dots is occupied"
 }
 
 // Scene contains locations
