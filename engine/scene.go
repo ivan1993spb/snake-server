@@ -279,10 +279,17 @@ func (s *Scene) RelocateObject(old, new DotList) *ErrRelocateObject {
 	return s.unsafeRelocateObject(old, new)
 }
 
-func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocateObject, DotList) {
+type ErrRelocateObjectAvailableDots struct {
+	Err error
+}
+
+func (e *ErrRelocateObjectAvailableDots) Error() string {
+	return "cannot relocate object with available dots"
+}
+
+func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocateObjectAvailableDots, DotList) {
 	if !s.unsafeObjectLocated(old) {
-		// TODO: Return another error type (?) Create specific error type for this method (?)
-		return &ErrRelocateObject{
+		return &ErrRelocateObjectAvailableDots{
 			Err: &ErrObjectNotLocated{
 				Object: old.Copy(),
 			},
@@ -290,19 +297,19 @@ func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocat
 	}
 
 	if err := s.unsafeDeleteObject(old); err != nil {
-		return &ErrRelocateObject{
+		return &ErrRelocateObjectAvailableDots{
 			Err: err,
 		}, nil
 	}
 
-	if dots := s.unsafeLocateAvailableObjectDots(new); len(dots) > 0 {
-		return nil, dots.Copy()
+	dots := s.unsafeLocateAvailableObjectDots(new)
+	if len(dots) == 0 {
+		return &ErrRelocateObjectAvailableDots{
+			Err: fmt.Errorf("all dots are not available"),
+		}, nil
 	}
 
-	// TODO: Return error
-	return &ErrRelocateObject{
-		Err: fmt.Errorf("all dots are not available"),
-	}, nil
+	return nil, dots.Copy()
 }
 
 func (s *Scene) RelocateObjectAvailableDots(old, new DotList) (error, DotList) {
