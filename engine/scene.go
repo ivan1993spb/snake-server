@@ -279,6 +279,38 @@ func (s *Scene) RelocateObject(old, new DotList) *ErrRelocateObject {
 	return s.unsafeRelocateObject(old, new)
 }
 
+func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocateObject, DotList) {
+	if !s.unsafeObjectLocated(old) {
+		// TODO: Return another error type (?) Create specific error type for this method (?)
+		return &ErrRelocateObject{
+			Err: &ErrObjectNotLocated{
+				Object: old.Copy(),
+			},
+		}, nil
+	}
+
+	if err := s.unsafeDeleteObject(old); err != nil {
+		return &ErrRelocateObject{
+			Err: err,
+		}, nil
+	}
+
+	if dots := s.unsafeLocateAvailableObjectDots(new); len(dots) > 0 {
+		return nil, dots.Copy()
+	}
+
+	// TODO: Return error
+	return &ErrRelocateObject{
+		Err: fmt.Errorf("all dots are not available"),
+	}, nil
+}
+
+func (s *Scene) RelocateObjectAvailableDots(old, new DotList) (error, DotList) {
+	s.objectsMutex.Lock()
+	defer s.objectsMutex.Unlock()
+	return s.unsafeRelocateObjectAvailableDots(old, new)
+}
+
 var FindRetriesNumber = 32
 
 var ErrRetriesLimit = errors.New("retries limit was reached")
