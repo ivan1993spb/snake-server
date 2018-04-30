@@ -282,32 +282,34 @@ func (e *ErrRelocateAvailableDots) Error() string {
 	return "cannot relocate with available dots"
 }
 
-func (s *Scene) unsafeRelocateAvailableDots(old, new Location) (*ErrRelocateAvailableDots, Location) {
+func (s *Scene) unsafeRelocateAvailableDots(old, new Location) (Location, *ErrRelocateAvailableDots) {
 	if !s.unsafeLocated(old) {
-		return &ErrRelocateAvailableDots{
+		return nil, &ErrRelocateAvailableDots{
 			Err: &ErrNotLocated{
 				Location: old.Copy(),
 			},
-		}, nil
+		}
 	}
 
 	if err := s.unsafeDelete(old); err != nil {
-		return &ErrRelocateAvailableDots{
+		return nil, &ErrRelocateAvailableDots{
 			Err: err,
-		}, nil
+		}
 	}
 
 	dots := s.unsafeLocateAvailableDots(new)
 	if len(dots) == 0 {
-		return &ErrRelocateAvailableDots{
-			Err: fmt.Errorf("all dots are not available"),
-		}, nil
+		return nil, &ErrRelocateAvailableDots{
+			Err: &ErrDotsOccupied{
+				Dots: new,
+			},
+		}
 	}
 
-	return nil, dots.Copy()
+	return dots.Copy(), nil
 }
 
-func (s *Scene) RelocateAvailableDots(old, new Location) (error, Location) {
+func (s *Scene) RelocateAvailableDots(old, new Location) (Location, *ErrRelocateAvailableDots) {
 	s.locationsMutex.Lock()
 	defer s.locationsMutex.Unlock()
 	return s.unsafeRelocateAvailableDots(old, new)
