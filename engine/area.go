@@ -12,11 +12,27 @@ type Area struct {
 	height uint8
 }
 
-func NewArea(width, height uint8) *Area {
+type ErrInvalidAreaSize struct {
+	width  uint8
+	height uint8
+}
+
+func (e *ErrInvalidAreaSize) Error() string {
+	return fmt.Sprintf("invalid area size: width=%d, height=%d", e.width, e.height)
+}
+
+func NewArea(width, height uint8) (*Area, error) {
+	if width*height == 0 {
+		return nil, &ErrInvalidAreaSize{
+			width:  width,
+			height: height,
+		}
+	}
+
 	return &Area{
 		width:  width,
 		height: height,
-	}
+	}, nil
 }
 
 // Size returns area size
