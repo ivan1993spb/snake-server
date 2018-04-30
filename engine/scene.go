@@ -6,72 +6,67 @@ import (
 	"sync"
 )
 
-type ErrObjectNotLocated struct {
-	Object DotList
+type ErrNotLocated struct {
+	Location Location
 }
 
-func (e *ErrObjectNotLocated) Error() string {
-	return "object is not located"
+func (e *ErrNotLocated) Error() string {
+	return "not located"
 }
 
-type ErrObjectLocated struct {
-	Object DotList
+type ErrLocated struct {
+	Location Location
 }
 
-func (e *ErrObjectLocated) Error() string {
-	return "object is located"
+func (e *ErrLocated) Error() string {
+	return "located"
 }
 
 type ErrDotsOccupied struct {
-	Dots []*Dot // Occupied dots
+	Dots []*Dot // List of occupied dots
 }
 
 func (e *ErrDotsOccupied) Error() string {
-	return fmt.Sprintf("dots is occupied by an objects: %s", e.Dots)
+	return fmt.Sprintf("dots is occupied: %s", e.Dots)
 }
 
-// Scene object contains all objects on map
+// Scene contains locations
 type Scene struct {
-	area         *Area
-	objects      []DotList
-	objectsMutex *sync.RWMutex
+	area           *Area
+	locations      []Location
+	locationsMutex *sync.RWMutex
 }
 
 // NewScene returns new empty scene
 func NewScene(area *Area) (*Scene, error) {
 	return &Scene{
-		area:         area,
-		objects:      make([]DotList, 0),
-		objectsMutex: &sync.RWMutex{},
+		area:           area,
+		locations:      make([]Location, 0),
+		locationsMutex: &sync.RWMutex{},
 	}, nil
 }
 
-// GetAreaSize returns scene area size
-func (s *Scene) GetArea() *Area {
-	return s.area
-}
-
-// unsafeObjectLocated returns true if passed object is located on scene
-func (s *Scene) unsafeObjectLocated(object DotList) bool {
-	for i := range s.objects {
-		if s.objects[i].Equals(object) {
+// unsafeLocated returns true if passed location is located on scene
+func (s *Scene) unsafeLocated(location Location) bool {
+	for i := range s.locations {
+		if s.locations[i].Equals(location) {
 			return true
 		}
 	}
 	return false
 }
 
-func (s *Scene) ObjectLocated(object DotList) bool {
-	s.objectsMutex.RLock()
-	defer s.objectsMutex.RUnlock()
-	return s.unsafeObjectLocated(object)
+func (s *Scene) Located(location Location) bool {
+	s.locationsMutex.RLock()
+	defer s.locationsMutex.RUnlock()
+	return s.unsafeLocated(location)
 }
 
-// unsafeDotOccupied returns true if passed dot already used by an object located on scene
+// unsafeDotOccupied returns true if passed dot already used by a location on scene
 func (s *Scene) unsafeDotOccupied(dot *Dot) bool {
 	if s.area.Contains(dot) {
-		for _, object := range s.objects {
-			if object.Contains(dot) {
+		for _, location := range s.locations {
+			if location.Contains(dot) {
 				return true
 			}
 		}
@@ -80,63 +75,63 @@ func (s *Scene) unsafeDotOccupied(dot *Dot) bool {
 }
 
 func (s *Scene) DotOccupied(dot *Dot) bool {
-	s.objectsMutex.RLock()
-	defer s.objectsMutex.RUnlock()
+	s.locationsMutex.RLock()
+	defer s.locationsMutex.RUnlock()
 	return s.unsafeDotOccupied(dot)
 }
 
-// unsafeGetObjectByDot returns object which contains passed dot
-func (s *Scene) unsafeGetObjectByDot(dot *Dot) DotList {
+// unsafeGetLocationByDot returns location which contains passed dot
+func (s *Scene) unsafeGetLocationByDot(dot *Dot) Location {
 	if s.area.Contains(dot) {
-		for _, object := range s.objects {
-			if object.Contains(dot) {
-				return object.Copy()
+		for _, location := range s.locations {
+			if location.Contains(dot) {
+				return location.Copy()
 			}
 		}
 	}
 	return nil
 }
 
-func (s *Scene) GetObjectByDot(dot *Dot) DotList {
-	s.objectsMutex.RLock()
-	defer s.objectsMutex.RUnlock()
-	return s.unsafeGetObjectByDot(dot)
+func (s *Scene) GetLocationByDot(dot *Dot) Location {
+	s.locationsMutex.RLock()
+	defer s.locationsMutex.RUnlock()
+	return s.unsafeGetLocationByDot(dot)
 }
 
-type ErrLocateObject struct {
+type ErrLocate struct {
 	Err error
 }
 
-func (e *ErrLocateObject) Error() string {
-	return "cannot locate object: " + e.Err.Error()
+func (e *ErrLocate) Error() string {
+	return "cannot locate: " + e.Err.Error()
 }
 
-func (s *Scene) unsafeLocateObject(object DotList) *ErrLocateObject {
-	if s.unsafeObjectLocated(object) {
-		return &ErrLocateObject{
-			Err: &ErrObjectLocated{
-				Object: object.Copy(),
+func (s *Scene) unsafeLocate(location Location) *ErrLocate {
+	if s.unsafeLocated(location) {
+		return &ErrLocate{
+			Err: &ErrLocated{
+				Location: location.Copy(),
 			},
 		}
 	}
 
-	object = object.Copy()
+	location = location.Copy()
 	occupiedDots := make([]*Dot, 0)
 
-	// Check each dot of passed object
-	for i := uint16(0); i < object.DotCount(); i++ {
-		var dot = object.Dot(i)
+	// Check each dot of passed location
+	for i := uint16(0); i < location.DotCount(); i++ {
+		var dot = location.Dot(i)
 
 		if s.area.Contains(dot) {
-			return &ErrLocateObject{
+			return &ErrLocate{
 				Err: &ErrAreaNotContainsDot{
 					Dot: dot,
 				},
 			}
 		}
 
-		for i := range s.objects {
-			if s.objects[i].Contains(dot) {
+		for i := range s.locations {
+			if s.locations[i].Contains(dot) {
 				occupiedDots = append(occupiedDots, dot)
 				break
 			}
@@ -144,128 +139,128 @@ func (s *Scene) unsafeLocateObject(object DotList) *ErrLocateObject {
 	}
 
 	if len(occupiedDots) > 0 {
-		return &ErrLocateObject{
+		return &ErrLocate{
 			Err: &ErrDotsOccupied{
 				Dots: occupiedDots,
 			},
 		}
 	}
 
-	// Add to object list of scene
-	s.objects = append(s.objects, object)
+	// Add to location list of scene
+	s.locations = append(s.locations, location)
 
 	return nil
 }
 
-// LocateObject tries to create object on scene
-func (s *Scene) LocateObject(object DotList) *ErrLocateObject {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
-	return s.unsafeLocateObject(object)
+// Locate tries to create location to scene
+func (s *Scene) Locate(location Location) *ErrLocate {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeLocate(location)
 }
 
-func (s *Scene) unsafeLocateAvailableObjectDots(object DotList) DotList {
-	if s.unsafeObjectLocated(object) {
-		return DotList{}
+func (s *Scene) unsafeLocateAvailableDots(location Location) Location {
+	if s.unsafeLocated(location) {
+		return Location{}
 	}
 
-	object = object.Copy()
-	objectMirror := object.Copy()
+	location = location.Copy()
+	locationMirror := location.Copy()
 
-	// Check each dot of passed object
-	for i := uint16(0); i < objectMirror.DotCount(); i++ {
-		var dot = objectMirror.Dot(i)
+	// Check each dot of passed location
+	for i := uint16(0); i < locationMirror.DotCount(); i++ {
+		var dot = locationMirror.Dot(i)
 
 		if !s.area.Contains(dot) {
-			object = object.Delete(dot)
+			location = location.Delete(dot)
 			continue
 		}
 
-		for i := range s.objects {
-			if s.objects[i].Contains(dot) {
-				object = object.Delete(dot)
+		for i := range s.locations {
+			if s.locations[i].Contains(dot) {
+				location = location.Delete(dot)
 				break
 			}
 		}
 	}
 
-	if len(object) > 0 {
-		s.objects = append(s.objects, object)
+	if len(location) > 0 {
+		s.locations = append(s.locations, location)
 	}
 
-	return object.Copy()
+	return location.Copy()
 }
 
-func (s *Scene) LocateAvailableObjectDots(object DotList) DotList {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
-	return s.unsafeLocateAvailableObjectDots(object)
+func (s *Scene) LocateAvailableDots(location Location) Location {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeLocateAvailableDots(location)
 }
 
-type ErrDeleteObject struct {
+type ErrDelete struct {
 	Err error
 }
 
-func (e *ErrDeleteObject) Error() string {
-	return "cannot delete object"
+func (e *ErrDelete) Error() string {
+	return "cannot delete"
 }
 
-// unsafeDeleteObject deletes passed object from scene and returns error if there is a problem
-func (s *Scene) unsafeDeleteObject(object DotList) *ErrDeleteObject {
-	for i := range s.objects {
-		if s.objects[i].Equals(object) {
-			s.objects = append(s.objects[:i], s.objects[i+1:]...)
+// unsafeDelete deletes passed location from scene and returns error if there is a problem
+func (s *Scene) unsafeDelete(location Location) *ErrDelete {
+	for i := range s.locations {
+		if s.locations[i].Equals(location) {
+			s.locations = append(s.locations[:i], s.locations[i+1:]...)
 			return nil
 		}
 	}
 
-	return &ErrDeleteObject{
-		Err: &ErrObjectNotLocated{
-			Object: object.Copy(),
+	return &ErrDelete{
+		Err: &ErrNotLocated{
+			Location: location.Copy(),
 		},
 	}
 }
 
-// DeleteObject deletes passed object from scene and returns error if there is a problem
-func (s *Scene) DeleteObject(object DotList) *ErrDeleteObject {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
-	return s.unsafeDeleteObject(object)
+// Delete deletes passed location from scene and returns error if there is a problem
+func (s *Scene) Delete(location Location) *ErrDelete {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeDelete(location)
 }
 
-type ErrRelocateObject struct {
+type ErrRelocate struct {
 	Err error
 }
 
-func (e *ErrRelocateObject) Error() string {
-	return "cannot relocate object: " + e.Err.Error()
+func (e *ErrRelocate) Error() string {
+	return "cannot relocate"
 }
 
-func (s *Scene) unsafeRelocateObject(old, new DotList) *ErrRelocateObject {
-	if !s.unsafeObjectLocated(old) {
-		return &ErrRelocateObject{
-			Err: &ErrObjectNotLocated{
-				Object: old.Copy(),
+func (s *Scene) unsafeRelocate(old, new Location) *ErrRelocate {
+	if !s.unsafeLocated(old) {
+		return &ErrRelocate{
+			Err: &ErrNotLocated{
+				Location: old.Copy(),
 			},
 		}
 	}
 
-	if s.unsafeObjectLocated(new) {
-		return &ErrRelocateObject{
-			Err: &ErrObjectLocated{
-				Object: new.Copy(),
+	if s.unsafeLocated(new) {
+		return &ErrRelocate{
+			Err: &ErrLocated{
+				Location: new.Copy(),
 			},
 		}
 	}
 
-	if err := s.unsafeDeleteObject(old); err != nil {
-		return &ErrRelocateObject{
+	if err := s.unsafeDelete(old); err != nil {
+		return &ErrRelocate{
 			Err: err,
 		}
 	}
 
-	if err := s.unsafeLocateObject(new); err != nil {
-		return &ErrRelocateObject{
+	if err := s.unsafeLocate(new); err != nil {
+		return &ErrRelocate{
 			Err: err,
 		}
 	}
@@ -273,38 +268,38 @@ func (s *Scene) unsafeRelocateObject(old, new DotList) *ErrRelocateObject {
 	return nil
 }
 
-func (s *Scene) RelocateObject(old, new DotList) *ErrRelocateObject {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
-	return s.unsafeRelocateObject(old, new)
+func (s *Scene) Relocate(old, new Location) *ErrRelocate {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeRelocate(old, new)
 }
 
-type ErrRelocateObjectAvailableDots struct {
+type ErrRelocateAvailableDots struct {
 	Err error
 }
 
-func (e *ErrRelocateObjectAvailableDots) Error() string {
-	return "cannot relocate object with available dots"
+func (e *ErrRelocateAvailableDots) Error() string {
+	return "cannot relocate with available dots"
 }
 
-func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocateObjectAvailableDots, DotList) {
-	if !s.unsafeObjectLocated(old) {
-		return &ErrRelocateObjectAvailableDots{
-			Err: &ErrObjectNotLocated{
-				Object: old.Copy(),
+func (s *Scene) unsafeRelocateAvailableDots(old, new Location) (*ErrRelocateAvailableDots, Location) {
+	if !s.unsafeLocated(old) {
+		return &ErrRelocateAvailableDots{
+			Err: &ErrNotLocated{
+				Location: old.Copy(),
 			},
 		}, nil
 	}
 
-	if err := s.unsafeDeleteObject(old); err != nil {
-		return &ErrRelocateObjectAvailableDots{
+	if err := s.unsafeDelete(old); err != nil {
+		return &ErrRelocateAvailableDots{
 			Err: err,
 		}, nil
 	}
 
-	dots := s.unsafeLocateAvailableObjectDots(new)
+	dots := s.unsafeLocateAvailableDots(new)
 	if len(dots) == 0 {
-		return &ErrRelocateObjectAvailableDots{
+		return &ErrRelocateAvailableDots{
 			Err: fmt.Errorf("all dots are not available"),
 		}, nil
 	}
@@ -312,47 +307,47 @@ func (s *Scene) unsafeRelocateObjectAvailableDots(old, new DotList) (*ErrRelocat
 	return nil, dots.Copy()
 }
 
-func (s *Scene) RelocateObjectAvailableDots(old, new DotList) (error, DotList) {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
-	return s.unsafeRelocateObjectAvailableDots(old, new)
+func (s *Scene) RelocateAvailableDots(old, new Location) (error, Location) {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeRelocateAvailableDots(old, new)
 }
 
 var FindRetriesNumber = 32
 
 var ErrRetriesLimit = errors.New("retries limit was reached")
 
-func (s *Scene) unsafeLocateRandomDot() (*Dot, error) {
+func (s *Scene) unsafeLocateRandomDot() (Location, error) {
 	for count := 0; count < FindRetriesNumber; count++ {
 		if dot := s.area.NewRandomDot(0, 0); !s.unsafeDotOccupied(dot) {
-			if err := s.unsafeLocateObject(DotList{dot}); err != nil {
+			if err := s.unsafeLocate(Location{dot}); err != nil {
 				return nil, err
 			}
-			return dot, nil
+			return Location{dot}, nil
 		}
 	}
 
 	return nil, ErrRetriesLimit
 }
 
-func (s *Scene) LocateRandomDot() (*Dot, error) {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
+func (s *Scene) LocateRandomDot() (Location, error) {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
 	return s.unsafeLocateRandomDot()
 }
 
-func (s *Scene) unsafeLocateRandomRectTryOnce(rw, rh uint8) (*Rect, error) {
+func (s *Scene) unsafeLocateRandomRectTryOnce(rw, rh uint8) (Location, error) {
 	if rect, err := s.area.NewRandomRect(rw, rh, 0, 0); err == nil {
-		if err := s.unsafeLocateObject(rect.DotList()); err != nil {
+		if err := s.unsafeLocate(rect.Location()); err != nil {
 			return nil, err
 		}
-		return rect, nil
+		return rect.Location(), nil
 	} else {
 		return nil, err
 	}
 }
 
-func (s *Scene) unsafeLocateRandomRect(rw, rh uint8) (*Rect, error) {
+func (s *Scene) unsafeLocateRandomRect(rw, rh uint8) (Location, error) {
 	for count := 0; count < FindRetriesNumber; count++ {
 		if rect, err := s.unsafeLocateRandomRectTryOnce(rw, rh); err == nil {
 			return rect, nil
@@ -362,8 +357,8 @@ func (s *Scene) unsafeLocateRandomRect(rw, rh uint8) (*Rect, error) {
 	return nil, ErrRetriesLimit
 }
 
-func (s *Scene) LocateRandomRect(rw, rh uint8) (*Rect, error) {
-	s.objectsMutex.Lock()
-	defer s.objectsMutex.Unlock()
+func (s *Scene) LocateRandomRect(rw, rh uint8) (Location, error) {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
 	return s.unsafeLocateRandomRect(rw, rh)
 }

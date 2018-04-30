@@ -59,8 +59,8 @@ func (r *Rect) Dots() []*Dot {
 	return dots
 }
 
-func (r *Rect) DotList() DotList {
-	object := make(DotList, 0, r.DotCount())
+func (r *Rect) Location() Location {
+	object := make(Location, 0, r.DotCount())
 
 	for i := uint16(0); i < r.DotCount(); i++ {
 		object = append(object, r.Dot(i))
