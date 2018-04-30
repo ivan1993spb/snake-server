@@ -64,20 +64,68 @@ func (l1 Location) Equals(l2 Location) bool {
 	if len(l1) == 0 && len(l2) == 0 {
 		return true
 	}
+
 	if len(l1) != len(l2) {
 		return false
 	}
 
-	for i := 0; i < len(l1); i++ {
-		if !l1[i].Equals(l2[i]) {
-			return false
-		}
+	if len(l1.Difference(l2)) > 0 {
+		return false
 	}
 
 	return true
 }
 
-func (l1 Location) Intersection(l2 Location) Location {
-	// TODO: Implement method
-	return Location{}
+func (l1 Location) Difference(l2 Location) Location {
+	var diff Location
+
+	for i := 0; i < 2; i++ {
+		for _, dot1 := range l1 {
+			found := false
+			for _, dot2 := range l2 {
+				if dot1.Equals(dot2) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				diff = append(diff, dot1)
+			}
+		}
+		if i == 0 {
+			l1, l2 = l2, l1
+		}
+	}
+
+	return diff
+}
+
+func (l1 Location) Intersection(l2 Location) (intersection Location) {
+	low, high := l1, l2
+	if len(l1) > len(l2) {
+		low = l2
+		high = l1
+	}
+
+	done := false
+	for i, l := range low {
+		for j, h := range high {
+			f1 := i + 1
+			f2 := j + 1
+			if l.Equals(h) {
+				intersection = append(intersection, h)
+				if f1 < len(low) && f2 < len(high) {
+					if !low[f1].Equals(high[f2]) {
+						done = true
+					}
+				}
+				high = high[:j+copy(high[j:], high[j+1:])]
+				break
+			}
+		}
+		if done {
+			break
+		}
+	}
+	return
 }
