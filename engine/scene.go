@@ -362,3 +362,7 @@ func (s *Scene) LocateRandomRect(rw, rh uint8) (Location, error) {
 	defer s.locationsMutex.Unlock()
 	return s.unsafeLocateRandomRect(rw, rh)
 }
+
+func (s *Scene) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
+	return s.area.Navigate(dot, dir, dis)
+}
