@@ -108,7 +108,9 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 	// Area must contain passed dot
 	if !a.Contains(dot) {
 		return nil, &ErrNavigation{
-			Err: &ErrAreaNotContainsDot{dot},
+			Err: &ErrAreaNotContainsDot{
+				Dot: dot,
+			},
 		}
 	}
 
@@ -121,16 +123,28 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 		// North
 		if dir == DirectionNorth {
 			if dis > dot.y {
-				return &Dot{dot.x, a.height - dis + dot.y}, nil
+				return &Dot{
+					x: dot.x,
+					y: a.height - dis + dot.y,
+				}, nil
 			}
-			return &Dot{dot.x, dot.y - dis}, nil
+			return &Dot{
+				x: dot.x,
+				y: dot.y - dis,
+			}, nil
 		}
 
 		// South
 		if dot.y+dis+1 > a.height {
-			return &Dot{dot.x, dis - a.height + dot.y}, nil
+			return &Dot{
+				x: dot.x,
+				y: dis - a.height + dot.y,
+			}, nil
 		}
-		return &Dot{dot.x, dot.y + dis}, nil
+		return &Dot{
+			x: dot.x,
+			y: dot.y + dis,
+		}, nil
 
 	case DirectionWest, DirectionEast:
 		if dis > a.width {
@@ -140,16 +154,28 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 		// East
 		if dir == DirectionEast {
 			if a.width > dot.x+dis {
-				return &Dot{dot.x + dis, dot.y}, nil
+				return &Dot{
+					x: dot.x + dis,
+					y: dot.y,
+				}, nil
 			}
-			return &Dot{dis - a.width + dot.x, dot.y}, nil
+			return &Dot{
+				x: dis - a.width + dot.x,
+				y: dot.y,
+			}, nil
 		}
 
 		// West
 		if dis > dot.x {
-			return &Dot{a.width - dis + dot.x, dot.y}, nil
+			return &Dot{
+				x: a.width - dis + dot.x,
+				y: dot.y,
+			}, nil
 		}
-		return &Dot{dot.x - dis, dot.y}, nil
+		return &Dot{
+			x: dot.x - dis,
+			y: dot.y,
+		}, nil
 	}
 
 	return nil, &ErrNavigation{

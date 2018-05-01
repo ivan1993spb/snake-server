@@ -3,12 +3,16 @@ package engine
 import "encoding/json"
 
 type Dot struct {
-	x, y uint8
+	x uint8
+	y uint8
 }
 
 // NewDot creates dot object
 func NewDot(x, y uint8) *Dot {
-	return &Dot{x, y}
+	return &Dot{
+		x: x,
+		y: y,
+	}
 }
 
 // Equals compares two dots

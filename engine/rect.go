@@ -3,12 +3,20 @@ package engine
 import "encoding/json"
 
 type Rect struct {
-	x, y, w, h uint8
+	x uint8
+	y uint8
+	w uint8
+	h uint8
 }
 
 // NewRect creates rect
 func NewRect(x, y, w, h uint8) *Rect {
-	return &Rect{x, y, w, h}
+	return &Rect{
+		x: x,
+		y: y,
+		w: w,
+		h: h,
+	}
 }
 
 func (r *Rect) Width() uint8 {
