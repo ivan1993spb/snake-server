@@ -54,6 +54,10 @@ func (l Location) DotCount() uint16 {
 	return uint16(len(l))
 }
 
+func (l Location) Empty() bool {
+	return len(l) == 0
+}
+
 func (l Location) Copy() Location {
 	newLocation := make(Location, 0, len(l))
 	copy(newLocation, l)
