@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/ivan1993spb/clever-snake/engine"
+	"github.com/ivan1993spb/snake-server/engine"
 )
 
 type entity struct {
