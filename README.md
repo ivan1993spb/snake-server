@@ -22,7 +22,7 @@ Response:
     },
     {
         "id": 2,
-        "available": 0
+        "available": 0,
         "players": 15
     }
 ]
@@ -64,13 +64,14 @@ Game objects:
 
 * Apple: `{"type": "apple", "id": 1, "dot": [x, y]}`
 * Corpse: `{"type": "corpse", "id": 2, "dots": [[x, y], [x, y], [x, y]]}`
+* Mouse: `{"type": "mouse", "id": 3, dot: [x, y], "dir": "n"}`
 * Snake: `{"type": "snake", "id": 3, "dots": [[x, y], [x, y], [x, y]]}`
 * Wall: `{"type": "wall", "id": 4, "dots": [[x, y], [x, y], [x, y]]}`
 * Watermelon: `{"type": "watermelon", "id": 4, "dots": [[x, y], [x, y], [x, y]]}`
 
 Message types:
 
-* Object
-* Error
-* Notice
-* Event
+* Object: `{"type": "object", "object": {}}`
+* Error: `{"type": "error", "message": "text"}`
+* Notice: `{}`
+* Event: `{}`
