@@ -367,3 +367,15 @@ func (s *Scene) LocateRandomRect(rw, rh uint8) (Location, error) {
 func (s *Scene) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 	return s.area.Navigate(dot, dir, dis)
 }
+
+func (s *Scene) Size() uint16 {
+	return s.area.Size()
+}
+
+func (s *Scene) Width() uint8 {
+	return s.area.Width()
+}
+
+func (s *Scene) Height() uint8 {
+	return s.area.Height()
+}
