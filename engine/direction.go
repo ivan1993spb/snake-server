@@ -1,9 +1,6 @@
 package engine
 
-import (
-	"fmt"
-	"math/rand"
-)
+import "math/rand"
 
 type ErrInvalidDirection struct {
 	Direction Direction
@@ -77,6 +74,14 @@ func ValidDirection(dir Direction) bool {
 	return directionCount > dir
 }
 
+type ErrDirectionMarshal struct {
+	Err error
+}
+
+func (e *ErrDirectionMarshal) Error() string {
+	return "cannot marshal direction"
+}
+
 // Implementing json.Marshaler interface
 func (dir Direction) MarshalJSON() ([]byte, error) {
 	if dirJSON, ok := directionsJSON[dir]; ok {
@@ -84,7 +89,19 @@ func (dir Direction) MarshalJSON() ([]byte, error) {
 	}
 
 	// Invalid direction
-	return unknownDirectionJSON, fmt.Errorf("cannot marshal direction: %s", &ErrInvalidDirection{dir})
+	return unknownDirectionJSON, &ErrDirectionMarshal{
+		Err: &ErrInvalidDirection{
+			Direction: dir,
+		},
+	}
+}
+
+type ErrReverseDirection struct {
+	Err error
+}
+
+func (e ErrReverseDirection) Error() string {
+	return "cannot reverse direction"
 }
 
 // Reverse reverses direction
@@ -100,5 +117,9 @@ func (dir Direction) Reverse() (Direction, error) {
 		return DirectionEast, nil
 	}
 
-	return 0, fmt.Errorf("cannot reverse direction: %s", &ErrInvalidDirection{dir})
+	return 0, &ErrReverseDirection{
+		Err: &ErrInvalidDirection{
+			Direction: dir,
+		},
+	}
 }

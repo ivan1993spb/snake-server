@@ -3,7 +3,6 @@ package engine
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/rand"
 )
 
@@ -13,19 +12,19 @@ type Area struct {
 }
 
 type ErrInvalidAreaSize struct {
-	width  uint8
-	height uint8
+	Width  uint8
+	Height uint8
 }
 
 func (e *ErrInvalidAreaSize) Error() string {
-	return fmt.Sprintf("invalid area size: width=%d, height=%d", e.width, e.height)
+	return "invalid area size"
 }
 
 func NewArea(width, height uint8) (*Area, error) {
 	if width*height == 0 {
 		return nil, &ErrInvalidAreaSize{
-			width:  width,
-			height: height,
+			Width:  width,
+			Height: height,
 		}
 	}
 
@@ -62,7 +61,7 @@ func (a *Area) NewRandomDot(x, y uint8) *Dot {
 
 func (a *Area) NewRandomRect(rw, rh, sx, sy uint8) (*Rect, error) {
 	if rw > a.width || rh > a.height {
-		return nil, errors.New("cannot get random rect on square: invalid width or height")
+		return nil, errors.New("cannot get random rect on square: invalid Width or Height")
 	}
 
 	var r = &Rect{
@@ -96,7 +95,7 @@ type ErrAreaNotContainsDot struct {
 }
 
 func (e *ErrAreaNotContainsDot) Error() string {
-	return fmt.Sprintf("area does not contain dot: %s", e.Dot)
+	return "area does not contain dot"
 }
 
 // Navigate calculates and returns dot placed on distance dis dots from passed dot in direction dir
