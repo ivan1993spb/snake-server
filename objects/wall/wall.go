@@ -5,8 +5,8 @@
 package wall
 
 import (
-	"github.com/ivan1993spb/clever-snake/engine"
-	"github.com/ivan1993spb/clever-snake/playground"
+	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/playground"
 )
 
 type Wall struct {
