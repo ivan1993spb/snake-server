@@ -583,7 +583,7 @@ func (e ErrCreateRandomRectObject) Error() string {
 	return "cannot create random rect object: " + string(e)
 }
 
-func (pg *Playground) CreateRandomRectObject(object interface{}, rw, rh uint8) (engine.Location, error) {
+func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, ErrCreateRandomRectObject("invalid rectangle size")
 	}
