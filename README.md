@@ -29,6 +29,8 @@ Server for online arcade game snake.
 
 ## API Description
 
+API methods provide JSON format.
+
 ### `GET /info`
 
 * returns information about rooms
@@ -50,21 +52,6 @@ Response:
         "players": 15
     }
 ]
-```
-
-### `GET /auth`
-
-* selects room
-* generate token for place in room for gamer
-
-Response:
-
-```json
-{
-    "room_id": 1,
-    "player_id": 12,
-    "token": "token"
-}
 ```
 
 ### `/game`
