@@ -1,11 +1,35 @@
 
 # Snake server
 
-Server for arcade game snake.
+Server for online arcade game snake.
 
-## Protocol
+```
++--------------------------------------------------------------+
+|                                                              |
+|     0                                                        |
+|                   o                                          |
+|                   x                                          |
+|            xxxxx  x                                          |
+|            x   xxxx                     0                    |
+|          xxx                                                 |
+|          x                0             0                    |
+|          x                                                   |
+|                                                              |
+|                                        xo   0                |
+|                                     xxxx                     |
+|               0                     x                        |
+|  xxo                          xxxxxxx                        |
+|  x                     xxxxxxxx                              |
+|  x   0                 x                                     |
+|xxx                     x                                 xxxx|
+|                                                              |
+|                                                              |
++--------------------------------------------------------------+
+```
 
-`GET /rooms`
+## API Description
+
+### `GET /info`
 
 * returns information about rooms
 * gamer limit in room
@@ -28,7 +52,7 @@ Response:
 ]
 ```
 
-`GET /auth`
+### `GET /auth`
 
 * selects room
 * generate token for place in room for gamer
@@ -43,9 +67,9 @@ Response:
 }
 ```
 
-`/game`
+### `/game`
 
-game websocket handler - json stream
+game WebSocket handler - json stream
 
 * verify token
 * return playground size : width and height
