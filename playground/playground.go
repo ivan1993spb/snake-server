@@ -119,6 +119,10 @@ func (pg *Playground) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Locat
 }
 
 func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
+	if len(dots) == 0 {
+		return nil
+	}
+
 	objects := make([]interface{}, 0)
 	for _, dot := range dots {
 		objects = append(objects, pg.unsafeGetObjectByDot(dot))
@@ -127,6 +131,10 @@ func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
 }
 
 func (pg *Playground) GetObjectsByDots(dots []*engine.Dot) []interface{} {
+	if len(dots) == 0 {
+		return nil
+	}
+
 	pg.entitiesMutex.RLock()
 	defer pg.entitiesMutex.RUnlock()
 	return pg.unsafeGetObjectsByDots(dots)
@@ -164,7 +172,11 @@ func (pg *Playground) unsafeCreateEntity(object interface{}, location engine.Loc
 }
 
 func (pg *Playground) CreateObject(object interface{}, location engine.Location) *ErrCreateObject {
-	// TODO: Check if location is empty
+	if location.Empty() {
+		return &ErrCreateObject{
+			Err: ErrEmptyLocation,
+		}
+	}
 
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
@@ -224,7 +236,11 @@ func (e *ErrCreateObjectAvailableDots) Error() string {
 }
 
 func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *ErrCreateObjectAvailableDots) {
-	// TODO: Check if location is empty
+	if location.Empty() {
+		return nil, &ErrCreateObjectAvailableDots{
+			Err: ErrEmptyLocation,
+		}
+	}
 
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
@@ -324,7 +340,11 @@ func (e *ErrUpdateObject) Error() string {
 }
 
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
-	// TODO: Check if old or new location is empty
+	if old.Empty() || new.Empty() {
+		return &ErrUpdateObject{
+			Err: ErrEmptyLocation,
+		}
+	}
 
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
@@ -435,7 +455,12 @@ func (err *ErrUpdateObjectAvailableDots) Error() string {
 }
 
 func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *ErrUpdateObjectAvailableDots) {
-	// TODO: Check if old or new location is empty
+	if old.Empty() || new.Empty() {
+		return nil, &ErrUpdateObjectAvailableDots{
+			Err: ErrEmptyLocation,
+		}
+	}
+
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
 
@@ -559,7 +584,9 @@ func (e ErrCreateRandomRectObject) Error() string {
 }
 
 func (pg *Playground) CreateRandomRectObject(object interface{}, rw, rh uint8) (engine.Location, error) {
-	// TODO: Check rw*rh > 0 and return error if it is not true
+	if rw*rh == 0 {
+		return nil, ErrCreateRandomRectObject("invalid rectangle size")
+	}
 
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
@@ -580,4 +607,16 @@ func (pg *Playground) CreateRandomRectObject(object interface{}, rw, rh uint8) (
 
 func (pg *Playground) Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error) {
 	return pg.scene.Navigate(dot, dir, dis)
+}
+
+func (pg *Playground) Size() uint16 {
+	return pg.scene.Size()
+}
+
+func (pg *Playground) Width() uint8 {
+	return pg.scene.Width()
+}
+
+func (pg *Playground) Height() uint8 {
+	return pg.scene.Height()
 }
