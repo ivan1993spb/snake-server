@@ -3,29 +3,7 @@
 
 Server for online arcade game snake.
 
-```
-+--------------------------------------------------------------+
-|                                                              |
-|     0                                                        |
-|                   o                                          |
-|                   x                                          |
-|            xxxxx  x                                          |
-|            x   xxxx                     0                    |
-|          xxx                                                 |
-|          x                0             0                    |
-|          x                                                   |
-|                                                              |
-|                                        xo   0                |
-|                                     xxxx                     |
-|               0                     x                        |
-|  xxo                          xxxxxxx                        |
-|  x                     xxxxxxxx                              |
-|  x   0                 x                                     |
-|xxx                     x                                 xxxx|
-|                                                              |
-|                                                              |
-+--------------------------------------------------------------+
-```
+// TODO: Create screen shot
 
 ## API Description
 
@@ -54,7 +32,11 @@ Response:
 ]
 ```
 
-### `/game`
+### `GET /info/{id}` ?
+
+### `GET /room/{id}` ?
+
+### `/game/{id}`
 
 game WebSocket handler - json stream
 
@@ -86,3 +68,29 @@ Message types:
 * Error: `{"type": "error", "message": "text"}`
 * Notice: `{}`
 * Event: `{}`
+
+# API Variant
+
+First:
+
+```
+POST /game/{id} - WebSocket - connect to game
+POST /game/create - {pg_w, pg_h, conn_limit} - returns {id, pg_w, pg_h, conn_limit, players}
+GET  /game/{id} - returns info {id, pg_w, pg_h, conn_limit, players}
+GET  /games [{id, pg_w, pg_h, conn_limit, players}, ...]
+```
+
+Second:
+
+```
+POST /game/{id} - WebSocket - connect to game with id
+POST /game - WebSocket - connect to random game or create
+GET  /game/{id} - returns info {id, pg_w, pg_h, conn_limit, players}
+GET  /games [{id, pg_w, pg_h, conn_limit, players}, ...]
+```
+
+Third:
+
+```
+GET /game - WebSocket - connect to first game or create
+```
