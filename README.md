@@ -92,5 +92,8 @@ GET  /games [{id, pg_w, pg_h, conn_limit, players}, ...]
 Third:
 
 ```
-GET /game - WebSocket - connect to first game or create
+GET /game/{id} - WebSocket - connect to first game or create
+POST /game - create game room
+DELETE /game/{id} - delete game room
+GET /game - get game list [{id, pg_w, pg_h, conn_limit, players}, ...]
 ```
