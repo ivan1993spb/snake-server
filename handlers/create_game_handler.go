@@ -21,7 +21,10 @@ const (
 )
 
 type responseCreateGameHandler struct {
-	ID int `json:"id"`
+	ID     int   `json:"id"`
+	Limit  int   `json:"limit"`
+	Width  uint8 `json:"width"`
+	Height uint8 `json:"height"`
 }
 
 type createGameHandler struct {
@@ -90,7 +93,10 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
 	err = json.NewEncoder(w).Encode(responseCreateGameHandler{
-		ID: id,
+		ID:     id,
+		Limit:  connectionLimit,
+		Width:  uint8(mapWidth),
+		Height: uint8(mapHeight),
 	})
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
