@@ -2,30 +2,36 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ivan1993spb/snake-server/connections"
 )
 
 const URLRouteGameByID = "/game/{id}"
 
-const MethodGame = http.MethodDelete
+const MethodGame = http.MethodGet
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:    1024,
+	WriteBufferSize:   1024,
+	EnableCompression: true,
 }
 
 type gameHandler struct {
-	logger *logrus.Logger
+	logger       *logrus.Logger
+	groupManager *connections.ConnectionGroupManager
 }
 
 type ErrGameHandler string
 
-func NewGameHandler(logger *logrus.Logger) http.Handler {
+func NewGameHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &gameHandler{
-		logger: logger,
+		logger:       logger,
+		groupManager: groupManager,
 	}
 }
 
@@ -33,16 +39,43 @@ func (h *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("game handler start")
 
 	vars := mux.Vars(r)
-	h.logger.Infoln("vars", vars)
+
+	id, err := strconv.Atoi(vars[routeVarGroupID])
+	if err != nil {
+		// TODO: Create custom error
+		h.logger.Error(err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	h.logger.Infoln("group id", id)
+
+	group, err := h.groupManager.Get(id)
+	if err != nil {
+		h.logger.Errorln("cannot get group:", err.Error())
+
+		switch err {
+		case connections.ErrNotFoundGroup:
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		default:
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	h.logger.Info(group)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error(err)
 	}
+	defer conn.Close()
+
+	group.Add(conn)
 
 	// TODO: Implement handler.
 
-	conn.Close()
+	group.Delete(conn)
 
 	h.logger.Info("game handler end")
 }
