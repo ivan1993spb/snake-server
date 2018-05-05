@@ -54,6 +54,8 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Infoln("group id to delete:", id)
 
+	// TODO: Stop group processes ?
+
 	if err := h.groupManager.Delete(id); err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
 
