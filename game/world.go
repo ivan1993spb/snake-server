@@ -7,6 +7,10 @@ import (
 	"github.com/ivan1993spb/snake-server/playground"
 )
 
+const worldEventsBufferSize = 512
+
+const worldEventsTimeout = time.Second
+
 type World struct {
 	pg       *playground.Playground
 	chEvents chan *Event
@@ -14,12 +18,12 @@ type World struct {
 	timeout  time.Duration
 }
 
-func NewWorld(pg *playground.Playground, buffer uint, timeout time.Duration) *World {
+func NewWorld(pg *playground.Playground) *World {
 	return &World{
 		pg:       pg,
-		chEvents: make(chan *Event, buffer),
+		chEvents: make(chan *Event, worldEventsBufferSize),
 		stop:     make(chan struct{}, 0),
-		timeout:  timeout,
+		timeout:  worldEventsTimeout,
 	}
 }
 
@@ -55,18 +59,22 @@ func (w *World) EntityExists(object interface{}, location engine.Location) bool 
 }
 
 func (w *World) GetObjectByLocation(location engine.Location) interface{} {
+	// TODO: Emit event?
 	return w.pg.GetObjectByLocation(location)
 }
 
 func (w *World) GetObjectByDot(dot *engine.Dot) interface{} {
+	// TODO: Emit event?
 	return w.pg.GetObjectByDot(dot)
 }
 
 func (w *World) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+	// TODO: Emit event?
 	return w.pg.GetEntityByDot(dot)
 }
 
 func (w *World) GetObjectsByDots(dots []*engine.Dot) []interface{} {
+	// TODO: Emit event?
 	return w.pg.GetObjectsByDots(dots)
 }
 
