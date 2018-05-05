@@ -9,6 +9,11 @@ import (
 	"github.com/olebedev/emitter"
 
 	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/objects/apple"
+	"github.com/ivan1993spb/snake-server/objects/corpse"
+	"github.com/ivan1993spb/snake-server/objects/mouse"
+	"github.com/ivan1993spb/snake-server/objects/wall"
+	"github.com/ivan1993spb/snake-server/objects/watermelon"
 	"github.com/ivan1993spb/snake-server/playground"
 )
 
@@ -19,20 +24,20 @@ const (
 	snakeStrengthFactor = 1
 )
 
-type SnakeCommand string
+type Command string
 
 const (
-	SnakeCommandToNorth SnakeCommand = "n"
-	SnakeCommandToEast  SnakeCommand = "e"
-	SnakeCommandToSouth SnakeCommand = "s"
-	SnakeCommandToWest  SnakeCommand = "w"
+	CommandToNorth Command = "n"
+	CommandToEast  Command = "e"
+	CommandToSouth Command = "s"
+	CommandToWest  Command = "w"
 )
 
-var snakeCommands = map[SnakeCommand]engine.Direction{
-	SnakeCommandToNorth: engine.DirectionNorth,
-	SnakeCommandToEast:  engine.DirectionEast,
-	SnakeCommandToSouth: engine.DirectionSouth,
-	SnakeCommandToWest:  engine.DirectionWest,
+var snakeCommands = map[Command]engine.Direction{
+	CommandToNorth: engine.DirectionNorth,
+	CommandToEast:  engine.DirectionEast,
+	CommandToSouth: engine.DirectionSouth,
+	CommandToWest:  engine.DirectionWest,
 }
 
 // Snake object
@@ -120,26 +125,26 @@ func (s *Snake) Run(emitter *emitter.Emitter) error {
 			case <-ticker.C:
 			}
 
-			if !s.pg.Located(s) {
-				return
-			}
-
 			// Calculate next position
 			dot, err := s.getNextHeadDot()
 			if err != nil {
-				s.p.OccurredError(s, err)
+				// TODO How to emit error ?
+				//s.p.OccurredError(s, err)
 				return
 			}
 
 			// TODO: Delete this logic
 			if object := s.pg.GetObjectByDot(dot); object != nil {
-				if err = logic.Clash(s, object, dot); err != nil {
-					s.p.OccurredError(s, err)
-					return
-				}
-
-				if !s.pg.Located(s) {
-					return
+				switch object := object.(type) {
+				case *apple.Apple:
+					object.NutritionalValue(dot)
+				case *corpse.Corpse:
+					object.NutritionalValue(dot)
+				case *mouse.Mouse:
+				case *Snake:
+				case *wall.Wall:
+				case *watermelon.Watermelon:
+					object.NutritionalValue(dot)
 				}
 
 				ticker = time.NewTicker(s.calculateDelay())
@@ -171,11 +176,11 @@ func (s *Snake) getNextHeadDot() (*engine.Dot, error) {
 		return s.pg.Navigate(s.location[0], s.direction, 1)
 	}
 
-	return nil, fmt.Errorf("cannot get next head location: %s", errEmptyDotList)
+	return nil, fmt.Errorf("cannot get next head location: errEmptyDotList")
 }
 
 // Implementing logic.Controlled interface
-func (s *Snake) Command(cmd SnakeCommand) error {
+func (s *Snake) Command(cmd Command) error {
 	if direction, ok := snakeCommands[cmd]; ok {
 		s.setMovementDirection(direction)
 		return nil
