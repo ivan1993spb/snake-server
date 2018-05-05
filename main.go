@@ -2,94 +2,80 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
 
+	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/handlers"
 )
 
-const description = "Snake server"
+const (
+	defaultAddress = ":8080"
 
-type errStartingServer struct {
-	err error
-}
+	defaultGroupsLimit      = 10
+	defaultConnectionsLimit = 4 // ?
 
-func (e *errStartingServer) Error() string {
-	return "starting server error: " + e.err.Error()
-}
+	defaultWidth  = 100 // ?
+	defaultHeight = 100 // ?
+)
+
+var (
+	address string
+
+	groupsLimit int
+
+	// TODO: ?
+	//emptyRoomExpire time.Duration // Create if users will be able to add rooms
+
+	// Room properties
+	connectionsLimit uint
+
+	pgW, pgH uint
+
+	seed int64
+)
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	flag.StringVar(&address, "address", defaultAddress, "address to serve")
+	flag.IntVar(&groupsLimit, "max-groups", defaultGroupsLimit, "max groups count on server")
+
+	flag.UintVar(&connectionsLimit, "default-conn-limit", defaultConnectionsLimit, "default connection count for group")
+	flag.UintVar(&pgW, "width", defaultWidth, "default map width")
+	flag.UintVar(&pgH, "height", defaultHeight, "default map height")
+
+	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
+	flag.Parse()
 }
 
 func main() {
-
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 *                  BEGIN PARSING PARAMETERS                   *
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-	var (
-		// Networking
-		// TODO: fix to one "addr" param
-		addr string
-
-		// Server limits
-		poolLimit uint
-		//emptyRoomExpire time.Duration // Create if users will be able to add rooms
-
-		// Room properties
-		connLimit, pgW, pgH uint
-	)
-
-	flag.StringVar(&addr, "addr", "", "addr")
-	flag.UintVar(&poolLimit, "pool_limit", 10, "max pool count on server")
-	flag.UintVar(&connLimit, "conn_limit", 4, "max connection count on pool")
-	flag.UintVar(&pgW, "pg_w", 40, "playground width")
-	flag.UintVar(&pgH, "pg_h", 28, "playground height")
-
-	flag.Usage = func() {
-		fmt.Println(description)
-		fmt.Println("Usage:")
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-
 	logger := logrus.New()
 	logger.Info("preparing to start server")
 
+	rand.Seed(seed)
+	logger.Infoln("seed:", seed)
+
+	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit)
+	if err != nil {
+		logger.Fatalln("cannot create connections group manager:", err)
+	}
+
 	r := mux.NewRouter()
+	r.Path(handlers.URLRouteGameByID).Methods(handlers.MethodGame).Handler(handlers.NewGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 
-	r.Path(handlers.URLRouteGameByRoomID).Methods(http.MethodGet).Handler(handlers.NewGameHandler(logger))
-
-	// TODO: Add negroni packages middlewares: recovery... etc
-
-	// Init game pool factory
-	//gamePoolFactory, err := NewGamePoolFactory(uint16(connLimit), uint8(pgW), uint8(pgH))
-	//if err != nil {
-	//	logger.Fatal(&errStartingServer{err})
-	//}
-	//logrus.Info("game pool factory was created")
-
-	// Init game pool manager which allocates connections on pools
-	//gamePoolManager, err := NewGamePoolManager(gamePoolFactory, uint16(poolLimit))
-	//if err != nil {
-	//	logger.Fatal(&errStartingServer{err})
-	//}
-	//logger.Info("game pool manager was created")
-
-	// Init game connection manager
-	//gameConnManager := new(GameConnManager)
-	//logger.Info("game connection manager was created")
+	// TODO: Check is it necessary to use recovery middleware.
+	n := negroni.New(negroni.NewRecovery())
+	n.UseHandler(r)
 
 	logger.Info("starting server")
 
-	if err := http.ListenAndServe(":3001", r); err != nil {
+	if err := http.ListenAndServe(address, n); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
