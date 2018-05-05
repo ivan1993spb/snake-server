@@ -17,9 +17,17 @@ API methods provide JSON format.
 
 Creates game.
 
+```
+curl -v -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/game
+```
+
 ### `DELETE /game/{id}`
 
 Deletes game if there is not players.
+
+```
+curl -v -X DELETE http://localhost:8080/game/0
+```
 
 ### `GET /game/{id}`
 
