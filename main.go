@@ -56,6 +56,10 @@ func main() {
 	logger := logrus.New()
 	logger.Info("preparing to start server")
 
+	logger.Infoln("address:", address)
+
+	logger.Infoln("group limit:", groupsLimit)
+
 	rand.Seed(seed)
 	logger.Infoln("seed:", seed)
 
