@@ -331,6 +331,18 @@ func (pg *Playground) DeleteObject(object interface{}, location engine.Location)
 	return nil
 }
 
+func (pg *Playground) unsafeUpdateEntity(object interface{}, old, new engine.Location) error {
+	for i := 0; i < len(pg.entities); i++ {
+		if pg.entities[i].object == object && pg.entities[i].location.Equals(old) {
+			pg.entities[i].location = new
+			return nil
+		}
+	}
+
+	// TODO: Create special error.
+	return errors.New("cannot update entity: entity not found")
+}
+
 type ErrUpdateObject struct {
 	Err error
 }
@@ -435,13 +447,12 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 		}
 	}
 
-	if err := pg.unsafeDeleteEntity(object, old); err != nil {
+	if err := pg.unsafeUpdateEntity(object, old, new.Copy()); err != nil {
+		// Concurrent invocation of unsafe methods on playground
 		return &ErrUpdateObject{
-			Err: errors.New("concurrent invocation of unsafe methods on playground"),
+			Err: err,
 		}
 	}
-
-	pg.unsafeCreateEntity(object, new.Copy())
 
 	return nil
 }
@@ -478,11 +489,11 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 		}
 	}
 
-	location, err := pg.scene.RelocateAvailableDots(old, new)
+	availableLocation, err := pg.scene.RelocateAvailableDots(old, new)
 	switch errRelocateAvailableDotsReason := err.Err.(type) {
 	case *engine.ErrNotLocated:
 		// Old location is not actual for object
-		if err := pg.unsafeDeleteEntity(object, location); err != nil {
+		if err := pg.unsafeDeleteEntity(object, availableLocation); err != nil {
 			// Concurrent invocation of unsafe method of playground
 			return nil, &ErrUpdateObjectAvailableDots{
 				Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
@@ -527,7 +538,7 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 		}
 	}
 
-	if len(location) == 0 {
+	if len(availableLocation) == 0 {
 		// RelocateAvailableDots did not return error but return empty location
 
 		// Concurrent invocation of unsafe method of playground
@@ -541,16 +552,14 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 		}
 	}
 
-	if err := pg.unsafeDeleteEntity(object, old); err != nil {
+	if err := pg.unsafeUpdateEntity(object, old, availableLocation.Copy()); err != nil {
 		// Concurrent invocation of unsafe method of playground
 		return nil, &ErrUpdateObjectAvailableDots{
 			Err: err,
 		}
 	}
 
-	pg.unsafeCreateEntity(object, location.Copy())
-
-	return location.Copy(), nil
+	return availableLocation.Copy(), nil
 }
 
 type ErrCreateObjectRandomDot string
