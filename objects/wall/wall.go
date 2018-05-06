@@ -1,42 +1,39 @@
-// Copyright 2015 Pushkin Ivan. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package wall
 
 import (
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/playground"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
 type Wall struct {
-	dots engine.Location
+	world    game.WorldInterface
+	location engine.Location
 }
 
 const wallStrengthFactor = 1000
 
-func CreateWall(dots engine.Location) (*Wall, error) {
+func CreateWall(world game.WorldInterface, location engine.Location) (*Wall, error) {
 
-	wall := &Wall{dots}
+	wall := &Wall{world, location}
 
 	return wall, nil
 }
 
-func CreateLongWall(pg *playground.Playground) (*Wall, error) {
+func CreateLongWall(world game.WorldInterface) (*Wall, error) {
 	var (
-		pgW = pg.Width()
-		pgH = pg.Height()
-		err error
-		e   *engine.Rect
+		pgW      = world.Width()
+		pgH      = world.Height()
+		err      error
+		location engine.Location
 	)
 
 	wall := &Wall{}
 
 	switch engine.RandomDirection() {
 	case engine.DirectionNorth, engine.DirectionSouth:
-		e, err = pg.CreateObjectRandomRect(wall, 1, pgH)
+		location, err = world.CreateObjectRandomRect(wall, 1, pgH)
 	case engine.DirectionEast, engine.DirectionWest:
-		e, err = pg.CreateObjectRandomRect(wall, pgW, 1)
+		location, err = world.CreateObjectRandomRect(wall, pgW, 1)
 	default:
 		err = &engine.ErrInvalidDirection{}
 	}
@@ -44,41 +41,24 @@ func CreateLongWall(pg *playground.Playground) (*Wall, error) {
 		return nil, err
 	}
 
-	return CreateWall(p, pg, e.Location())
+	wall.location = location
+	wall.world = world
+
+	return wall, nil
 }
 
-// Implementing playground.Location interface
-func (w *Wall) DotCount() uint16 {
-	return w.dots.DotCount()
-}
-
-// Implementing playground.Location interface
-func (w *Wall) Dot(i uint16) *engine.Dot {
-	if w.dots.DotCount() > i {
-		return w.dots[i]
-	}
-
-	return nil
-}
-
-// Implementing logic.Notalive interface
 func (w *Wall) Break(dot *engine.Dot) {
-	if w.dots.Contains(dot) {
-		w.dots = w.dots.Delete(dot)
+	if w.location.Contains(dot) {
+		location := w.location.Delete(dot)
 
-		if w.dots.DotCount() > 0 {
-			w.p.OccurredUpdating(w)
+		if w.location.DotCount() > 0 {
+			w.world.UpdateObject(w, w.location, location)
+			w.location = location
 			return
 		}
 	}
 
-	if w.dots.DotCount() == 0 {
-		w.pg.Delete(w)
-		w.p.OccurredDeleting(w)
+	if w.location.DotCount() == 0 {
+		w.world.DeleteObject(w, w.location)
 	}
-}
-
-// Implementing logic.Resistant interface
-func (*Wall) Strength() float32 {
-	return wallStrengthFactor
 }
