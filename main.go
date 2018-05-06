@@ -15,39 +15,19 @@ import (
 )
 
 const (
-	defaultAddress = ":8080"
-
-	defaultGroupsLimit      = 10
-	defaultConnectionsLimit = 4 // ?
-
-	defaultWidth  = 100 // ?
-	defaultHeight = 100 // ?
+	defaultAddress     = ":8080"
+	defaultGroupsLimit = 10
 )
 
 var (
-	address string
-
+	address     string
 	groupsLimit int
-
-	// TODO: ?
-	//emptyRoomExpire time.Duration // Create if users will be able to add rooms
-
-	// Room properties
-	connectionsLimit uint
-
-	pgW, pgH uint
-
-	seed int64
+	seed        int64
 )
 
 func init() {
 	flag.StringVar(&address, "address", defaultAddress, "address to serve")
-	flag.IntVar(&groupsLimit, "max-groups", defaultGroupsLimit, "max groups count on server")
-
-	flag.UintVar(&connectionsLimit, "default-conn-limit", defaultConnectionsLimit, "default connection count for group")
-	flag.UintVar(&pgW, "width", defaultWidth, "default map width")
-	flag.UintVar(&pgH, "height", defaultHeight, "default map height")
-
+	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.Parse()
 }
@@ -57,21 +37,21 @@ func main() {
 	logger.Info("preparing to start server")
 
 	logger.Infoln("address:", address)
-
 	logger.Infoln("group limit:", groupsLimit)
-
-	rand.Seed(seed)
 	logger.Infoln("seed:", seed)
 
-	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit)
+	rand.Seed(seed)
+
+	groupManager, err := connections.NewConnectionGroupManager(groupsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
 
 	r := mux.NewRouter()
-	r.Path(handlers.URLRouteGameWebSocket).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 
 	// TODO: Check is it necessary to use recovery middleware.
 	n := negroni.New(negroni.NewRecovery())
