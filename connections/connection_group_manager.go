@@ -3,22 +3,17 @@ package connections
 import (
 	"errors"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
 type ConnectionGroupManager struct {
-	logger      *logrus.Logger
 	groups      map[int]*ConnectionGroup
 	groupsMutex *sync.RWMutex
 	groupLimit  int
 }
 
-// TODO: Is it necessary to pass logger in group manager ?
-func NewConnectionGroupManager(logger *logrus.Logger, groupLimit int) (*ConnectionGroupManager, error) {
+func NewConnectionGroupManager(groupLimit int) (*ConnectionGroupManager, error) {
 	if groupLimit > 0 {
 		return &ConnectionGroupManager{
-			logger:      logger,
 			groups:      map[int]*ConnectionGroup{},
 			groupsMutex: &sync.RWMutex{},
 			groupLimit:  groupLimit,
@@ -78,17 +73,19 @@ var (
 	ErrDeleteNotFoundGroup = ErrDeleteGroup("group not found")
 )
 
-func (m *ConnectionGroupManager) Delete(id int) error {
+func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
+	if !group.IsEmpty() {
+		return ErrDeleteNotEmptyGroup
+	}
+
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
-	if group, ok := m.groups[id]; ok {
-		if !group.IsEmpty() {
-			return ErrDeleteNotEmptyGroup
+	for id := range m.groups {
+		if m.groups[id] == group {
+			delete(m.groups, id)
+			return nil
 		}
-
-		delete(m.groups, id)
-		return nil
 	}
 
 	return ErrDeleteNotFoundGroup
