@@ -7,6 +7,7 @@ const (
 	EventTypeObjectCreate
 	EventTypeObjectDelete
 	EventTypeObjectUpdate
+	EventTypeObjectChecked
 )
 
 type Event struct {
