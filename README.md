@@ -18,7 +18,7 @@ API methods provide JSON format.
 Creates game.
 
 ```
-curl -v -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/game
+curl -v -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games
 ```
 
 ### Request `DELETE /games/{id}`
@@ -26,7 +26,7 @@ curl -v -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/game
 Deletes game if there is not players.
 
 ```
-curl -v -X DELETE http://localhost:8080/game/0
+curl -v -X DELETE http://localhost:8080/games/0
 ```
 
 ### Request `GET /games`
@@ -34,7 +34,7 @@ curl -v -X DELETE http://localhost:8080/game/0
 Return info about all games on server.
 
 ```
-curl -v -X GET http://localhost:8080/game
+curl -v -X GET http://localhost:8080/games
 ```
 
 ### Request `GET /games/{id}`
@@ -42,7 +42,7 @@ curl -v -X GET http://localhost:8080/game
 Returns game information
 
 ```
-curl -v -X GET http://localhost:8080/game/0
+curl -v -X GET http://localhost:8080/games/0
 ```
 
 ### Request `GET /games/{id}/ws`
