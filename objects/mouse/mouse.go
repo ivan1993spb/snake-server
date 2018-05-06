@@ -2,26 +2,26 @@ package mouse
 
 import (
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/playground"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
 type Mouse struct {
-	pg        *playground.Playground
+	world     game.WorldInterface
 	location  engine.Location
 	direction engine.Direction
 }
 
-func NewMouse(pg *playground.Playground) *Mouse {
+func NewMouse(world game.WorldInterface) *Mouse {
 	mouse := &Mouse{}
-	location, err := pg.CreateObjectRandomDot(mouse)
+	location, err := world.CreateObjectRandomDot(mouse)
 	if err != nil {
 		// TODO: return error
 		return nil
 	}
 
-	return &Mouse{
-		pg:        pg,
-		location:  location,
-		direction: engine.RandomDirection(),
-	}
+	mouse.world = world
+	mouse.location = location
+	mouse.direction = engine.RandomDirection()
+
+	return mouse
 }
