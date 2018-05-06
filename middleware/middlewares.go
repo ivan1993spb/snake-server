@@ -25,7 +25,7 @@ func NewRecovery(logger *logrus.Logger) negroni.Handler {
 	return middleware
 }
 
-const httpLoggerFormat = "{{.StartTime}} | {{.Status}} | {{.Duration}} | {{.Method}} {{.Path}} \n"
+const httpLoggerFormat = "request processed: {{.StartTime}} | {{.Status}} | {{.Duration}} | {{.Method}} {{.Path}}"
 
 func NewLogger(logger *logrus.Logger) negroni.Handler {
 	middleware := negroni.NewLogger()
