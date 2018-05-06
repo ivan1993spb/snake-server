@@ -23,11 +23,11 @@ const (
 )
 
 type Watermelon struct {
-	world    game.WorldInterface
+	world    game.World
 	location engine.Location
 }
 
-func CreateWatermelon(world game.WorldInterface) (*Watermelon, error) {
+func CreateWatermelon(world game.World) (*Watermelon, error) {
 
 	watermelon := &Watermelon{}
 

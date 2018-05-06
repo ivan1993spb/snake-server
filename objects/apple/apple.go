@@ -6,7 +6,7 @@ import (
 )
 
 type Apple struct {
-	world    game.WorldInterface
+	world    game.World
 	location engine.Location
 }
 
@@ -17,7 +17,7 @@ func (e ErrCreateApple) Error() string {
 }
 
 // CreateApple creates and locates new apple
-func CreateApple(world game.WorldInterface) (*Apple, error) {
+func CreateApple(world game.World) (*Apple, error) {
 	apple := &Apple{}
 
 	location, err := world.CreateObjectRandomDot(apple)

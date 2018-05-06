@@ -40,7 +40,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	world game.WorldInterface
+	world game.World
 
 	location engine.Location
 	length   uint16
@@ -50,7 +50,7 @@ type Snake struct {
 }
 
 // CreateSnake creates new snake
-func CreateSnake(world game.WorldInterface) (*Snake, error) {
+func CreateSnake(world game.World) (*Snake, error) {
 	var (
 		dir  = engine.RandomDirection()
 		err  error

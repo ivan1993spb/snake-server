@@ -6,12 +6,12 @@ import (
 )
 
 type Mouse struct {
-	world     game.WorldInterface
+	world     game.World
 	location  engine.Location
 	direction engine.Direction
 }
 
-func NewMouse(world game.WorldInterface) *Mouse {
+func NewMouse(world game.World) *Mouse {
 	mouse := &Mouse{}
 	location, err := world.CreateObjectRandomDot(mouse)
 	if err != nil {

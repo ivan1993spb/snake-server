@@ -6,20 +6,20 @@ import (
 )
 
 type Wall struct {
-	world    game.WorldInterface
+	world    game.World
 	location engine.Location
 }
 
 const wallStrengthFactor = 1000
 
-func CreateWall(world game.WorldInterface, location engine.Location) (*Wall, error) {
+func CreateWall(world game.World, location engine.Location) (*Wall, error) {
 
 	wall := &Wall{world, location}
 
 	return wall, nil
 }
 
-func CreateLongWall(world game.WorldInterface) (*Wall, error) {
+func CreateLongWall(world game.World) (*Wall, error) {
 	var (
 		pgW      = world.Width()
 		pgH      = world.Height()
