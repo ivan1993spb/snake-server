@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
 const URLRouteCreateGame = "/game"
@@ -55,10 +56,20 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	if connectionLimit <= 0 {
+		h.logger.Warnln(ErrCreateGameHandler("invalid connection limit"), connectionLimit)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	mapWidth, err := strconv.ParseUint(r.PostFormValue(postFieldMapWidth), 10, 8)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	if mapWidth == 0 {
+		h.logger.Warnln(ErrCreateGameHandler("invalid map width"), mapWidth)
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -69,10 +80,17 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	if mapHeight == 0 {
+		h.logger.Warnln(ErrCreateGameHandler("invalid map height"), mapHeight)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
-	h.logger.Infof("create group: limit=%d, width=%d, height=%d", connectionLimit, mapWidth, mapHeight)
+	h.logger.Infof("create game: width=%d, height=%d", mapWidth, mapHeight)
+	g, err := game.NewGame(uint8(mapWidth), uint8(mapHeight))
 
-	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
+	h.logger.Infof("create group: limit=%d", connectionLimit)
+	group, err := connections.NewConnectionGroup(connectionLimit, g)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -84,7 +102,13 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id, err := h.groupManager.Add(group)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+
+		switch err {
+		case connections.ErrGroupLimitReached:
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		default:
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 		return
 	}
 
