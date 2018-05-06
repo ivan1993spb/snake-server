@@ -103,3 +103,13 @@ func (m *ConnectionGroupManager) Get(id int) (*ConnectionGroup, error) {
 
 	return nil, ErrNotFoundGroup
 }
+
+func (m *ConnectionGroupManager) Groups() map[int]*ConnectionGroup {
+	m.groupsMutex.RLock()
+	defer m.groupsMutex.RUnlock()
+	groups := map[int]*ConnectionGroup{}
+	for id, group := range m.groups {
+		groups[id] = group
+	}
+	return groups
+}
