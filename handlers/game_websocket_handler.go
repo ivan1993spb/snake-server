@@ -11,7 +11,7 @@ import (
 	"github.com/ivan1993spb/snake-server/connections"
 )
 
-const URLRouteGameByID = "/game/{id}/ws"
+const URLRouteGameWebSocket = "/game/{id}/ws"
 
 const MethodGame = http.MethodGet
 

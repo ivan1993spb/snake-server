@@ -69,7 +69,7 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Path(handlers.URLRouteGameByID).Methods(handlers.MethodGame).Handler(handlers.NewGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGameWebSocket).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 
