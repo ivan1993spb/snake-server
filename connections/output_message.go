@@ -4,6 +4,7 @@ type OutputMessageType uint8
 
 const (
 	OutputMessageTypeGameEvent OutputMessageType = iota
+	OutputMessageGroupNotice
 )
 
 type OutputMessage struct {
