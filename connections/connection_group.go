@@ -4,83 +4,73 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
 type ConnectionGroup struct {
-	logger           *logrus.Logger
-	connections      map[int]*websocket.Conn
-	connectionsMutex *sync.RWMutex
-	connectionLimit  int
+	limit   int
+	counter int
+	mutex   *sync.RWMutex
+	game    *game.Game
 }
 
-// TODO: Is it necessary to pass logger in group manager ?
-func NewConnectionGroup(logger *logrus.Logger, connectionLimit int, mapWidth, mapHeight uint8) (*ConnectionGroup, error) {
-	// TODO: Check input params.
+func NewConnectionGroup(connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
+	if connectionLimit > 0 {
+		return &ConnectionGroup{
+			limit: connectionLimit,
+			mutex: &sync.RWMutex{},
+			game:  g,
+		}, nil
+	}
 
-	// TODO: Create game. (?)
+	return nil, errors.New("cannot create connection group: invalid connection limit")
+}
 
-	return &ConnectionGroup{
-		logger:           logger,
-		connections:      make(map[int]*websocket.Conn),
-		connectionsMutex: &sync.RWMutex{},
-		connectionLimit:  connectionLimit,
-	}, nil
+func (cg *ConnectionGroup) GetLimit() int {
+	return cg.limit
+}
+
+func (cg *ConnectionGroup) GetCount() int {
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
+	return cg.counter
 }
 
 // unsafeIsFull returns true if group is full
 func (cg *ConnectionGroup) unsafeIsFull() bool {
-	return len(cg.connections) == cg.connectionLimit
+	return cg.counter == cg.limit
+}
+
+func (cg *ConnectionGroup) IsFull() bool {
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
+	return cg.unsafeIsFull()
 }
 
 // unsafeIsEmpty returns true if group is empty
 func (cg *ConnectionGroup) unsafeIsEmpty() bool {
-	return len(cg.connections) == 0
+	return cg.counter == 0
 }
 
 func (cg *ConnectionGroup) IsEmpty() bool {
-	cg.connectionsMutex.RLock()
-	defer cg.connectionsMutex.RUnlock()
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
 	return cg.unsafeIsEmpty()
 }
 
-type ErrAddConnectionToGroup string
-
-func (e ErrAddConnectionToGroup) Error() string {
-	return "cannot add connection to group: " + string(e)
-}
-
-// AddConn adds connection to group
-func (cg *ConnectionGroup) Add(conn *websocket.Conn) error {
-	cg.connectionsMutex.Lock()
-	defer cg.connectionsMutex.Unlock()
-
+func (cg *ConnectionGroup) Run(f func(game *game.Game)) error {
+	cg.mutex.Lock()
 	if cg.unsafeIsFull() {
-		return ErrAddConnectionToGroup("group is full")
+		cg.mutex.Unlock()
+		return errors.New("add connection to group: group is full")
 	}
+	cg.counter += 1
+	cg.mutex.Unlock()
 
-	for id := 0; id <= len(cg.connections); id++ {
-		if _, occupied := cg.connections[id]; !occupied {
-			cg.connections[id] = conn
-			return nil
-		}
-	}
+	f(cg.game)
 
-	return ErrAddConnectionToGroup("cannot get free id")
-}
-
-// Delete removes connection from group
-func (cg *ConnectionGroup) Delete(conn *websocket.Conn) error {
-	cg.connectionsMutex.Lock()
-	defer cg.connectionsMutex.Unlock()
-
-	for id := range cg.connections {
-		if cg.connections[id] == conn {
-			delete(cg.connections, id)
-			return nil
-		}
-	}
-
-	return errors.New("cannot delete connection from group: connection was not found")
+	cg.mutex.Lock()
+	cg.counter -= 1
+	cg.mutex.Unlock()
+	return nil
 }
