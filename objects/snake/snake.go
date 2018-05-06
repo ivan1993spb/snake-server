@@ -6,15 +6,13 @@ import (
 	"math"
 	"time"
 
-	"github.com/olebedev/emitter"
-
 	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/objects/apple"
 	"github.com/ivan1993spb/snake-server/objects/corpse"
 	"github.com/ivan1993spb/snake-server/objects/mouse"
 	"github.com/ivan1993spb/snake-server/objects/wall"
 	"github.com/ivan1993spb/snake-server/objects/watermelon"
-	"github.com/ivan1993spb/snake-server/playground"
 )
 
 const (
@@ -42,7 +40,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	pg *playground.Playground
+	world game.WorldInterface
 
 	location engine.Location
 	length   uint16
@@ -52,7 +50,7 @@ type Snake struct {
 }
 
 // CreateSnake creates new snake
-func CreateSnake(pg *playground.Playground) (*Snake, error) {
+func CreateSnake(world game.WorldInterface) (*Snake, error) {
 	var (
 		dir  = engine.RandomDirection()
 		err  error
@@ -63,9 +61,9 @@ func CreateSnake(pg *playground.Playground) (*Snake, error) {
 
 	switch dir {
 	case engine.DirectionNorth, engine.DirectionSouth:
-		dots, err = pg.CreateObjectRandomRect(snake, 1, uint8(snakeStartLength))
+		dots, err = world.CreateObjectRandomRect(snake, 1, uint8(snakeStartLength))
 	case engine.DirectionEast, engine.DirectionWest:
-		dots, err = pg.CreateObjectRandomRect(snake, uint8(snakeStartLength), 1)
+		dots, err = world.CreateObjectRandomRect(snake, uint8(snakeStartLength), 1)
 	}
 	if err != nil {
 		// TODO: Create error
@@ -77,7 +75,7 @@ func CreateSnake(pg *playground.Playground) (*Snake, error) {
 		dots = reversedDots
 	}
 
-	snake.pg = pg
+	snake.world = world
 	snake.location = dots
 	snake.length = snakeStartLength
 	snake.direction = dir
@@ -85,38 +83,21 @@ func CreateSnake(pg *playground.Playground) (*Snake, error) {
 	return snake, nil
 }
 
-// Implementing playground.Location interface
-func (s *Snake) DotCount() uint16 {
-	return uint16(len(s.location))
-}
-
-// Implementing playground.Location interface
-func (s *Snake) Dot(i uint16) *engine.Dot {
-	if uint16(len(s.location)) > i {
-		return s.location[i]
-	}
-
-	return nil
-}
-
-// Implementing logic.Living interface
 func (s *Snake) Die() {
-	s.pg.DeleteObject(s, s.location)
+	s.world.DeleteObject(s, s.location)
 }
 
-// Implementing logic.Living interface
 func (s *Snake) Feed(f int8) {
 	if f > 0 {
 		s.length += uint16(f)
 	}
 }
 
-// Implementing logic.Resistant interface
 func (s *Snake) Strength() float32 {
 	return snakeStrengthFactor * float32(s.length)
 }
 
-func (s *Snake) Run(emitter *emitter.Emitter) error {
+func (s *Snake) Run(ch <-chan game.Event) error {
 	go func() {
 		var ticker = time.NewTicker(s.calculateDelay())
 
@@ -134,7 +115,7 @@ func (s *Snake) Run(emitter *emitter.Emitter) error {
 			}
 
 			// TODO: Delete this logic
-			if object := s.pg.GetObjectByDot(dot); object != nil {
+			if object := s.world.GetObjectByDot(dot); object != nil {
 				switch object := object.(type) {
 				case *apple.Apple:
 					object.NutritionalValue(dot)
@@ -153,10 +134,10 @@ func (s *Snake) Run(emitter *emitter.Emitter) error {
 			tmpLocation := make(engine.Location, len(s.location)+1)
 			copy(tmpLocation[1:], s.location)
 			tmpLocation[0] = dot
-			s.pg.UpdateObject(s, s.location, tmpLocation)
+			s.world.UpdateObject(s, s.location, tmpLocation)
 			s.location = tmpLocation
 
-			if s.length < s.DotCount() {
+			if s.length < s.location.DotCount() {
 				s.location = s.location[:len(s.location)-1]
 			}
 		}
@@ -173,13 +154,12 @@ func (s *Snake) calculateDelay() time.Duration {
 // direction and current head position
 func (s *Snake) getNextHeadDot() (*engine.Dot, error) {
 	if len(s.location) > 0 {
-		return s.pg.Navigate(s.location[0], s.direction, 1)
+		return s.world.Navigate(s.location[0], s.direction, 1)
 	}
 
 	return nil, fmt.Errorf("cannot get next head location: errEmptyDotList")
 }
 
-// Implementing logic.Controlled interface
 func (s *Snake) Command(cmd Command) error {
 	if direction, ok := snakeCommands[cmd]; ok {
 		s.setMovementDirection(direction)
