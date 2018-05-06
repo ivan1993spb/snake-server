@@ -1,58 +1,40 @@
 package apple
 
 import (
-	"github.com/olebedev/emitter"
-
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/playground"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
 type Apple struct {
-	pg       *playground.Playground
+	world    game.WorldInterface
 	location engine.Location
 }
 
+type ErrCreateApple string
+
+func (e ErrCreateApple) Error() string {
+	return "cannot create apple: " + string(e)
+}
+
 // CreateApple creates and locates new apple
-func CreateApple(pg *playground.Playground) (*Apple, error) {
+func CreateApple(world game.WorldInterface) (*Apple, error) {
 	apple := &Apple{}
 
-	location, err := pg.CreateObjectRandomDot(apple)
+	location, err := world.CreateObjectRandomDot(apple)
 	if err != nil {
-		return nil, err
+		return nil, ErrCreateApple(err.Error())
 	}
 
 	apple.location = location
-	apple.pg = pg
+	apple.world = world
 
 	return apple, nil
 }
 
-// Implementing playground.Location interface
-func (*Apple) DotCount() uint16 {
-	return 1
-}
-
-// Implementing playground.Location interface
-func (a *Apple) Dot(i uint16) *engine.Dot {
-	if i == 0 {
-		return a.location.Dot(0)
-	}
-
-	return nil
-}
-
-// Implementing logic.Food interface
 func (a *Apple) NutritionalValue(dot *engine.Dot) int8 {
 	if a.location.Equals(engine.Location{dot}) {
-		a.pg.DeleteObject(a, a.location)
-		return 1
+		a.world.DeleteObject(a, a.location)
 	}
 
 	return 0
-}
-
-func (a *Apple) Run(emitter *emitter.Emitter) {
-	go func() {
-
-	}()
 }

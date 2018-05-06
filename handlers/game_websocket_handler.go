@@ -11,7 +11,7 @@ import (
 	"github.com/ivan1993spb/snake-server/connections"
 )
 
-const URLRouteGameByID = "/game/{id}"
+const URLRouteGameByID = "/game/{id}/ws"
 
 const MethodGame = http.MethodGet
 
@@ -21,21 +21,21 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 }
 
-type gameHandler struct {
+type gameWebSocketHandler struct {
 	logger       *logrus.Logger
 	groupManager *connections.ConnectionGroupManager
 }
 
 type ErrGameHandler string
 
-func NewGameHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
-	return &gameHandler{
+func NewGameWebSocketHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+	return &gameWebSocketHandler{
 		logger:       logger,
 		groupManager: groupManager,
 	}
 }
 
-func (h *gameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("game handler start")
 
 	vars := mux.Vars(r)
