@@ -66,12 +66,14 @@ func (e *ErrRunConnection) Error() string {
 	return "run connection error: " + e.Err.Error()
 }
 
-func (cg *ConnectionGroup) Run(connection *Connection) *ErrRunConnection {
+var ErrGroupIsFull = errors.New("group is full")
+
+func (cg *ConnectionGroup) Handle(connection *Connection) *ErrRunConnection {
 	cg.mutex.Lock()
 	if cg.unsafeIsFull() {
 		cg.mutex.Unlock()
 		return &ErrRunConnection{
-			Err: errors.New("group is full"),
+			Err: ErrGroupIsFull,
 		}
 	}
 	cg.counter += 1
