@@ -11,7 +11,7 @@ import (
 	"github.com/ivan1993spb/snake-server/connections"
 )
 
-const URLRouteDeleteGameByID = "/game/{id}"
+const URLRouteDeleteGameByID = "/games/{id}"
 
 const MethodDeleteGame = http.MethodDelete
 

@@ -11,7 +11,7 @@ import (
 	"github.com/ivan1993spb/snake-server/game"
 )
 
-const URLRouteCreateGame = "/game"
+const URLRouteCreateGame = "/games"
 
 const MethodCreateGame = http.MethodPost
 
@@ -114,6 +114,7 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Infoln("created group with id:", id)
 
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
 	err = json.NewEncoder(w).Encode(responseCreateGameHandler{

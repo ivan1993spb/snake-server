@@ -11,7 +11,7 @@ import (
 	"github.com/ivan1993spb/snake-server/connections"
 )
 
-const URLRouteGetGameByID = "/game/{id}"
+const URLRouteGetGameByID = "/games/{id}"
 
 const MethodGetGame = http.MethodGet
 

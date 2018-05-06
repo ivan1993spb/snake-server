@@ -13,7 +13,7 @@ Server for online arcade game - snake.
 
 API methods provide JSON format.
 
-### Request `POST /game/`
+### Request `POST /games`
 
 Creates game.
 
@@ -21,7 +21,7 @@ Creates game.
 curl -v -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/game
 ```
 
-### Request `DELETE /game/{id}`
+### Request `DELETE /games/{id}`
 
 Deletes game if there is not players.
 
@@ -29,7 +29,7 @@ Deletes game if there is not players.
 curl -v -X DELETE http://localhost:8080/game/0
 ```
 
-### Request `GET /game`
+### Request `GET /games`
 
 Return info about all games on server.
 
@@ -37,7 +37,7 @@ Return info about all games on server.
 curl -v -X GET http://localhost:8080/game
 ```
 
-### Request `GET /game/{id}`
+### Request `GET /games/{id}`
 
 Returns game information
 
@@ -45,7 +45,7 @@ Returns game information
 curl -v -X GET http://localhost:8080/game/0
 ```
 
-### Request `GET /game/{id}/ws`
+### Request `GET /games/{id}/ws`
 
 Connects to game WebSocket.
 

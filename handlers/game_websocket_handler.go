@@ -9,10 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/game"
+	//"github.com/ivan1993spb/snake-server/game"
 )
 
-const URLRouteGameWebSocketByID = "/game/{id}/ws"
+const URLRouteGameWebSocketByID = "/games/{id}/ws"
 
 const MethodGame = http.MethodGet
 
@@ -81,9 +81,10 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	defer conn.Close()
 
 	// TODO: Catch run error.
-	group.Run(func(game *game.Game) {
-		// TODO: Implement working with game.
-	})
+	//group.Run(func(game *game.Game) {
+	// TODO: Implement working with game.
+	//game
+	//})
 
 	// TODO: Implement handler.
 }
