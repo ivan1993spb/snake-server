@@ -79,7 +79,7 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
-	if err := group.Handle(connections.NewConnection(conn, h.logger)); err != nil {
+	if err := group.Handle(connections.NewConnectionWorker(conn, h.logger)); err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 
 		switch err.Err {

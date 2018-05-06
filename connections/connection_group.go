@@ -68,7 +68,7 @@ func (e *ErrRunConnection) Error() string {
 
 var ErrGroupIsFull = errors.New("group is full")
 
-func (cg *ConnectionGroup) Handle(connection *Connection) *ErrRunConnection {
+func (cg *ConnectionGroup) Handle(connection *ConnectionWorker) *ErrRunConnection {
 	cg.mutex.Lock()
 	if cg.unsafeIsFull() {
 		cg.mutex.Unlock()
