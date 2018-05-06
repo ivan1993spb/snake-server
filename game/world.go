@@ -70,16 +70,24 @@ func (w *world) run() {
 
 func (w *world) broadcast(event Event) {
 	w.chsMux.RLock()
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(w.chs))
 	for _, ch := range w.chs {
-		var timer = time.NewTimer(w.timeout)
-		select {
-		case ch <- event:
-		case <-w.stop:
-			return
-		case <-timer.C:
-		}
-		timer.Stop()
+		go func() {
+			var timer = time.NewTimer(w.timeout)
+			select {
+			case ch <- event:
+			case <-w.stop:
+				return
+			case <-timer.C:
+			}
+			timer.Stop()
+			wg.Done()
+		}()
 	}
+	wg.Wait()
+
 	w.chsMux.RUnlock()
 }
 
