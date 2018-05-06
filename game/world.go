@@ -12,6 +12,8 @@ const worldEventsBufferSize = 512
 
 const worldEventsTimeout = time.Second
 
+const worldEventsNumberLimit = 128
+
 type World interface {
 	ObjectExists(object interface{}) bool
 	LocationExists(location engine.Location) bool
@@ -35,6 +37,7 @@ type World interface {
 
 type world struct {
 	pg      *playground.Playground
+	ch      chan Event
 	chs     []chan Event
 	chsMux  *sync.RWMutex
 	stop    chan struct{}
@@ -44,6 +47,7 @@ type world struct {
 func newWorld(pg *playground.Playground) *world {
 	return &world{
 		pg:      pg,
+		ch:      make(chan Event, worldEventsBufferSize),
 		chs:     make([]chan Event, 0),
 		chsMux:  &sync.RWMutex{},
 		stop:    make(chan struct{}, 0),
@@ -51,35 +55,57 @@ func newWorld(pg *playground.Playground) *world {
 	}
 }
 
-func (w *world) event(event Event) {
+func (w *world) run() {
 	go func() {
-		w.chsMux.RLock()
-
-		wg := sync.WaitGroup{}
-		wg.Add(len(w.chs))
-		go func() {
-			wg.Wait()
-			w.chsMux.RUnlock()
-		}()
-
-		for _, ch := range w.chs {
-			go func(ch chan Event) {
-				var timer = time.NewTimer(w.timeout)
-				defer timer.Stop()
-
-				select {
-				case ch <- event:
-				case <-w.stop:
-				case <-timer.C:
-				}
-
-				wg.Done()
-			}(ch)
+		for {
+			select {
+			case event := <-w.ch:
+				w.broadcast(event)
+			case <-w.stop:
+				return
+			}
 		}
 	}()
 }
 
-func (w *world) RunObserver(observer Observer) {
+func (w *world) broadcast(event Event) {
+	w.chsMux.RLock()
+	for _, ch := range w.chs {
+		var timer = time.NewTimer(w.timeout)
+		select {
+		case ch <- event:
+		case <-w.stop:
+			return
+		case <-timer.C:
+		}
+		timer.Stop()
+	}
+	w.chsMux.RUnlock()
+}
+
+// TODO: Create reset by count events in awaiting
+func (w *world) event(event Event) {
+	if len(w.ch) == worldEventsBufferSize {
+		// TODO: Create warning messages?
+		<-w.ch
+	}
+	if worldEventsBufferSize == 0 {
+		// TODO: Async?
+		var timer = time.NewTimer(worldEventsTimeout)
+		select {
+		case w.ch <- event:
+		case <-w.stop:
+		case <-timer.C:
+		}
+		timer.Stop()
+	} else {
+		w.ch <- event
+	}
+}
+
+func (w *world) RunObserver(observer interface {
+	Run(<-chan Event)
+}) {
 	ch := make(chan Event, worldEventsBufferSize)
 
 	w.chsMux.Lock()
@@ -91,8 +117,8 @@ func (w *world) RunObserver(observer Observer) {
 	w.chsMux.Lock()
 	for i := range w.chs {
 		if w.chs[i] == ch {
-			close(ch)
 			w.chs = append(w.chs[:i], w.chs[i+1:]...)
+			close(ch)
 			break
 		}
 	}
@@ -101,6 +127,7 @@ func (w *world) RunObserver(observer Observer) {
 
 func (w *world) Stop() {
 	close(w.stop)
+	close(w.ch)
 
 	w.chsMux.Lock()
 	defer w.chsMux.Unlock()
