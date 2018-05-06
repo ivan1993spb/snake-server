@@ -29,6 +29,14 @@ Deletes game if there is not players.
 curl -v -X DELETE http://localhost:8080/game/0
 ```
 
+### Request `GET /game`
+
+Return info about all games on server.
+
+```
+curl -v -X GET http://localhost:8080/game
+```
+
 ### Request `GET /game/{id}`
 
 Returns game information
