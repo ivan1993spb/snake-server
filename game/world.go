@@ -71,44 +71,42 @@ func (w *world) run() {
 func (w *world) broadcast(event Event) {
 	w.chsMux.RLock()
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(w.chs))
 	for _, ch := range w.chs {
-		go func() {
-			var timer = time.NewTimer(w.timeout)
-			select {
-			case ch <- event:
-			case <-w.stop:
-				return
-			case <-timer.C:
-			}
-			timer.Stop()
-			wg.Done()
-		}()
+		w.sendEvent(ch, event, worldEventsTimeout)
 	}
-	wg.Wait()
 
 	w.chsMux.RUnlock()
 }
 
-// TODO: Create reset by count events in awaiting
-func (w *world) event(event Event) {
-	if len(w.ch) == worldEventsBufferSize {
-		// TODO: Create warning messages?
-		<-w.ch
-	}
-	if worldEventsBufferSize == 0 {
-		// TODO: Async?
-		var timer = time.NewTimer(worldEventsTimeout)
+func (w *world) sendEvent(ch chan Event, event Event, timeout time.Duration) {
+	var timer = time.NewTimer(timeout)
+	defer timer.Stop()
+	if cap(ch) == 0 {
 		select {
-		case w.ch <- event:
+		case ch <- event:
 		case <-w.stop:
 		case <-timer.C:
 		}
-		timer.Stop()
 	} else {
-		w.ch <- event
+		for {
+			select {
+			case ch <- event:
+				return
+			case <-w.stop:
+				return
+			case <-timer.C:
+				return
+			default:
+				if len(ch) == cap(ch) {
+					<-ch
+				}
+			}
+		}
 	}
+}
+
+func (w *world) event(event Event) {
+	w.sendEvent(w.ch, event, worldEventsTimeout)
 }
 
 func (w *world) RunObserver(observer interface {
