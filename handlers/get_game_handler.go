@@ -15,6 +15,7 @@ const URLRouteGetGameByID = "/games/{id}"
 
 const MethodGetGame = http.MethodGet
 
+// TODO: Create width and height?
 type responseGetGameHandler struct {
 	ID    int `json:"id"`
 	Limit int `json:"limit"`
@@ -60,7 +61,7 @@ func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrNotFoundGroup:
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			http.NotFound(w, r)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}

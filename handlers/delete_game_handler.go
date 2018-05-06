@@ -57,8 +57,8 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
 
 		switch err {
-		case connections.ErrDeleteNotFoundGroup:
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		case connections.ErrNotFoundGroup:
+			http.NotFound(w, r)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -76,7 +76,7 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrDeleteNotFoundGroup:
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			http.NotFound(w, r)
 		case connections.ErrDeleteNotEmptyGroup:
 			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		default:
