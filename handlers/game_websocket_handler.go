@@ -5,22 +5,14 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
-	//"github.com/ivan1993spb/snake-server/game"
 )
 
 const URLRouteGameWebSocketByID = "/games/{id}/ws"
 
 const MethodGame = http.MethodGet
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:    1024,
-	WriteBufferSize:   1024,
-	EnableCompression: true,
-}
 
 type gameWebSocketHandler struct {
 	logger       *logrus.Logger
@@ -61,7 +53,7 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 		switch err {
 		case connections.ErrNotFoundGroup:
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			http.NotFound(w, r)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -74,17 +66,21 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	connection, err := connections.NewConnection(w, r)
 	if err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	defer conn.Close()
 
-	// TODO: Catch run error.
-	//group.Run(func(game *game.Game) {
-	// TODO: Implement working with game.
-	//game
-	//})
+	if err := group.Handle(connection); err != nil {
+		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 
-	// TODO: Implement handler.
+		switch err.Err {
+		case connections.ErrGroupIsFull:
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		default:
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
 }
