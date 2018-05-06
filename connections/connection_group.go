@@ -58,19 +58,36 @@ func (cg *ConnectionGroup) IsEmpty() bool {
 	return cg.unsafeIsEmpty()
 }
 
-func (cg *ConnectionGroup) Run(f func(game *game.Game)) error {
+type ErrRunConnection struct {
+	Err error
+}
+
+func (e *ErrRunConnection) Error() string {
+	return "run connection error: " + e.Err.Error()
+}
+
+func (cg *ConnectionGroup) Run(connection *Connection) *ErrRunConnection {
 	cg.mutex.Lock()
 	if cg.unsafeIsFull() {
 		cg.mutex.Unlock()
-		return errors.New("add connection to group: group is full")
+		return &ErrRunConnection{
+			Err: errors.New("group is full"),
+		}
 	}
 	cg.counter += 1
 	cg.mutex.Unlock()
 
-	f(cg.game)
+	defer func() {
+		cg.mutex.Lock()
+		cg.counter -= 1
+		cg.mutex.Unlock()
+	}()
 
-	cg.mutex.Lock()
-	cg.counter -= 1
-	cg.mutex.Unlock()
+	if err := connection.Run(cg.game); err != nil {
+		return &ErrRunConnection{
+			Err: err,
+		}
+	}
+
 	return nil
 }
