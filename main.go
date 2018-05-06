@@ -12,6 +12,7 @@ import (
 
 	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/handlers"
+	"github.com/ivan1993spb/snake-server/middleware"
 )
 
 const (
@@ -48,18 +49,13 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
-	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 
-	recoveryMiddleware := negroni.NewRecovery()
-	recoveryMiddleware.Logger = logger
-
-	loggerMiddleware := negroni.NewLogger()
-	loggerMiddleware.ALogger = logger
-
-	n := negroni.New(recoveryMiddleware, loggerMiddleware)
+	n := negroni.New(middleware.NewRecovery(logger), middleware.NewLogger(logger))
 	n.UseHandler(r)
 
 	logger.Info("starting server")
