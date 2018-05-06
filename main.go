@@ -53,8 +53,13 @@ func main() {
 	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 
-	// TODO: Check is it necessary to use recovery middleware.
-	n := negroni.New(negroni.NewRecovery())
+	recoveryMiddleware := negroni.NewRecovery()
+	recoveryMiddleware.Logger = logger
+
+	loggerMiddleware := negroni.NewLogger()
+	loggerMiddleware.ALogger = logger
+
+	n := negroni.New(recoveryMiddleware, loggerMiddleware)
 	n.UseHandler(r)
 
 	logger.Info("starting server")
