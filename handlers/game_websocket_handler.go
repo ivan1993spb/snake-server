@@ -9,9 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
+	"github.com/ivan1993spb/snake-server/game"
 )
 
-const URLRouteGameWebSocket = "/game/{id}/ws"
+const URLRouteGameWebSocketByID = "/game/{id}/ws"
 
 const MethodGame = http.MethodGet
 
@@ -26,7 +27,11 @@ type gameWebSocketHandler struct {
 	groupManager *connections.ConnectionGroupManager
 }
 
-type ErrGameHandler string
+type ErrGameWebSocketHandler string
+
+func (e ErrGameWebSocketHandler) Error() string {
+	return "game websocket handler error: " + string(e)
+}
 
 func NewGameWebSocketHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &gameWebSocketHandler{
@@ -37,13 +42,13 @@ func NewGameWebSocketHandler(logger *logrus.Logger, groupManager *connections.Co
 
 func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("game handler start")
+	defer h.logger.Info("game handler end")
 
 	vars := mux.Vars(r)
 
-	id, err := strconv.Atoi(vars[routeVarGroupID])
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		// TODO: Create custom error
-		h.logger.Error(err.Error())
+		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -52,7 +57,7 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	group, err := h.groupManager.Get(id)
 	if err != nil {
-		h.logger.Errorln("cannot get group:", err.Error())
+		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 
 		switch err {
 		case connections.ErrNotFoundGroup:
@@ -63,19 +68,22 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.logger.Info(group)
+	if group.IsFull() {
+		h.logger.Warn(ErrGameWebSocketHandler("group is full"))
+		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		return
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		h.logger.Error(err)
+		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 	}
 	defer conn.Close()
 
-	group.Add(conn)
+	// TODO: Catch run error.
+	group.Run(func(game *game.Game) {
+		// TODO: Implement working with game.
+	})
 
 	// TODO: Implement handler.
-
-	group.Delete(conn)
-
-	h.logger.Info("game handler end")
 }
