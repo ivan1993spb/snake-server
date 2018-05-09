@@ -1,20 +1,24 @@
 package connections
 
 import (
+	"sync"
+	"time"
+
 	"github.com/gorilla/websocket"
+	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/game"
-	"github.com/ivan1993spb/snake-server/objects/snake"
 )
 
 type ConnectionWorker struct {
-	conn      *websocket.Conn
-	logger    *logrus.Logger
-	chStop    chan struct{}
-	chStopErr chan error
-	chOutput  chan OutputMessage
-	chInput   chan InputMessageType
+	conn        *websocket.Conn
+	logger      *logrus.Logger
+	chStop      chan struct{}
+	chStopErr   chan error
+	chOutput    chan OutputMessage
+	chsInput    []chan InputMessage
+	chsInputMux *sync.RWMutex
 
 	flagStarted bool
 	flagStopped bool
@@ -36,16 +40,11 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 		return nil
 	}
 
-	cw.startRead()
-	cw.startWrite()
-
 	// Start connection read
 	// Start connection write
 	// Listen game events
 	// Parse input messages (?) and send game commands
 
-	s, _ := snake.CreateSnake(game.World())
-	go game.RunObserver(s, 16)
 	//game.RunObserver(cw, 16)
 
 	cw.flagStarted = true
@@ -53,55 +52,204 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 	return <-cw.chStopErr
 }
 
-func (cw *ConnectionWorker) startRead() {
+func (cw *ConnectionWorker) read() <-chan []byte {
+	// TODO: Create buffer.
+	chout := make(chan []byte, 0)
+
 	go func() {
+		defer close(chout)
+
 		for {
-			//messageType, r, err := cw.conn.NextReader()
-			_, _, err := cw.conn.NextReader()
+			messageType, data, err := cw.conn.ReadMessage()
 			if err != nil {
-				cw.chStopErr <- err
+				// TODO: Handle error?
+				return
+			}
+
+			if websocket.TextMessage != messageType {
+				// TODO: Handle case - unexpected message type?
+				continue
+			}
+
+			chout <- data
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-chan InputMessage {
+	// TODO: Create buffer.
+	chout := make(chan InputMessage, 0)
+
+	go func() {
+		defer close(chout)
+
+		var decoder = ffjson.NewDecoder()
+
+		for {
+			select {
+			case data := <-chin:
+				var inputMessage *InputMessage
+				if err := decoder.DecodeFast(data, &inputMessage); err != nil {
+					// TODO: Handler error.
+				} else {
+					chout <- *inputMessage
+				}
+			case <-stop:
 				return
 			}
 		}
 	}()
+
+	return chout
 }
 
-func (cw *ConnectionWorker) startWrite() {
+func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop <-chan struct{}) {
 	go func() {
 		for {
 			select {
-			case message := <-cw.chOutput:
-				cw.logger.Info(message)
-				//err := cw.writeMessage(message)
-				// TODO: Handler error.
-			case <-cw.chStop:
+			case inputMessage := <-chin:
+				cw.chsInputMux.RLock()
+				for _, ch := range cw.chsInput {
+					select {
+					case ch <- inputMessage:
+					case <-stop:
+						return
+					}
+				}
+				cw.chsInputMux.RUnlock()
+			case <-stop:
 				return
 			}
-
 		}
 	}()
 }
 
-func (cw *ConnectionWorker) writeMessage(message *OutputMessage) error {
-	w, err := cw.conn.NextWriter(websocket.TextMessage)
-	if err != nil {
-		return nil
-	}
+func (cw *ConnectionWorker) Input(stop <-chan struct{}) <-chan InputMessage {
+	// TODO: Create buffer.
+	chProxy := make(chan InputMessage, 0)
 
-	// TODO: Write message.
+	cw.chsInputMux.Lock()
+	cw.chsInput = append(cw.chsInput, chProxy)
+	cw.chsInputMux.Unlock()
 
-	// TODO: Return error.
+	// TODO: Create buffer.
+	chout := make(chan InputMessage, 0)
 
-	w.Close()
-	return nil
+	go func() {
+		defer close(chout)
+		defer func() {
+			cw.chsInputMux.Lock()
+			for i := range cw.chsInput {
+				if cw.chsInput[i] == chProxy {
+					cw.chsInput = append(cw.chsInput[:i], cw.chsInput[i+1:]...)
+					close(chProxy)
+					break
+				}
+			}
+			cw.chsInputMux.Unlock()
+		}()
+
+		for {
+			select {
+			case <-stop:
+				return
+			case <-cw.chStop:
+				return
+			case inputMessage := <-chProxy:
+				// TODO: Create timeout.
+				cw.sendInputMessage(chout, inputMessage, stop, time.Second)
+			}
+		}
+	}()
+
+	return chout
 }
 
-func (cw *ConnectionWorker) Run(ch <-chan game.Event) {
+func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage InputMessage, stop <-chan struct{}, timeout time.Duration) {
+	var timer = time.NewTimer(timeout)
+	defer timer.Stop()
+	if cap(ch) == 0 {
+		select {
+		case ch <- inputMessage:
+		case <-cw.chStop:
+		case <-stop:
+		case <-timer.C:
+		}
+	} else {
+		for {
+			select {
+			case ch <- inputMessage:
+				return
+			case <-cw.chStop:
+				return
+			case <-stop:
+				return
+			case <-timer.C:
+				return
+			default:
+				if len(ch) == cap(ch) {
+					<-ch
+				}
+			}
+		}
+	}
+}
+
+func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
+	go func() {
+		for {
+			select {
+			case data := <-chin:
+				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
+					// TODO: Handler error.
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+}
+
+func (cw *ConnectionWorker) outputMessage(outputMessage OutputMessage) {
+	select {
+	case cw.chOutput <- outputMessage:
+	case <-cw.chStop:
+	}
+}
+
+func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct{}) <-chan []byte {
+	// TODO: Create buffer.
+	chout := make(chan []byte, 0)
+
+	go func() {
+		defer close(chout)
+
+		for {
+			select {
+			case message := <-chin:
+				if data, err := ffjson.MarshalFast(message); err != nil {
+					// TODO: Handler error.
+				} else {
+					chout <- data
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) listen(chin <-chan game.Event, stop <-chan struct{}) {
 	for {
 		select {
-		case event := <-ch:
+		case event := <-chin:
+			// TODO: Do stuff.
 			cw.logger.Info(event)
-		case <-cw.chStop:
+		case <-stop:
 			return
 		}
 	}
