@@ -8,11 +8,11 @@ import (
 	"github.com/ivan1993spb/snake-server/playground"
 )
 
-const worldEventsBufferSize = 512
+const worldEventsChanMainBufferSize = 1024
 
-const worldEventsTimeout = time.Second
+const worldEventsChanProxyBufferSize = 1024
 
-const worldEventsNumberLimit = 128
+const worldEventsSendTimeout = time.Millisecond * 100
 
 type World interface {
 	ObjectExists(object interface{}) bool
@@ -36,22 +36,27 @@ type World interface {
 }
 
 type world struct {
-	pg      *playground.Playground
-	ch      chan Event
-	chs     []chan Event
-	chsMux  *sync.RWMutex
-	stop    chan struct{}
-	timeout time.Duration
+	pg          *playground.Playground
+	chMain      chan Event
+	chsProxy    []chan Event
+	chsProxyMux *sync.RWMutex
+	stopGlobal  chan struct{}
 }
 
 func newWorld(pg *playground.Playground) *world {
 	return &world{
-		pg:      pg,
-		ch:      make(chan Event, worldEventsBufferSize),
-		chs:     make([]chan Event, 0),
-		chsMux:  &sync.RWMutex{},
-		stop:    make(chan struct{}, 0),
-		timeout: worldEventsTimeout,
+		pg:          pg,
+		chMain:      make(chan Event, worldEventsChanMainBufferSize),
+		chsProxy:    make([]chan Event, 0),
+		chsProxyMux: &sync.RWMutex{},
+		stopGlobal:  make(chan struct{}, 0),
+	}
+}
+
+func (w *world) event(event Event) {
+	select {
+	case w.chMain <- event:
+	case <-w.stopGlobal:
 	}
 }
 
@@ -59,9 +64,9 @@ func (w *world) run() {
 	go func() {
 		for {
 			select {
-			case event := <-w.ch:
+			case event := <-w.chMain:
 				w.broadcast(event)
-			case <-w.stop:
+			case <-w.stopGlobal:
 				return
 			}
 		}
@@ -69,22 +74,70 @@ func (w *world) run() {
 }
 
 func (w *world) broadcast(event Event) {
-	w.chsMux.RLock()
+	w.chsProxyMux.RLock()
+	defer w.chsProxyMux.RUnlock()
 
-	for _, ch := range w.chs {
-		w.sendEvent(ch, event, worldEventsTimeout)
+	for _, chProxy := range w.chsProxy {
+		select {
+		case chProxy <- event:
+		case <-w.stopGlobal:
+		}
 	}
-
-	w.chsMux.RUnlock()
 }
 
-func (w *world) sendEvent(ch chan Event, event Event, timeout time.Duration) {
+func (w *world) createChanProxy() chan Event {
+	chProxy := make(chan Event, worldEventsChanProxyBufferSize)
+
+	w.chsProxyMux.Lock()
+	w.chsProxy = append(w.chsProxy, chProxy)
+	w.chsProxyMux.Unlock()
+
+	return chProxy
+}
+
+func (w *world) deleteChanProxy(chProxy chan Event) {
+	w.chsProxyMux.Lock()
+	for i := range w.chsProxy {
+		if w.chsProxy[i] == chProxy {
+			w.chsProxy = append(w.chsProxy[:i], w.chsProxy[i+1:]...)
+			close(chProxy)
+			break
+		}
+	}
+	w.chsProxyMux.Unlock()
+}
+
+func (w *world) runObserverProxy(stopProxy <-chan struct{}, bufferSize uint) <-chan Event {
+	chProxy := w.createChanProxy()
+	chOut := make(chan Event, bufferSize)
+
+	go func() {
+		defer close(chOut)
+		defer w.deleteChanProxy(chProxy)
+
+		for {
+			select {
+			case <-stopProxy:
+				return
+			case <-w.stopGlobal:
+				return
+			case event := <-chProxy:
+				w.sendEvent(chOut, event, stopProxy, worldEventsSendTimeout)
+			}
+		}
+	}()
+
+	return chOut
+}
+
+func (w *world) sendEvent(ch chan Event, event Event, stopProxy <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 	if cap(ch) == 0 {
 		select {
 		case ch <- event:
-		case <-w.stop:
+		case <-w.stopGlobal:
+		case <-stopProxy:
 		case <-timer.C:
 		}
 	} else {
@@ -92,7 +145,9 @@ func (w *world) sendEvent(ch chan Event, event Event, timeout time.Duration) {
 			select {
 			case ch <- event:
 				return
-			case <-w.stop:
+			case <-w.stopGlobal:
+				return
+			case <-stopProxy:
 				return
 			case <-timer.C:
 				return
@@ -105,44 +160,27 @@ func (w *world) sendEvent(ch chan Event, event Event, timeout time.Duration) {
 	}
 }
 
-func (w *world) event(event Event) {
-	w.sendEvent(w.ch, event, worldEventsTimeout)
-}
-
 func (w *world) RunObserver(observer interface {
 	Run(<-chan Event)
-}) {
-	ch := make(chan Event, worldEventsBufferSize)
-
-	w.chsMux.Lock()
-	w.chs = append(w.chs, ch)
-	w.chsMux.Unlock()
-
+}, bufferSize uint) {
+	stopProxy := make(chan struct{}, 0)
+	defer close(stopProxy)
+	ch := w.runObserverProxy(stopProxy, bufferSize)
 	observer.Run(ch)
-
-	w.chsMux.Lock()
-	for i := range w.chs {
-		if w.chs[i] == ch {
-			w.chs = append(w.chs[:i], w.chs[i+1:]...)
-			close(ch)
-			break
-		}
-	}
-	w.chsMux.Unlock()
 }
 
 func (w *world) Stop() {
-	close(w.stop)
-	close(w.ch)
+	close(w.stopGlobal)
+	close(w.chMain)
 
-	w.chsMux.Lock()
-	defer w.chsMux.Unlock()
+	w.chsProxyMux.Lock()
+	defer w.chsProxyMux.Unlock()
 
-	for _, ch := range w.chs {
+	for _, ch := range w.chsProxy {
 		close(ch)
 	}
 
-	w.chs = w.chs[:0]
+	w.chsProxy = w.chsProxy[:0]
 }
 
 func (w *world) ObjectExists(object interface{}) bool {
