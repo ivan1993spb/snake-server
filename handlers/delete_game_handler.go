@@ -71,6 +71,9 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logger.Info("stop game")
+	group.Game().Stop()
+
 	if err := h.groupManager.Delete(group); err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
 
