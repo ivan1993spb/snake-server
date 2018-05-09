@@ -85,14 +85,6 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	if err := group.Handle(connections.NewConnectionWorker(conn, h.logger)); err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
-
-		// TODO: Delete HTTP response writing on WebSocket connection!
-		switch err.Err {
-		case connections.ErrGroupIsFull:
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
 		return
 	}
 }
