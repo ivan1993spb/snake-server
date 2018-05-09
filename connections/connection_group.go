@@ -68,7 +68,7 @@ func (e *ErrRunConnection) Error() string {
 
 var ErrGroupIsFull = errors.New("group is full")
 
-func (cg *ConnectionGroup) Handle(connection *ConnectionWorker) *ErrRunConnection {
+func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunConnection {
 	cg.mutex.Lock()
 	if cg.unsafeIsFull() {
 		cg.mutex.Unlock()
@@ -85,7 +85,7 @@ func (cg *ConnectionGroup) Handle(connection *ConnectionWorker) *ErrRunConnectio
 		cg.mutex.Unlock()
 	}()
 
-	if err := connection.Run(cg.game); err != nil {
+	if err := connectionWorker.Start(cg.game); err != nil {
 		return &ErrRunConnection{
 			Err: err,
 		}
