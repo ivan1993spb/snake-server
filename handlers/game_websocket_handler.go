@@ -52,7 +52,7 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.logger.Infoln("group id", id)
+	h.logger.Infoln("try to connect to game group id", id)
 
 	group, err := h.groupManager.Get(id)
 	if err != nil {
@@ -73,15 +73,20 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	h.logger.Info("upgrade connection")
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
+	h.logger.Info("start connection worker")
+
 	if err := group.Handle(connections.NewConnectionWorker(conn, h.logger)); err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 
+		// TODO: Delete HTTP response writing on WebSocket connection!
 		switch err.Err {
 		case connections.ErrGroupIsFull:
 			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
