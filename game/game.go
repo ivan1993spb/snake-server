@@ -48,8 +48,6 @@ func (g *Game) World() World {
 	return g.world
 }
 
-func (g *Game) RunObserver(observer interface {
-	Run(<-chan Event)
-}, bufferSize uint) {
-	g.world.RunObserver(observer, bufferSize)
+func (g *Game) Events(stop <-chan struct{}) <-chan Event {
+	return g.world.Events(stop)
 }

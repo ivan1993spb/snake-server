@@ -8,11 +8,13 @@ import (
 	"github.com/ivan1993spb/snake-server/playground"
 )
 
-const worldEventsChanMainBufferSize = 1024
+const (
+	worldEventsChanMainBufferSize  = 512
+	worldEventsChanProxyBufferSize = 128
+	worldEventsChanOutBufferSize   = 32
 
-const worldEventsChanProxyBufferSize = 1024
-
-const worldEventsSendTimeout = time.Millisecond * 100
+	worldEventsSendTimeout = time.Millisecond * 100
+)
 
 type World interface {
 	ObjectExists(object interface{}) bool
@@ -65,10 +67,9 @@ func (w *world) start() {
 	if !w.flagStarted {
 		return
 	}
+	w.flagStarted = true
 
 	go func() {
-		w.flagStarted = true
-
 		for {
 			select {
 			case event := <-w.chMain:
@@ -114,9 +115,9 @@ func (w *world) deleteChanProxy(chProxy chan Event) {
 	w.chsProxyMux.Unlock()
 }
 
-func (w *world) runObserverProxy(stopProxy <-chan struct{}, bufferSize uint) <-chan Event {
+func (w *world) Events(stop <-chan struct{}) <-chan Event {
 	chProxy := w.createChanProxy()
-	chOut := make(chan Event, bufferSize)
+	chOut := make(chan Event, worldEventsChanOutBufferSize)
 
 	go func() {
 		defer close(chOut)
@@ -124,12 +125,12 @@ func (w *world) runObserverProxy(stopProxy <-chan struct{}, bufferSize uint) <-c
 
 		for {
 			select {
-			case <-stopProxy:
+			case <-stop:
 				return
 			case <-w.stopGlobal:
 				return
 			case event := <-chProxy:
-				w.sendEvent(chOut, event, stopProxy, worldEventsSendTimeout)
+				w.sendEvent(chOut, event, stop, worldEventsSendTimeout)
 			}
 		}
 	}()
@@ -137,14 +138,14 @@ func (w *world) runObserverProxy(stopProxy <-chan struct{}, bufferSize uint) <-c
 	return chOut
 }
 
-func (w *world) sendEvent(ch chan Event, event Event, stopProxy <-chan struct{}, timeout time.Duration) {
+func (w *world) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 	if cap(ch) == 0 {
 		select {
 		case ch <- event:
 		case <-w.stopGlobal:
-		case <-stopProxy:
+		case <-stop:
 		case <-timer.C:
 		}
 	} else {
@@ -154,7 +155,7 @@ func (w *world) sendEvent(ch chan Event, event Event, stopProxy <-chan struct{},
 				return
 			case <-w.stopGlobal:
 				return
-			case <-stopProxy:
+			case <-stop:
 				return
 			case <-timer.C:
 				return
@@ -165,15 +166,6 @@ func (w *world) sendEvent(ch chan Event, event Event, stopProxy <-chan struct{},
 			}
 		}
 	}
-}
-
-func (w *world) RunObserver(observer interface {
-	Run(<-chan Event)
-}, bufferSize uint) {
-	stopProxy := make(chan struct{}, 0)
-	defer close(stopProxy)
-	ch := w.runObserverProxy(stopProxy, bufferSize)
-	observer.Run(ch)
 }
 
 func (w *world) stop() {
