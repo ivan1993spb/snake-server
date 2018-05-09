@@ -6,7 +6,7 @@ import (
 )
 
 type Game struct {
-	world World
+	world *world
 }
 
 type ErrCreateGame struct {
@@ -30,9 +30,20 @@ func NewGame(width, height uint8) (*Game, error) {
 
 	pg := playground.NewPlayground(scene)
 	world := newWorld(pg)
-	world.run()
 
 	return &Game{
 		world: world,
 	}, nil
+}
+
+func (g *Game) Start() {
+	g.world.start()
+}
+
+func (g *Game) Stop() {
+	g.world.stop()
+}
+
+func (g *Game) World() World {
+	return g.world
 }

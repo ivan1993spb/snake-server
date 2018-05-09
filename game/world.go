@@ -41,6 +41,7 @@ type world struct {
 	chsProxy    []chan Event
 	chsProxyMux *sync.RWMutex
 	stopGlobal  chan struct{}
+	flagStarted bool
 }
 
 func newWorld(pg *playground.Playground) *world {
@@ -60,8 +61,14 @@ func (w *world) event(event Event) {
 	}
 }
 
-func (w *world) run() {
+func (w *world) start() {
+	if !w.flagStarted {
+		return
+	}
+
 	go func() {
+		w.flagStarted = true
+
 		for {
 			select {
 			case event := <-w.chMain:
@@ -169,7 +176,7 @@ func (w *world) RunObserver(observer interface {
 	observer.Run(ch)
 }
 
-func (w *world) Stop() {
+func (w *world) stop() {
 	close(w.stopGlobal)
 	close(w.chMain)
 
