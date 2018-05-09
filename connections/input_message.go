@@ -5,7 +5,7 @@ import "encoding/json"
 type InputMessageType uint8
 
 const (
-	InputMessageTypeGameCommand InputMessageType = iota
+	InputMessageTypeSnakeCommand InputMessageType = iota
 )
 
 type InputMessage struct {
