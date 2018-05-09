@@ -124,9 +124,24 @@ func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
 	}
 
 	objects := make([]interface{}, 0)
+	locations := make([]engine.Location, 0)
+
 	for _, dot := range dots {
-		objects = append(objects, pg.unsafeGetObjectByDot(dot))
+		flagObjectCreated := false
+		for _, location := range locations {
+			if location.Contains(dot) {
+				flagObjectCreated = true
+				break
+			}
+		}
+
+		if !flagObjectCreated {
+			object, location := pg.unsafeGetEntityByDot(dot)
+			objects = append(objects, object)
+			locations = append(locations, location)
+		}
 	}
+
 	return objects
 }
 
