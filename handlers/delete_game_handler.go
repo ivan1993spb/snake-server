@@ -66,7 +66,8 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !group.IsEmpty() {
-		h.logger.Warnln("try to delete not empty group:", id)
+		h.logger.Warn(ErrDeleteGameHandler("try to delete not empty group"))
+		h.logger.Warnf("there is %d opened connections in group %d", group.GetCount(), id)
 		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		return
 	}
