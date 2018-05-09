@@ -93,3 +93,7 @@ func (cg *ConnectionGroup) Handle(connection *ConnectionWorker) *ErrRunConnectio
 
 	return nil
 }
+
+func (cg *ConnectionGroup) Game() *game.Game {
+	return cg.game
+}
