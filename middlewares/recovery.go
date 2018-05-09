@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"fmt"
@@ -22,14 +22,5 @@ func NewRecovery(logger *logrus.Logger) negroni.Handler {
 	middleware.PrintStack = false
 	middleware.Logger = logger
 	middleware.Formatter = &textPanicFormatter{}
-	return middleware
-}
-
-const httpLoggerFormat = "request processed: {{.StartTime}} | {{.Status}} | {{.Duration}} | {{.Method}} {{.Path}}"
-
-func NewLogger(logger *logrus.Logger) negroni.Handler {
-	middleware := negroni.NewLogger()
-	middleware.SetFormat(httpLoggerFormat)
-	middleware.ALogger = logger
 	return middleware
 }

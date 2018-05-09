@@ -12,7 +12,7 @@ import (
 
 	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/handlers"
-	"github.com/ivan1993spb/snake-server/middleware"
+	"github.com/ivan1993spb/snake-server/middlewares"
 )
 
 const (
@@ -55,7 +55,7 @@ func main() {
 	r.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 
-	n := negroni.New(middleware.NewRecovery(logger), middleware.NewLogger(logger))
+	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
 	n.UseHandler(r)
 
 	logger.Info("starting server")
