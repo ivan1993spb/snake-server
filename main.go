@@ -2,169 +2,65 @@ package main
 
 import (
 	"flag"
-	"net"
+	"math/rand"
 	"net/http"
-	"runtime"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/ivan1993spb/pwshandler"
-	"golang.org/x/net/context"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
+
+	"github.com/ivan1993spb/snake-server/connections"
+	"github.com/ivan1993spb/snake-server/handlers"
+	"github.com/ivan1993spb/snake-server/middlewares"
 )
 
 const (
-	INFOLOG_LEVEL_ABOUT_SERVER = iota + 1 // Messages about server
-	INFOLOG_LEVEL_ABOUT_POOLS             // about pools
-	INFOLOG_LEVEL_ABOUT_CONNS             // and connections
+	defaultAddress     = ":8080"
+	defaultGroupsLimit = 10
 )
 
-func main() {
-	var host, port, sdPort, hashSalt string
-	flag.StringVar(&host, "host", "",
-		"host on which game server handles requests")
-	flag.StringVar(&port, "port", "8081",
-		"port on which game server handles requests")
-	flag.StringVar(&sdPort, "shutdown_port", "8082",
-		"port on which server accepts for shutdown request")
-	flag.StringVar(&hashSalt, "hash_salt", "",
-		"salt for request verifier")
+var (
+	address     string
+	groupsLimit int
+	seed        int64
+)
 
-	var poolLimit, connLimit, pgW, pgH uint
-	flag.UintVar(&poolLimit, "pool_limit", 10,
-		"max pool number on server")
-	flag.UintVar(&connLimit, "conn_limit", 4,
-		"max connection number on pool")
-	flag.UintVar(&pgW, "pg_w", 40, "playground width")
-	flag.UintVar(&pgH, "pg_h", 28, "playground height")
-
-	var delay time.Duration
-	flag.DurationVar(&delay, "delay", time.Millisecond*150,
-		"stream delay")
-
+func init() {
+	flag.StringVar(&address, "address", defaultAddress, "address to serve")
+	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
+	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.Parse()
+}
 
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Preparing to start server")
-	}
+func main() {
+	logger := logrus.New()
+	logger.Info("preparing to start server")
 
-	// Working listener is used for game servering
-	workingListener, err := net.Listen("tcp", host+":"+port)
+	logger.Infoln("address:", address)
+	logger.Infoln("group limit:", groupsLimit)
+	logger.Infoln("seed:", seed)
+
+	rand.Seed(seed)
+
+	groupManager, err := connections.NewConnectionGroupManager(groupsLimit)
 	if err != nil {
-		glog.Exitln("Cannot create working listener:", err)
+		logger.Fatalln("cannot create connections group manager:", err)
 	}
 
-	// Shutdown listener is used only for shutdown command. Listening
-	// only local requests
-	shutdownListener, err := net.Listen("tcp", "127.0.0.1:"+sdPort)
-	if err != nil {
-		glog.Exitln("Cannot create shutdown listener:", err)
+	r := mux.NewRouter()
+	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
+	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
+
+	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
+	n.UseHandler(r)
+
+	logger.Info("starting server")
+
+	if err := http.ListenAndServe(address, n); err != nil {
+		logger.Fatalf("server error: %s", err)
 	}
-
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Listeners was created")
-	}
-
-	// Gets root context and cancel func for all goroutines on server
-	cxt, cancel := context.WithCancel(context.Background())
-
-	// Init pool factory
-	factory, err := NewPGPoolFactory(cxt, uint8(connLimit),
-		uint8(pgW), uint8(pgH))
-	if err != nil {
-		glog.Exitln(err)
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Pool factory was created")
-	}
-
-	// Init pool manager which allocates connections on pools
-	poolManager, err := NewGamePoolManager(factory, uint8(poolLimit))
-	if err != nil {
-		glog.Exitln(err)
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Pool manager was created")
-	}
-
-	streamer, err := NewStreamer(cxt, delay)
-	if err != nil {
-		glog.Exitln(err)
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Streamer was created")
-	}
-
-	// Init connection manager
-	connManager, err := NewConnManager(streamer)
-	if err != nil {
-		glog.Exitln(err)
-	}
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Connection manager was created")
-	}
-
-	// Init request verifier
-	verifier := NewVerifier(hashSalt)
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Request verifier was created")
-	}
-
-	// Setup GOMAXPROCS
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	// Start goroutine looking for shutdown command
-	go func() {
-		// Waiting for shutdown command. We don't need of connection
-		if _, err := shutdownListener.Accept(); err != nil {
-			glog.Errorln("Accepting shutdown connection error:", err)
-		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-			glog.Infoln("Accepted shutdown command")
-		}
-
-		// Closing shutdown listener
-		if err := shutdownListener.Close(); err != nil {
-			glog.Errorln("Closing shutdown listener error:", err)
-		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-			glog.Infoln("Shutdown listener was closed")
-		}
-
-		// Finishing all goroutines
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-			glog.Infoln("Canceling root context")
-		}
-		go cancel()
-		time.Sleep(time.Second)
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-			glog.Infoln("Root context was canceled")
-		}
-
-		// Closing working listener
-		if err := workingListener.Close(); err != nil {
-			glog.Errorln("Closing working listener error:", err)
-		}
-		if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-			glog.Infoln(
-				"Working listener was closed.",
-				"Server will shutdown with error:",
-				"use of closed network connection",
-			)
-		}
-	}()
-
-	if glog.V(INFOLOG_LEVEL_ABOUT_SERVER) {
-		glog.Infoln("Starting server")
-	}
-	// Start server
-	err = http.Serve(
-		workingListener,
-		pwshandler.PoolHandler(poolManager, connManager, verifier),
-	)
-	if err != nil {
-		glog.Errorln("Servering error:", err)
-	}
-
-	// Flush log
-	glog.Flush()
 }
