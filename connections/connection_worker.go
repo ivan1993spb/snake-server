@@ -120,7 +120,7 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 			select {
 			case data := <-chin:
 				var inputMessage *InputMessage
-				if err := decoder.DecodeFast(data, &inputMessage); err != nil {
+				if err := decoder.Decode(data, &inputMessage); err != nil {
 					// TODO: Handler error.
 				} else {
 					chout <- *inputMessage
@@ -254,7 +254,7 @@ func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct
 		for {
 			select {
 			case message := <-chin:
-				if data, err := ffjson.MarshalFast(message); err != nil {
+				if data, err := ffjson.Marshal(message); err != nil {
 					// TODO: Handler error.
 				} else {
 					chout <- data
