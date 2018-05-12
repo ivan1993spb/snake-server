@@ -20,14 +20,17 @@ const (
 	chanListenInputMessageBuffer = 32
 
 	sendInputMessageTimeout = time.Millisecond * 50
+
+	sendCloseConnectionTimeout = time.Second
+
+	readMessageLimit = 1024
 )
 
 type ConnectionWorker struct {
 	conn   *websocket.Conn
 	logger *logrus.Logger
 
-	chStop      chan struct{}
-	chOutput    chan OutputMessage
+	chStop      <-chan struct{}
 	chsInput    []chan InputMessage
 	chsInputMux *sync.RWMutex
 
@@ -38,8 +41,6 @@ func NewConnectionWorker(conn *websocket.Conn, logger *logrus.Logger) *Connectio
 	return &ConnectionWorker{
 		conn:        conn,
 		logger:      logger,
-		chStop:      make(chan struct{}, 0),
-		chOutput:    make(chan OutputMessage, chanOutputMessageBuffer),
 		chsInput:    make([]chan InputMessage, 0),
 		chsInputMux: &sync.RWMutex{},
 	}
@@ -58,36 +59,52 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 
 	cw.flagStarted = true
 
-	chInputBytes := cw.read()
-	chInputMessages := cw.decode(chInputBytes, cw.chStop)
-	cw.broadcastInputMessage(chInputMessages, cw.chStop)
-	cw.listen(game.Events(cw.chStop), cw.chStop)
-	chOutputBytes := cw.encode(cw.chOutput, cw.chStop)
-	cw.write(chOutputBytes, cw.chStop)
+	cw.conn.SetCloseHandler(cw.handleCloseConnection)
+	cw.conn.SetReadLimit(readMessageLimit)
+
+	// Input
+	chInputBytes, chStop := cw.read()
+	chInputMessages := cw.decode(chInputBytes, chStop)
+	cw.broadcastInputMessage(chInputMessages, chStop)
+
+	// Output
+	chOutputMessages := cw.listenGameEvents(game.Events(chStop), chStop)
+	chOutputBytes := cw.encode(chOutputMessages, chStop)
+	cw.write(chOutputBytes, chStop)
+
+	cw.chStop = chStop
+
+	<-chStop
+
+	cw.stopInputs()
 
 	return nil
 }
 
-func (cw *ConnectionWorker) listenErrors(cherr <-chan error) <-chan struct{} {
-	stop := make(chan struct{}, 0)
-
-	go func() {
-		for err := range cherr {
-			if err != nil {
-				close(stop)
-				return
-			}
-		}
-	}()
-
-	return stop
+func (cw *ConnectionWorker) handleCloseConnection(code int, text string) error {
+	message := websocket.FormatCloseMessage(code, "")
+	cw.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(sendCloseConnectionTimeout))
+	return nil
 }
 
-func (cw *ConnectionWorker) read() <-chan []byte {
+func (cw *ConnectionWorker) stopInputs() {
+	cw.chsInputMux.Lock()
+	defer cw.chsInputMux.Unlock()
+
+	for _, ch := range cw.chsInput {
+		close(ch)
+	}
+
+	cw.chsInput = cw.chsInput[:0]
+}
+
+func (cw *ConnectionWorker) read() (<-chan []byte, <-chan struct{}) {
 	chout := make(chan []byte, chanReadMessagesBuffer)
+	chstop := make(chan struct{}, 0)
 
 	go func() {
 		defer close(chout)
+		defer close(chstop)
 
 		for {
 			messageType, data, err := cw.conn.ReadMessage()
@@ -105,7 +122,7 @@ func (cw *ConnectionWorker) read() <-chan []byte {
 		}
 	}()
 
-	return chout
+	return chout, chstop
 }
 
 func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-chan InputMessage {
@@ -238,13 +255,6 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 	}()
 }
 
-func (cw *ConnectionWorker) outputMessage(outputMessage OutputMessage) {
-	select {
-	case cw.chOutput <- outputMessage:
-	case <-cw.chStop:
-	}
-}
-
 func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct{}) <-chan []byte {
 	chout := make(chan []byte, chanEncodeMessageBuffer)
 
@@ -268,21 +278,32 @@ func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct
 	return chout
 }
 
-func (cw *ConnectionWorker) listen(chin <-chan game.Event, stop <-chan struct{}) {
-	for {
-		select {
-		case event := <-chin:
-			// TODO: Do stuff.
-			cw.logger.Info(event)
+func (cw *ConnectionWorker) listenGameEvents(chin <-chan game.Event, stop <-chan struct{}) <-chan OutputMessage {
+	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
-			// ...
+	go func() {
+		defer close(chout)
 
-			cw.outputMessage(OutputMessage{
-				Type:    OutputMessageTypeGameEvent,
-				Payload: event,
-			})
-		case <-stop:
-			return
+		for {
+			select {
+			case event := <-chin:
+				// TODO: Do stuff.
+
+				outputMessage := OutputMessage{
+					Type:    OutputMessageTypeGameEvent,
+					Payload: event,
+				}
+
+				select {
+				case chout <- outputMessage:
+				case <-stop:
+					return
+				}
+			case <-stop:
+				return
+			}
 		}
-	}
+	}()
+
+	return chout
 }
