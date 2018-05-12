@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/game"
+	"github.com/ivan1993spb/snake-server/player"
 )
 
 const (
@@ -71,6 +72,9 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 	chOutputMessages := cw.listenGameEvents(game.Events(chStop), chStop)
 	chOutputBytes := cw.encode(chOutputMessages, chStop)
 	cw.write(chOutputBytes, chStop)
+
+	player := player.NewPlayer(game)
+	player.Start()
 
 	cw.chStop = chStop
 
