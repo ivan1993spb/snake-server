@@ -505,51 +505,53 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 	}
 
 	availableLocation, err := pg.scene.RelocateAvailableDots(old, new)
-	switch errRelocateAvailableDotsReason := err.Err.(type) {
-	case *engine.ErrNotLocated:
-		// Old location is not actual for object
-		if err := pg.unsafeDeleteEntity(object, availableLocation); err != nil {
-			// Concurrent invocation of unsafe method of playground
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-			}
-		}
-
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: errors.New("object is not located on scene"),
-		}
-	case *engine.ErrDelete:
-		// Ошибка при удалении старого объекта
-		switch errDeleteReason := errRelocateAvailableDotsReason.Err.(type) {
+	if err != nil {
+		switch errRelocateAvailableDotsReason := err.Err.(type) {
 		case *engine.ErrNotLocated:
-			// Старый объект не находится на сцене
-			if err := pg.unsafeDeleteEntity(object, old); err != nil {
+			// Old location is not actual for object
+			if err := pg.unsafeDeleteEntity(object, availableLocation); err != nil {
 				// Concurrent invocation of unsafe method of playground
 				return nil, &ErrUpdateObjectAvailableDots{
 					Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
 				}
 			}
+
 			return nil, &ErrUpdateObjectAvailableDots{
 				Err: errors.New("object is not located on scene"),
 			}
-		default:
-			// Unknown deletion error
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: errDeleteReason,
+		case *engine.ErrDelete:
+			// Ошибка при удалении старого объекта
+			switch errDeleteReason := errRelocateAvailableDotsReason.Err.(type) {
+			case *engine.ErrNotLocated:
+				// Старый объект не находится на сцене
+				if err := pg.unsafeDeleteEntity(object, old); err != nil {
+					// Concurrent invocation of unsafe method of playground
+					return nil, &ErrUpdateObjectAvailableDots{
+						Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
+					}
+				}
+				return nil, &ErrUpdateObjectAvailableDots{
+					Err: errors.New("object is not located on scene"),
+				}
+			default:
+				// Unknown deletion error
+				return nil, &ErrUpdateObjectAvailableDots{
+					Err: errDeleteReason,
+				}
 			}
-		}
-	case *engine.ErrDotsOccupied:
-		// Case of all dots of new location are occupied
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: &ErrLocationDotsOccupiedByObjects{
-				Objects: pg.unsafeGetObjectsByDots(errRelocateAvailableDotsReason.Dots),
-			},
-		}
-	default:
-		// Unknown relocate available dots error
-		// TODO: Create ErrUnknown{}
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: errRelocateAvailableDotsReason,
+		case *engine.ErrDotsOccupied:
+			// Case of all dots of new location are occupied
+			return nil, &ErrUpdateObjectAvailableDots{
+				Err: &ErrLocationDotsOccupiedByObjects{
+					Objects: pg.unsafeGetObjectsByDots(errRelocateAvailableDotsReason.Dots),
+				},
+			}
+		default:
+			// Unknown relocate available dots error
+			// TODO: Create ErrUnknown{}
+			return nil, &ErrUpdateObjectAvailableDots{
+				Err: errRelocateAvailableDotsReason,
+			}
 		}
 	}
 
