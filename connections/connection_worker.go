@@ -11,50 +11,80 @@ import (
 	"github.com/ivan1993spb/snake-server/game"
 )
 
+const (
+	chanOutputMessageBuffer      = 128
+	chanReadMessagesBuffer       = 128
+	chanDecodeMessageBuffer      = 128
+	chanEncodeMessageBuffer      = 128
+	chanProxyInputMessageBuffer  = 64
+	chanListenInputMessageBuffer = 32
+
+	sendInputMessageTimeout = time.Millisecond * 50
+)
+
 type ConnectionWorker struct {
-	conn        *websocket.Conn
-	logger      *logrus.Logger
+	conn   *websocket.Conn
+	logger *logrus.Logger
+
 	chStop      chan struct{}
-	chStopErr   chan error
 	chOutput    chan OutputMessage
 	chsInput    []chan InputMessage
 	chsInputMux *sync.RWMutex
 
 	flagStarted bool
-	flagStopped bool
 }
 
 func NewConnectionWorker(conn *websocket.Conn, logger *logrus.Logger) *ConnectionWorker {
 	return &ConnectionWorker{
-		conn:      conn,
-		logger:    logger,
-		chStopErr: make(chan error, 0),
+		conn:        conn,
+		logger:      logger,
+		chStop:      make(chan struct{}, 0),
+		chOutput:    make(chan OutputMessage, chanOutputMessageBuffer),
+		chsInput:    make([]chan InputMessage, 0),
+		chsInputMux: &sync.RWMutex{},
 	}
+}
+
+type ErrStartConnectionWorker string
+
+func (e ErrStartConnectionWorker) Error() string {
+	return "error start connection worker: " + string(e)
 }
 
 func (cw *ConnectionWorker) Start(game *game.Game) error {
-	//return cw.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "close"), time.Now().Add(time.Second))
-
 	if cw.flagStarted {
-		// Return error
-		return nil
+		return ErrStartConnectionWorker("connection worker already started")
 	}
-
-	// Start connection read
-	// Start connection write
-	// Listen game events
-	// Parse input messages (?) and send game commands
-
-	//game.RunObserver(cw, 16)
 
 	cw.flagStarted = true
 
-	return <-cw.chStopErr
+	chInputBytes := cw.read()
+	chInputMessages := cw.decode(chInputBytes, cw.chStop)
+	cw.broadcastInputMessage(chInputMessages, cw.chStop)
+	cw.listen(game.Events(cw.chStop), cw.chStop)
+	chOutputBytes := cw.encode(cw.chOutput, cw.chStop)
+	cw.write(chOutputBytes, cw.chStop)
+
+	return nil
+}
+
+func (cw *ConnectionWorker) listenErrors(cherr <-chan error) <-chan struct{} {
+	stop := make(chan struct{}, 0)
+
+	go func() {
+		for err := range cherr {
+			if err != nil {
+				close(stop)
+				return
+			}
+		}
+	}()
+
+	return stop
 }
 
 func (cw *ConnectionWorker) read() <-chan []byte {
-	// TODO: Create buffer.
-	chout := make(chan []byte, 0)
+	chout := make(chan []byte, chanReadMessagesBuffer)
 
 	go func() {
 		defer close(chout)
@@ -79,8 +109,7 @@ func (cw *ConnectionWorker) read() <-chan []byte {
 }
 
 func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-chan InputMessage {
-	// TODO: Create buffer.
-	chout := make(chan InputMessage, 0)
+	chout := make(chan InputMessage, chanDecodeMessageBuffer)
 
 	go func() {
 		defer close(chout)
@@ -127,15 +156,13 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 }
 
 func (cw *ConnectionWorker) Input(stop <-chan struct{}) <-chan InputMessage {
-	// TODO: Create buffer.
-	chProxy := make(chan InputMessage, 0)
+	chProxy := make(chan InputMessage, chanProxyInputMessageBuffer)
 
 	cw.chsInputMux.Lock()
 	cw.chsInput = append(cw.chsInput, chProxy)
 	cw.chsInputMux.Unlock()
 
-	// TODO: Create buffer.
-	chout := make(chan InputMessage, 0)
+	chout := make(chan InputMessage, chanListenInputMessageBuffer)
 
 	go func() {
 		defer close(chout)
@@ -158,8 +185,7 @@ func (cw *ConnectionWorker) Input(stop <-chan struct{}) <-chan InputMessage {
 			case <-cw.chStop:
 				return
 			case inputMessage := <-chProxy:
-				// TODO: Create timeout.
-				cw.sendInputMessage(chout, inputMessage, stop, time.Second)
+				cw.sendInputMessage(chout, inputMessage, stop, sendInputMessageTimeout)
 			}
 		}
 	}()
@@ -220,8 +246,7 @@ func (cw *ConnectionWorker) outputMessage(outputMessage OutputMessage) {
 }
 
 func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct{}) <-chan []byte {
-	// TODO: Create buffer.
-	chout := make(chan []byte, 0)
+	chout := make(chan []byte, chanEncodeMessageBuffer)
 
 	go func() {
 		defer close(chout)
@@ -249,6 +274,13 @@ func (cw *ConnectionWorker) listen(chin <-chan game.Event, stop <-chan struct{})
 		case event := <-chin:
 			// TODO: Do stuff.
 			cw.logger.Info(event)
+
+			// ...
+
+			cw.outputMessage(OutputMessage{
+				Type:    OutputMessageTypeGameEvent,
+				Payload: event,
+			})
 		case <-stop:
 			return
 		}
