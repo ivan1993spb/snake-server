@@ -1,6 +1,9 @@
 package engine
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Dot struct {
 	x uint8
@@ -23,6 +26,10 @@ func (d1 *Dot) Equals(d2 *Dot) bool {
 // Implementing json.Marshaler interface
 func (d *Dot) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]uint16{uint16(d.x), uint16(d.y)})
+}
+
+func (d *Dot) String() string {
+	return fmt.Sprintf("[%d, %d]", d.x, d.y)
 }
 
 // DistanceTo calculates distance between two dots
