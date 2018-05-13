@@ -60,3 +60,24 @@ func Test_Playground_CreateObject(t *testing.T) {
 	err = pg.CreateObject(object, location)
 	require.Nil(t, err)
 }
+
+func Test_Playground_CreateObjectRandomRect(t *testing.T) {
+	area, err := engine.NewArea(100, 100)
+	require.Nil(t, err, "cannot create area")
+	require.NotNil(t, area, "cannot create area")
+	scene, err := engine.NewScene(area)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{}{}
+
+	pg := &Playground{
+		scene:         scene,
+		entities:      []entity{},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	location, err := pg.CreateObjectRandomRect(object, 10, 10)
+	require.Nil(t, err)
+	require.Len(t, location, 100)
+}
