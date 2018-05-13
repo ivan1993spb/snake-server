@@ -17,18 +17,25 @@ func Test_Playground_ObjectExists(t *testing.T) {
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
-	object := &struct{}{}
+	objectExists := &struct{}{}
+
+	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err)
 
 	pg := &Playground{
 		scene: scene,
 		entities: []entity{
 			{
-				object:   object,
+				object:   objectExists,
 				location: engine.Location{engine.NewDot(0, 0)},
 			},
 		},
 		entitiesMutex: &sync.RWMutex{},
 	}
 
-	require.True(t, pg.ObjectExists(object))
+	require.True(t, pg.ObjectExists(objectExists))
+
+	objectNotExists := &struct{}{}
+
+	require.False(t, pg.ObjectExists(objectNotExists))
 }
