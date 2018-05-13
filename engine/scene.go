@@ -121,7 +121,7 @@ func (s *Scene) unsafeLocate(location Location) *ErrLocate {
 	for i := uint16(0); i < location.DotCount(); i++ {
 		var dot = location.Dot(i)
 
-		if s.area.Contains(dot) {
+		if !s.area.Contains(dot) {
 			return &ErrLocate{
 				Err: &ErrAreaNotContainsDot{
 					Dot: dot,
