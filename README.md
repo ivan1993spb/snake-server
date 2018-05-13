@@ -94,3 +94,7 @@ Message types:
 * Object: `{"type": "object", "object": {}}` - delete, update or create
 * Error: `{"type": "error", "message": "text"}`
 * Notice: `{"type": "notice", "message": "text"}`
+
+## License
+
+See [LICENSE](LICENSE).
