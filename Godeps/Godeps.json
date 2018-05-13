@@ -7,6 +7,11 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Comment": "v1.1.0-12-g8991bc2",
+			"Rev": "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+		},
+		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.6.1-16-gded0c29",
 			"Rev": "ded0c29b24f96f46cf349e6701b099db601cf8ec"
@@ -15,6 +20,10 @@
 			"ImportPath": "github.com/gorilla/websocket",
 			"Comment": "v1.2.0-40-g21ab95f",
 			"Rev": "21ab95fa12b9bdd8fecf5fa3586aad941cc98785"
+		},
+		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
 			"ImportPath": "github.com/pquerna/ffjson/ffjson",
@@ -32,6 +41,16 @@
 			"ImportPath": "github.com/sirupsen/logrus",
 			"Comment": "v1.0.4",
 			"Rev": "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.2.1-14-gc679ae2",
+			"Rev": "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/require",
+			"Comment": "v1.2.1-14-gc679ae2",
+			"Rev": "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
 		},
 		{
 			"ImportPath": "github.com/urfave/negroni",
