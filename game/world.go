@@ -43,7 +43,7 @@ func (w *World) event(event Event) {
 }
 
 func (w *World) start() {
-	if !w.flagStarted {
+	if w.flagStarted {
 		return
 	}
 	w.flagStarted = true
