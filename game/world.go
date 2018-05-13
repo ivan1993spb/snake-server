@@ -16,28 +16,7 @@ const (
 	worldEventsSendTimeout = time.Millisecond * 100
 )
 
-type World interface {
-	ObjectExists(object interface{}) bool
-	LocationExists(location engine.Location) bool
-	EntityExists(object interface{}, location engine.Location) bool
-	GetObjectByLocation(location engine.Location) interface{}
-	GetObjectByDot(dot *engine.Dot) interface{}
-	GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location)
-	GetObjectsByDots(dots []*engine.Dot) []interface{}
-	CreateObject(object interface{}, location engine.Location) error
-	CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *playground.ErrCreateObjectAvailableDots)
-	DeleteObject(object interface{}, location engine.Location) *playground.ErrDeleteObject
-	UpdateObject(object interface{}, old, new engine.Location) *playground.ErrUpdateObject
-	UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *playground.ErrUpdateObjectAvailableDots)
-	CreateObjectRandomDot(object interface{}) (engine.Location, error)
-	CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error)
-	Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error)
-	Size() uint16
-	Width() uint8
-	Height() uint8
-}
-
-type world struct {
+type World struct {
 	pg          *playground.Playground
 	chMain      chan Event
 	chsProxy    []chan Event
@@ -46,8 +25,8 @@ type world struct {
 	flagStarted bool
 }
 
-func newWorld(pg *playground.Playground) *world {
-	return &world{
+func NewWorld(pg *playground.Playground) *World {
+	return &World{
 		pg:          pg,
 		chMain:      make(chan Event, worldEventsChanMainBufferSize),
 		chsProxy:    make([]chan Event, 0),
@@ -56,14 +35,14 @@ func newWorld(pg *playground.Playground) *world {
 	}
 }
 
-func (w *world) event(event Event) {
+func (w *World) event(event Event) {
 	select {
 	case w.chMain <- event:
 	case <-w.stopGlobal:
 	}
 }
 
-func (w *world) start() {
+func (w *World) start() {
 	if !w.flagStarted {
 		return
 	}
@@ -81,7 +60,7 @@ func (w *world) start() {
 	}()
 }
 
-func (w *world) broadcast(event Event) {
+func (w *World) broadcast(event Event) {
 	w.chsProxyMux.RLock()
 	defer w.chsProxyMux.RUnlock()
 
@@ -93,7 +72,7 @@ func (w *world) broadcast(event Event) {
 	}
 }
 
-func (w *world) createChanProxy() chan Event {
+func (w *World) createChanProxy() chan Event {
 	chProxy := make(chan Event, worldEventsChanProxyBufferSize)
 
 	w.chsProxyMux.Lock()
@@ -103,7 +82,7 @@ func (w *world) createChanProxy() chan Event {
 	return chProxy
 }
 
-func (w *world) deleteChanProxy(chProxy chan Event) {
+func (w *World) deleteChanProxy(chProxy chan Event) {
 	w.chsProxyMux.Lock()
 	for i := range w.chsProxy {
 		if w.chsProxy[i] == chProxy {
@@ -115,7 +94,8 @@ func (w *world) deleteChanProxy(chProxy chan Event) {
 	w.chsProxyMux.Unlock()
 }
 
-func (w *world) Events(stop <-chan struct{}) <-chan Event {
+// TODO: Create chan buffer param
+func (w *World) Events(stop <-chan struct{}) <-chan Event {
 	chProxy := w.createChanProxy()
 	chOut := make(chan Event, worldEventsChanOutBufferSize)
 
@@ -138,7 +118,7 @@ func (w *world) Events(stop <-chan struct{}) <-chan Event {
 	return chOut
 }
 
-func (w *world) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
+func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 	if cap(ch) == 0 {
@@ -168,7 +148,7 @@ func (w *world) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 	}
 }
 
-func (w *world) stop() {
+func (w *World) stop() {
 	close(w.stopGlobal)
 	close(w.chMain)
 
@@ -182,19 +162,19 @@ func (w *world) stop() {
 	w.chsProxy = w.chsProxy[:0]
 }
 
-func (w *world) ObjectExists(object interface{}) bool {
+func (w *World) ObjectExists(object interface{}) bool {
 	return w.pg.ObjectExists(object)
 }
 
-func (w *world) LocationExists(location engine.Location) bool {
+func (w *World) LocationExists(location engine.Location) bool {
 	return w.pg.LocationExists(location)
 }
 
-func (w *world) EntityExists(object interface{}, location engine.Location) bool {
+func (w *World) EntityExists(object interface{}, location engine.Location) bool {
 	return w.pg.EntityExists(object, location)
 }
 
-func (w *world) GetObjectByLocation(location engine.Location) interface{} {
+func (w *World) GetObjectByLocation(location engine.Location) interface{} {
 	if object := w.pg.GetObjectByLocation(location); object != nil {
 		w.event(Event{
 			Type:    EventTypeObjectChecked,
@@ -206,7 +186,7 @@ func (w *world) GetObjectByLocation(location engine.Location) interface{} {
 
 }
 
-func (w *world) GetObjectByDot(dot *engine.Dot) interface{} {
+func (w *World) GetObjectByDot(dot *engine.Dot) interface{} {
 	if object := w.pg.GetObjectByDot(dot); object != nil {
 		w.event(Event{
 			Type:    EventTypeObjectChecked,
@@ -217,7 +197,7 @@ func (w *world) GetObjectByDot(dot *engine.Dot) interface{} {
 	return nil
 }
 
-func (w *world) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+func (w *World) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
 	if object, location := w.pg.GetEntityByDot(dot); object != nil && !location.Empty() {
 		w.event(Event{
 			Type:    EventTypeObjectChecked,
@@ -228,7 +208,7 @@ func (w *world) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
 	return nil, nil
 }
 
-func (w *world) GetObjectsByDots(dots []*engine.Dot) []interface{} {
+func (w *World) GetObjectsByDots(dots []*engine.Dot) []interface{} {
 	if objects := w.pg.GetObjectsByDots(dots); len(objects) > 0 {
 		for _, object := range objects {
 			w.event(Event{
@@ -241,7 +221,7 @@ func (w *world) GetObjectsByDots(dots []*engine.Dot) []interface{} {
 	return nil
 }
 
-func (w *world) CreateObject(object interface{}, location engine.Location) error {
+func (w *World) CreateObject(object interface{}, location engine.Location) error {
 	if err := w.pg.CreateObject(object, location); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -256,7 +236,7 @@ func (w *world) CreateObject(object interface{}, location engine.Location) error
 	return nil
 }
 
-func (w *world) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *playground.ErrCreateObjectAvailableDots) {
+func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *playground.ErrCreateObjectAvailableDots) {
 	location, err := w.pg.CreateObjectAvailableDots(object, location)
 	if err != nil {
 		w.event(Event{
@@ -272,7 +252,7 @@ func (w *world) CreateObjectAvailableDots(object interface{}, location engine.Lo
 	return location, err
 }
 
-func (w *world) DeleteObject(object interface{}, location engine.Location) *playground.ErrDeleteObject {
+func (w *World) DeleteObject(object interface{}, location engine.Location) *playground.ErrDeleteObject {
 	err := w.pg.DeleteObject(object, location)
 	if err != nil {
 		w.event(Event{
@@ -288,7 +268,7 @@ func (w *world) DeleteObject(object interface{}, location engine.Location) *play
 	return err
 }
 
-func (w *world) UpdateObject(object interface{}, old, new engine.Location) *playground.ErrUpdateObject {
+func (w *World) UpdateObject(object interface{}, old, new engine.Location) *playground.ErrUpdateObject {
 	if err := w.pg.UpdateObject(object, old, new); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -303,7 +283,7 @@ func (w *world) UpdateObject(object interface{}, old, new engine.Location) *play
 	return nil
 }
 
-func (w *world) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *playground.ErrUpdateObjectAvailableDots) {
+func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *playground.ErrUpdateObjectAvailableDots) {
 	location, err := w.pg.UpdateObjectAvailableDots(object, old, new)
 	if err != nil {
 		w.event(Event{
@@ -319,7 +299,7 @@ func (w *world) UpdateObjectAvailableDots(object interface{}, old, new engine.Lo
 	return location, err
 }
 
-func (w *world) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
+func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomDot(object)
 	if err != nil {
 		w.event(Event{
@@ -335,7 +315,7 @@ func (w *world) CreateObjectRandomDot(object interface{}) (engine.Location, erro
 	return location, err
 }
 
-func (w *world) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
+func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomRect(object, rw, rh)
 	if err != nil {
 		w.event(Event{
@@ -351,18 +331,18 @@ func (w *world) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine
 	return location, err
 }
 
-func (w *world) Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error) {
+func (w *World) Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error) {
 	return w.pg.Navigate(dot, dir, dis)
 }
 
-func (w *world) Size() uint16 {
+func (w *World) Size() uint16 {
 	return w.pg.Size()
 }
 
-func (w *world) Width() uint8 {
+func (w *World) Width() uint8 {
 	return w.pg.Width()
 }
 
-func (w *world) Height() uint8 {
+func (w *World) Height() uint8 {
 	return w.pg.Height()
 }

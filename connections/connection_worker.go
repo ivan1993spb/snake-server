@@ -74,7 +74,7 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 	cw.write(chOutputBytes, chStop)
 
 	player := player.NewPlayer(game)
-	player.Start()
+	player.Start(chStop)
 
 	cw.chStop = chStop
 
@@ -297,6 +297,8 @@ func (cw *ConnectionWorker) listenGameEvents(chin <-chan game.Event, stop <-chan
 					Type:    OutputMessageTypeGameEvent,
 					Payload: event,
 				}
+
+				cw.logger.Info(event)
 
 				select {
 				case chout <- outputMessage:
