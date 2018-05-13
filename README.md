@@ -17,7 +17,13 @@ Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub.
 
 ## CLI arguments
 
-// TODO: Create arguments description
+Use `snake-server -help` for help info.
+
+Arguments:
+
+* `-address` - **string** - address to serve (default `:8080`). For example: `:8080`, `localhost:7070`
+* `-groups-limit` - **int** - groups limit for server (default 10)
+* `-seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
 
 ## API Description
 
