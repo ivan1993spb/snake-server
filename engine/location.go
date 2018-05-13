@@ -60,7 +60,7 @@ func (l Location) Empty() bool {
 }
 
 func (l Location) Copy() Location {
-	newLocation := make(Location, 0, len(l))
+	newLocation := make(Location, len(l), len(l))
 	copy(newLocation, l)
 	return newLocation
 }
