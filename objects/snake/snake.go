@@ -42,41 +42,41 @@ var snakeCommands = map[Command]engine.Direction{
 type Snake struct {
 	world game.World
 
-	location engine.Location
-	length   uint16
+	dots   []*engine.Dot
+	length uint16
 
 	// Motion direction
 	direction engine.Direction
 }
 
-// CreateSnake creates new snake
-func CreateSnake(world game.World) (*Snake, error) {
+// NewSnake creates new snake
+func NewSnake(world game.World) (*Snake, error) {
 	var (
-		dir  = engine.RandomDirection()
-		err  error
-		dots engine.Location
+		dir      = engine.RandomDirection()
+		err      error
+		location engine.Location
 	)
 
 	snake := &Snake{}
 
 	switch dir {
 	case engine.DirectionNorth, engine.DirectionSouth:
-		dots, err = world.CreateObjectRandomRect(snake, 1, uint8(snakeStartLength))
+		location, err = world.CreateObjectRandomRect(snake, 1, uint8(snakeStartLength))
 	case engine.DirectionEast, engine.DirectionWest:
-		dots, err = world.CreateObjectRandomRect(snake, uint8(snakeStartLength), 1)
+		location, err = world.CreateObjectRandomRect(snake, uint8(snakeStartLength), 1)
 	}
 	if err != nil {
-		// TODO: Create error
+		// TODO: Create error.
 		return nil, err
 	}
 
 	if dir == engine.DirectionSouth || dir == engine.DirectionEast {
-		reversedDots := dots.Reverse()
-		dots = reversedDots
+		reversedDots := location.Reverse()
+		location = reversedDots
 	}
 
 	snake.world = world
-	snake.location = dots
+	snake.dots = []*engine.Dot(location)
 	snake.length = snakeStartLength
 	snake.direction = dir
 
@@ -84,7 +84,7 @@ func CreateSnake(world game.World) (*Snake, error) {
 }
 
 func (s *Snake) Die() {
-	s.world.DeleteObject(s, s.location)
+	s.world.DeleteObject(s, s.dots)
 }
 
 func (s *Snake) Feed(f int8) {
@@ -131,14 +131,14 @@ func (s *Snake) Run(ch <-chan game.Event) error {
 				ticker = time.NewTicker(s.calculateDelay())
 			}
 
-			tmpLocation := make(engine.Location, len(s.location)+1)
-			copy(tmpLocation[1:], s.location)
+			tmpLocation := make(engine.Location, len(s.dots)+1)
+			copy(tmpLocation[1:], s.dots)
 			tmpLocation[0] = dot
-			s.world.UpdateObject(s, s.location, tmpLocation)
-			s.location = tmpLocation
+			s.world.UpdateObject(s, s.dots, tmpLocation)
+			s.dots = tmpLocation
 
-			if s.length < s.location.DotCount() {
-				s.location = s.location[:len(s.location)-1]
+			if s.length < uint16(len(s.dots)) {
+				s.dots = s.dots[:len(s.dots)-1]
 			}
 		}
 	}()
@@ -153,11 +153,11 @@ func (s *Snake) calculateDelay() time.Duration {
 // getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
 func (s *Snake) getNextHeadDot() (*engine.Dot, error) {
-	if len(s.location) > 0 {
-		return s.world.Navigate(s.location[0], s.direction, 1)
+	if len(s.dots) > 0 {
+		return s.world.Navigate(s.dots[0], s.direction, 1)
 	}
 
-	return nil, fmt.Errorf("cannot get next head location: errEmptyDotList")
+	return nil, fmt.Errorf("cannot get next head dots: errEmptyDotList")
 }
 
 func (s *Snake) Command(cmd Command) error {
@@ -170,7 +170,7 @@ func (s *Snake) Command(cmd Command) error {
 
 func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 	if engine.ValidDirection(nextDir) {
-		currDir := engine.CalculateDirection(s.location[1], s.location[0])
+		currDir := engine.CalculateDirection(s.dots[1], s.dots[0])
 		rNextDir, err := nextDir.Reverse()
 		if err != nil {
 			return fmt.Errorf("cannot set movement direction: %s", err)
