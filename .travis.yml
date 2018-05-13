@@ -9,5 +9,6 @@ go:
 env:
   global:
     - GOARCH=amd64
-install:
-  - go install
+script:
+  - go list ./... | grep -v vendor | xargs go vet
+  - go list ./... | grep -v vendor | xargs go test -v
