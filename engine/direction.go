@@ -28,6 +28,20 @@ var directionsJSON = map[Direction][]byte{
 	DirectionWest:  []byte(`"w"`),
 }
 
+var directionsLabels = map[Direction]string{
+	DirectionNorth: "north",
+	DirectionEast:  "east",
+	DirectionSouth: "south",
+	DirectionWest:  "west",
+}
+
+func (dir Direction) String() string {
+	if label, ok := directionsLabels[dir]; ok {
+		return label
+	}
+	return "unknown"
+}
+
 var unknownDirectionJSON = []byte(`"-"`)
 
 // RandomDirection returns random direction
