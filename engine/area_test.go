@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -62,7 +63,7 @@ func Test_Area_Navigate_SquareArea100x100(t *testing.T) {
 
 	for i, test := range tests {
 		actualDot, actualErr := area.Navigate(test.inputDot, test.inputDir, test.inputDis)
-		require.Equal(t, test.expectedDot, actualDot, i)
-		require.Equal(t, test.expectedErr, actualErr, i)
+		require.Equal(t, test.expectedDot, actualDot, fmt.Sprintf("number %d", i))
+		require.Equal(t, test.expectedErr, actualErr, fmt.Sprintf("number %d", i))
 	}
 }
