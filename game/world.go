@@ -11,7 +11,6 @@ import (
 const (
 	worldEventsChanMainBufferSize  = 512
 	worldEventsChanProxyBufferSize = 128
-	worldEventsChanOutBufferSize   = 32
 
 	worldEventsSendTimeout = time.Millisecond * 100
 )
@@ -94,10 +93,9 @@ func (w *World) deleteChanProxy(chProxy chan Event) {
 	w.chsProxyMux.Unlock()
 }
 
-// TODO: Create chan buffer param
-func (w *World) Events(stop <-chan struct{}) <-chan Event {
+func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 	chProxy := w.createChanProxy()
-	chOut := make(chan Event, worldEventsChanOutBufferSize)
+	chOut := make(chan Event, buffer)
 
 	go func() {
 		defer close(chOut)

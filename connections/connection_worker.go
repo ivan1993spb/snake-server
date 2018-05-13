@@ -69,7 +69,8 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
 	// Output
-	chOutputMessages := cw.listenGameEvents(game.Events(chStop), chStop)
+	// TODO: Create buffer const
+	chOutputMessages := cw.listenGameEvents(game.Events(chStop, 32), chStop)
 	chOutputBytes := cw.encode(chOutputMessages, chStop)
 	cw.write(chOutputBytes, chStop)
 

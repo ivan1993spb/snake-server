@@ -48,6 +48,6 @@ func (g *Game) World() *World {
 	return g.world
 }
 
-func (g *Game) Events(stop <-chan struct{}) <-chan Event {
-	return g.world.Events(stop)
+func (g *Game) Events(stop <-chan struct{}, buffer uint) <-chan Event {
+	return g.world.Events(stop, buffer)
 }

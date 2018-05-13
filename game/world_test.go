@@ -33,8 +33,8 @@ func Test_World_Events(t *testing.T) {
 
 	stop := make(chan struct{})
 
-	chEventsFirst := world.Events(stop)
-	chEventsSecond := world.Events(stop)
+	chEventsFirst := world.Events(stop, 0)
+	chEventsSecond := world.Events(stop, 4)
 
 	object := &struct{}{}
 
