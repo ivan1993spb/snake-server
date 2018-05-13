@@ -81,3 +81,40 @@ func Test_Playground_CreateObjectRandomRect(t *testing.T) {
 	require.Nil(t, err)
 	require.Len(t, location, 100)
 }
+
+func Test_Playground_UpdateObject(t *testing.T) {
+	area, err := engine.NewArea(100, 100)
+	require.Nil(t, err, "cannot create area")
+	require.NotNil(t, area, "cannot create area")
+	scene, err := engine.NewScene(area)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{}{}
+
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{object, engine.Location{engine.NewDot(0, 0)}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err)
+
+	err = pg.UpdateObject(object, engine.Location{engine.NewDot(0, 0)}, engine.Location{engine.NewDot(1, 1)})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.NewDot(1, 1)}))
+	require.False(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
+
+	err = pg.UpdateObject(object, engine.Location{engine.NewDot(1, 1)}, engine.Location{engine.NewDot(2, 2)})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.NewDot(2, 2)}))
+	require.False(t, scene.Located(engine.Location{engine.NewDot(1, 1)}))
+
+	err = pg.UpdateObject(object, engine.Location{engine.NewDot(2, 2)}, engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
+	require.False(t, scene.Located(engine.Location{engine.NewDot(2, 2)}))
+}
