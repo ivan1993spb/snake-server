@@ -60,3 +60,51 @@ func Test_World_Events(t *testing.T) {
 
 	world.stop()
 }
+
+func Test_World_UpdateObject(t *testing.T) {
+	area, err := engine.NewArea(100, 100)
+	require.Nil(t, err, "cannot create area")
+	require.NotNil(t, area, "cannot create area")
+
+	scene, err := engine.NewScene(area)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	pg := playground.NewPlayground(scene)
+	require.NotNil(t, pg, "cannot initialize playground")
+
+	object := &struct{}{}
+	err = pg.CreateObject(object, engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err, "cannot create object to playground")
+
+	world := &World{
+		pg:          pg,
+		chMain:      make(chan Event, worldEventsChanMainBufferSize),
+		chsProxy:    make([]chan Event, 0),
+		chsProxyMux: &sync.RWMutex{},
+		stopGlobal:  make(chan struct{}, 0),
+	}
+	world.start()
+	defer world.stop()
+
+	err = world.UpdateObject(object, engine.Location{engine.NewDot(0, 0)}, engine.Location{engine.NewDot(1, 1)})
+	require.Nil(t, err)
+	require.True(t, pg.EntityExists(object, engine.Location{engine.NewDot(1, 1)}))
+	require.False(t, pg.EntityExists(object, engine.Location{engine.NewDot(0, 0)}))
+	require.False(t, pg.LocationExists(engine.Location{engine.NewDot(0, 0)}))
+	require.True(t, pg.LocationExists(engine.Location{engine.NewDot(1, 1)}))
+
+	err = world.UpdateObject(object, engine.Location{engine.NewDot(1, 1)}, engine.Location{engine.NewDot(3, 3)})
+	require.Nil(t, err)
+	require.True(t, pg.EntityExists(object, engine.Location{engine.NewDot(3, 3)}))
+	require.False(t, pg.EntityExists(object, engine.Location{engine.NewDot(1, 1)}))
+	require.False(t, pg.LocationExists(engine.Location{engine.NewDot(1, 1)}))
+	require.True(t, pg.LocationExists(engine.Location{engine.NewDot(3, 3)}))
+
+	err = world.UpdateObject(object, engine.Location{engine.NewDot(3, 3)}, engine.Location{engine.NewDot(0, 5)})
+	require.Nil(t, err)
+	require.True(t, pg.EntityExists(object, engine.Location{engine.NewDot(0, 5)}))
+	require.False(t, pg.EntityExists(object, engine.Location{engine.NewDot(3, 3)}))
+	require.False(t, pg.LocationExists(engine.Location{engine.NewDot(3, 3)}))
+	require.True(t, pg.LocationExists(engine.Location{engine.NewDot(0, 5)}))
+}
