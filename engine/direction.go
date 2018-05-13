@@ -14,7 +14,7 @@ func (e *ErrInvalidDirection) Error() string {
 type Direction uint8
 
 const (
-	DirectionNorth = iota
+	DirectionNorth Direction = iota
 	DirectionEast
 	DirectionSouth
 	DirectionWest
@@ -32,7 +32,7 @@ var unknownDirectionJSON = []byte(`"-"`)
 
 // RandomDirection returns random direction
 func RandomDirection() Direction {
-	return Direction(rand.Intn(directionCount))
+	return Direction(rand.Intn(int(directionCount)))
 }
 
 // CalculateDirection calculates direction by two passed dots
