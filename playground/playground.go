@@ -617,7 +617,7 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
 
-	if !pg.unsafeObjectExists(object) {
+	if pg.unsafeObjectExists(object) {
 		return nil, ErrCreateRandomRectObject("object to create already created")
 	}
 
