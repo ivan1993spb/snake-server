@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/playground"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -30,17 +29,8 @@ func Test_Snake_calculateDelay(t *testing.T) {
 }
 
 func Test_Snake_setMovementDirection(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-
-	scene, err := engine.NewScene(area)
-	require.Nil(t, err, "cannot create scene")
-	require.NotNil(t, scene, "cannot create scene")
-
-	pg := playground.NewPlayground(scene)
-	require.NotNil(t, pg, "cannot initialize playground")
-	world := world.NewWorld(pg)
+	world, err := world.NewWorld(100, 100)
+	require.Nil(t, err, "cannot initialize world")
 	require.NotNil(t, world, "cannot initialize world")
 
 	snake := &Snake{
@@ -75,17 +65,8 @@ func Test_Snake_setMovementDirection(t *testing.T) {
 }
 
 func Test_Snake_getNextHeadDot(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-
-	scene, err := engine.NewScene(area)
-	require.Nil(t, err, "cannot create scene")
-	require.NotNil(t, scene, "cannot create scene")
-
-	pg := playground.NewPlayground(scene)
-	require.NotNil(t, pg, "cannot initialize playground")
-	world := world.NewWorld(pg)
+	world, err := world.NewWorld(100, 100)
+	require.Nil(t, err, "cannot initialize world")
 	require.NotNil(t, world, "cannot initialize world")
 
 	// First case east
@@ -197,17 +178,8 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 }
 
 func Test_Snake_move_validLocation(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-
-	scene, err := engine.NewScene(area)
-	require.Nil(t, err, "cannot create scene")
-	require.NotNil(t, scene, "cannot create scene")
-
-	pg := playground.NewPlayground(scene)
-	require.NotNil(t, pg, "cannot initialize playground")
-	world := world.NewWorld(pg)
+	world, err := world.NewWorld(100, 100)
+	require.Nil(t, err, "cannot initialize world")
 	require.NotNil(t, world, "cannot initialize world")
 
 	snake := &Snake{

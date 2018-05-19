@@ -11,15 +11,8 @@ import (
 )
 
 func Test_World_Events(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-
-	scene, err := engine.NewScene(area)
-	require.Nil(t, err, "cannot create scene")
-	require.NotNil(t, scene, "cannot create scene")
-
-	pg := playground.NewPlayground(scene)
+	pg, err := playground.NewPlayground(100, 100)
+	require.Nil(t, err, "cannot initialize playground")
 	require.NotNil(t, pg, "cannot initialize playground")
 
 	world := &World{
@@ -64,15 +57,8 @@ func Test_World_Events(t *testing.T) {
 }
 
 func Test_World_UpdateObject(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-
-	scene, err := engine.NewScene(area)
-	require.Nil(t, err, "cannot create scene")
-	require.NotNil(t, scene, "cannot create scene")
-
-	pg := playground.NewPlayground(scene)
+	pg, err := playground.NewPlayground(100, 100)
+	require.Nil(t, err, "cannot initialize playground")
 	require.NotNil(t, pg, "cannot initialize playground")
 
 	object := &struct{}{}

@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -24,14 +25,19 @@ type World struct {
 	flagStarted bool
 }
 
-func NewWorld(pg *playground.Playground) *World {
+func NewWorld(width, height uint8) (*World, error) {
+	pg, err := playground.NewPlayground(width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create world: %s", err)
+	}
+
 	return &World{
 		pg:          pg,
 		chMain:      make(chan Event, worldEventsChanMainBufferSize),
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}),
-	}
+	}, nil
 }
 
 func (w *World) event(event Event) {

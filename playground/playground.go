@@ -2,6 +2,7 @@ package playground
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -20,12 +21,17 @@ type Playground struct {
 	entitiesMutex *sync.RWMutex
 }
 
-func NewPlayground(scene *engine.Scene) *Playground {
+func NewPlayground(width, height uint8) (*Playground, error) {
+	scene, err := engine.NewScene(width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create playground: %s", err)
+	}
+
 	return &Playground{
 		scene:         scene,
 		entities:      []entity{},
 		entitiesMutex: &sync.RWMutex{},
-	}
+	}, nil
 }
 
 func (pg *Playground) unsafeObjectExists(object interface{}) bool {

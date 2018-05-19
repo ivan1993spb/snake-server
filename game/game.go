@@ -1,11 +1,11 @@
 package game
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 
-	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/objects/apple"
-	"github.com/ivan1993spb/snake-server/playground"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -23,21 +23,13 @@ func (e *ErrCreateGame) Error() string {
 }
 
 func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
-	area, err := engine.NewArea(width, height)
+	w, err := world.NewWorld(width, height)
 	if err != nil {
-		return nil, &ErrCreateGame{Err: err}
+		return nil, fmt.Errorf("cannot create game: %s", err)
 	}
-
-	scene, err := engine.NewScene(area)
-	if err != nil {
-		return nil, &ErrCreateGame{Err: err}
-	}
-
-	pg := playground.NewPlayground(scene)
-	world := world.NewWorld(pg)
 
 	return &Game{
-		world:  world,
+		world:  w,
 		logger: logger,
 	}, nil
 }

@@ -10,10 +10,7 @@ import (
 )
 
 func Test_Playground_ObjectExists(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
@@ -41,10 +38,7 @@ func Test_Playground_ObjectExists(t *testing.T) {
 }
 
 func Test_Playground_CreateObject(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
@@ -62,10 +56,7 @@ func Test_Playground_CreateObject(t *testing.T) {
 }
 
 func Test_Playground_CreateObjectRandomRect(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
@@ -83,10 +74,7 @@ func Test_Playground_CreateObjectRandomRect(t *testing.T) {
 }
 
 func Test_Playground_UpdateObject(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
@@ -124,10 +112,7 @@ func Benchmark_Playground_UpdateObject(b *testing.B) {
 }
 
 func Test_Playground_DeleteObject(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -37,7 +38,12 @@ type Scene struct {
 }
 
 // NewScene returns new empty scene
-func NewScene(area *Area) (*Scene, error) {
+func NewScene(width, height uint8) (*Scene, error) {
+	area, err := NewArea(width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create scene: %s", err)
+	}
+
 	return &Scene{
 		area:           area,
 		locations:      make([]Location, 0),
