@@ -1,6 +1,8 @@
 package apple
 
 import (
+	"fmt"
+
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -29,6 +31,10 @@ func NewApple(world *world.World) (*Apple, error) {
 	apple.world = world
 
 	return apple, nil
+}
+
+func (a *Apple) String() string {
+	return fmt.Sprintf("apple %s", a.location)
 }
 
 func (a *Apple) NutritionalValue(dot *engine.Dot) uint16 {
