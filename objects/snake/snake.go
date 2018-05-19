@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/objects/apple"
+	"github.com/ivan1993spb/snake-server/objects"
 	"github.com/ivan1993spb/snake-server/objects/corpse"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -142,12 +142,9 @@ func (s *Snake) move() error {
 
 	if object := s.world.GetObjectByDot(dot); object != nil {
 		// TODO: Use interfaces to interact objects.
-		switch object := object.(type) {
-		case *apple.Apple:
-			s.length += object.NutritionalValue(dot)
-		case *corpse.Corpse:
-			s.length += object.NutritionalValue(dot)
-		case *Snake:
+		if food, ok := object.(objects.Food); ok {
+			s.length += food.NutritionalValue(dot)
+		} else {
 			s.Die()
 			return nil
 		}
