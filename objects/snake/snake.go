@@ -93,8 +93,8 @@ func (s *Snake) String() string {
 
 func (s *Snake) Die() {
 	s.mux.Lock()
-	defer s.mux.Unlock()
 	s.world.DeleteObject(s, engine.Location(s.dots))
+	s.mux.Unlock()
 	corpse.NewCorpse(s.world, s.dots)
 }
 
@@ -149,7 +149,7 @@ func (s *Snake) move() error {
 			s.length += object.NutritionalValue(dot)
 		case *Snake:
 			s.Die()
-			corpse.NewCorpse(s.world, engine.Location(s.dots))
+			return nil
 		}
 
 		// TODO: Reload ticker.
