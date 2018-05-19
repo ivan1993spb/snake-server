@@ -38,7 +38,15 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.
 }
 
 func (cg *ConnectionGroup) GetLimit() int {
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
 	return cg.limit
+}
+
+func (cg *ConnectionGroup) SetLimit(limit int) {
+	cg.mutex.Lock()
+	cg.limit = limit
+	cg.mutex.Unlock()
 }
 
 func (cg *ConnectionGroup) GetCount() int {

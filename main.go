@@ -18,11 +18,13 @@ import (
 const (
 	defaultAddress     = ":8080"
 	defaultGroupsLimit = 10
+	defaultConnsLimit  = 100
 )
 
 var (
 	address     string
 	groupsLimit int
+	connsLimit  int
 	seed        int64
 	flagJSONLog bool
 	logLevel    string
@@ -31,6 +33,7 @@ var (
 func init() {
 	flag.StringVar(&address, "address", defaultAddress, "address to serve")
 	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
+	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
 	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
@@ -54,6 +57,7 @@ func main() {
 	logger := logger()
 
 	logger.WithFields(logrus.Fields{
+		"conns_limit":  connsLimit,
 		"groups_limit": groupsLimit,
 		"seed":         seed,
 		"log_level":    logLevel,
@@ -61,7 +65,7 @@ func main() {
 
 	rand.Seed(seed)
 
-	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit)
+	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit, connsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}

@@ -11,17 +11,18 @@ type ConnectionGroupManager struct {
 	groups      map[int]*ConnectionGroup
 	groupsMutex *sync.RWMutex
 	groupLimit  int
+	connsLimit  int
+	connsCount  int
 	logger      logrus.FieldLogger
 }
 
-func NewConnectionGroupManager(logger logrus.FieldLogger, groupLimit int) (*ConnectionGroupManager, error) {
-	// TODO: Create argument connections limit.
-
+func NewConnectionGroupManager(logger logrus.FieldLogger, groupLimit, connsLimit int) (*ConnectionGroupManager, error) {
 	if groupLimit > 0 {
 		return &ConnectionGroupManager{
 			groups:      map[int]*ConnectionGroup{},
 			groupsMutex: &sync.RWMutex{},
 			groupLimit:  groupLimit,
+			connsLimit:  connsLimit,
 			logger:      logger,
 		}, nil
 	}
@@ -48,6 +49,7 @@ func (e ErrAddGroup) Error() string {
 var (
 	ErrGroupLimitReached = ErrAddGroup("limit group count reached")
 	ErrCannotGetID       = ErrAddGroup("cannot get id for group")
+	ErrConnsLimitReached = ErrAddGroup("cannot reserve connections for group: connections count reached")
 )
 
 func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
@@ -57,6 +59,15 @@ func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
 	if m.unsafeIsFull() {
 		return 0, ErrGroupLimitReached
 	}
+
+	if group.GetLimit() > m.connsLimit-m.connsCount {
+		if m.connsLimit-m.connsCount == 0 {
+			return 0, ErrConnsLimitReached
+		}
+		group.SetLimit(m.connsLimit - m.connsCount)
+	}
+
+	m.connsCount += group.GetLimit()
 
 	for id := 0; id <= len(m.groups); id++ {
 		if _, occupied := m.groups[id]; !occupied {
@@ -86,6 +97,8 @@ func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
 
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
+
+	m.connsCount -= group.GetLimit()
 
 	for id := range m.groups {
 		if m.groups[id] == group {

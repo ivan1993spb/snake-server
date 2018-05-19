@@ -112,6 +112,8 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case connections.ErrGroupLimitReached:
 			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		case connections.ErrConnsLimitReached:
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -125,7 +127,7 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseCreateGameHandler{
 		ID:     id,
-		Limit:  connectionLimit,
+		Limit:  group.GetLimit(),
 		Width:  uint8(mapWidth),
 		Height: uint8(mapHeight),
 	})

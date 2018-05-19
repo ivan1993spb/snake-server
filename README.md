@@ -21,11 +21,12 @@ Use `snake-server -help` for help info.
 
 Arguments:
 
-* `--address` - **string** - address to serve (default `:8080`). For example: `:8080`, `localhost:7070`
-* `--groups-limit` - **int** - groups limit for server (default 10)
+* `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
+* `--groups-limit` - **int** - groups limit for server (default: *10*)
+* `--conns-limit` - **int** - open web-socket connections limit (default: *100*)
 * `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
-* `--log-json` - set this flag to use JSON log format. Default: *false*
-* `--log-level` - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug*. Default: *info*
+* `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
+* `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 
 ## API Description
 
