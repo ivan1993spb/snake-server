@@ -39,7 +39,7 @@ type Scene struct {
 
 // NewScene returns new empty scene
 func NewScene(width, height uint8) (*Scene, error) {
-	area, err := NewArea(width, height)
+	area, err := NewUsefulArea(width, height)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create scene: %s", err)
 	}

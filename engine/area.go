@@ -41,6 +41,17 @@ func NewArea(width, height uint8) (Area, error) {
 	}, nil
 }
 
+func NewUsefulArea(width, height uint8) (Area, error) {
+	if width < minAreaWidth || height < minAreaHeight {
+		return Area{}, errors.New("try to add useless area with extra small size")
+	}
+
+	return Area{
+		width:  width,
+		height: height,
+	}, nil
+}
+
 // Size returns area size
 func (a Area) Size() uint16 {
 	return uint16(a.width) * uint16(a.height)
