@@ -15,8 +15,13 @@ func NewPlayer(game *game.Game) *Player {
 	}
 }
 
-func (p *Player) Start() {
+func (p *Player) Start(stop <-chan struct{}) {
 	s, _ := snake.NewSnake(p.game.World())
 	// TODO: Pass stop channel?
-	s.Run(p.game.Events(make(chan struct{})))
+	s.Run(stop)
+
+	go func() {
+		<-stop
+		s.Die()
+	}()
 }
