@@ -7,13 +7,18 @@ Server for online arcade game - snake.
 
 ## Installation
 
-### Go get
+### Install from source
 
-Use `go get -u github.com/ivan1993spb/snake-server` to install server.
+* `go get -u github.com/ivan1993spb/snake-server` to load source code
+* `go install github.com/ivan1993spb/snake-server` to install server
+* `snake-server` to start server
+* use `snake-server -h` for usage information
 
-### Docker
+### Install from docker-hub
 
-Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub.
+* Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub.
+* `docker run --rm --net host ivan1993spb/snake-server` to start server
+* `docker run --rm ivan1993spb/snake-server -h` for usage information
 
 ## CLI arguments
 
