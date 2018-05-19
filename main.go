@@ -24,22 +24,36 @@ var (
 	address     string
 	groupsLimit int
 	seed        int64
+	flagJSONLog bool
+	logLevel    string
 )
 
 func init() {
 	flag.StringVar(&address, "address", defaultAddress, "address to serve")
 	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
+	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
+	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
 	flag.Parse()
 }
 
 func main() {
 	logger := logrus.New()
+	if flagJSONLog {
+		logger.Formatter = &logrus.JSONFormatter{}
+	}
+	if level, err := logrus.ParseLevel(logLevel); err != nil {
+		logger.SetLevel(logrus.InfoLevel)
+	} else {
+		logger.SetLevel(level)
+	}
+
 	logger.Info("preparing to start server")
 
 	logger.Infoln("address:", address)
 	logger.Infoln("group limit:", groupsLimit)
 	logger.Infoln("seed:", seed)
+	logger.Infoln("log level:", logger.Level)
 
 	rand.Seed(seed)
 
