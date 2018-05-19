@@ -6,6 +6,9 @@ import (
 	"math"
 	"sync"
 	"time"
+	"unsafe"
+
+	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/objects"
@@ -38,6 +41,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
+	id    uint64
 	world *world.World
 
 	dots   []engine.Dot
@@ -76,6 +80,7 @@ func NewSnake(world *world.World) (*Snake, error) {
 		location = reversedDots
 	}
 
+	snake.id = *(*uint64)(unsafe.Pointer(&snake))
 	snake.world = world
 	snake.dots = []engine.Dot(location)
 	snake.length = snakeStartLength
@@ -212,4 +217,16 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 	}
 
 	return errors.New("invalid direction")
+}
+
+func (s *Snake) MarshalJSON() ([]byte, error) {
+	return ffjson.Marshal(&snake{
+		ID:   s.id,
+		Dots: s.dots,
+	})
+}
+
+type snake struct {
+	ID   uint64       `json:"id"`
+	Dots []engine.Dot `json:"dots"`
 }

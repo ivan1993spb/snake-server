@@ -3,11 +3,17 @@
 
 Server for online arcade game - snake.
 
-// TODO: Create screen shot
+// TODO: Create screen shot.
 
 ## Game rules
 
-// TODO: Write game rules
+// TODO: Write game rules.
+
+## Client
+
+Python client repo: https://github.com/ivan1993spb/snake-client
+
+// TODO: Write info about client.
 
 ## Installation
 

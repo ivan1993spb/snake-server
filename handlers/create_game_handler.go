@@ -86,20 +86,17 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.WithFields(logrus.Fields{
-		"width":  mapWidth,
-		"height": mapHeight,
-	}).Debug("create game")
+		"width":            mapWidth,
+		"height":           mapHeight,
+		"connection_limit": connectionLimit,
+	}).Debug("create game group")
 
-	h.logger.WithField("connection_limit", connectionLimit).Info("create group")
 	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	h.logger.Info("start group")
-	group.Start()
 
 	id, err := h.groupManager.Add(group)
 	if err != nil {
@@ -115,6 +112,9 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	h.logger.Info("start group")
+	group.Start()
 
 	h.logger.Infoln("created group with id:", id)
 

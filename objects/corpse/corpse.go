@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pquerna/ffjson/ffjson"
+
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -71,4 +73,8 @@ func (c *Corpse) run() {
 		close(c.stop)
 	case <-c.stop:
 	}
+}
+
+func (c *Corpse) MarshalJSON() ([]byte, error) {
+	return ffjson.Marshal(c.location)
 }
