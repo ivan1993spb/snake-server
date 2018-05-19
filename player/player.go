@@ -1,17 +1,21 @@
 package player
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/objects/snake"
 )
 
 type Player struct {
-	game *game.Game
+	game   *game.Game
+	logger logrus.FieldLogger
 }
 
-func NewPlayer(game *game.Game) *Player {
+func NewPlayer(logger logrus.FieldLogger, game *game.Game) *Player {
 	return &Player{
-		game: game,
+		game:   game,
+		logger: logger,
 	}
 }
 

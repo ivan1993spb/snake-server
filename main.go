@@ -37,7 +37,7 @@ func init() {
 	flag.Parse()
 }
 
-func main() {
+func logger() logrus.FieldLogger {
 	logger := logrus.New()
 	if flagJSONLog {
 		logger.Formatter = &logrus.JSONFormatter{}
@@ -47,17 +47,21 @@ func main() {
 	} else {
 		logger.SetLevel(level)
 	}
+	return logger
+}
 
-	logger.Info("preparing to start server")
+func main() {
+	logger := logger()
 
-	logger.Infoln("address:", address)
-	logger.Infoln("group limit:", groupsLimit)
-	logger.Infoln("seed:", seed)
-	logger.Infoln("log level:", logger.Level)
+	logger.WithFields(logrus.Fields{
+		"groups_limit": groupsLimit,
+		"seed":         seed,
+		"log_level":    logLevel,
+	}).Info("preparing to start server")
 
 	rand.Seed(seed)
 
-	groupManager, err := connections.NewConnectionGroupManager(groupsLimit)
+	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
@@ -72,7 +76,7 @@ func main() {
 	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
 	n.UseHandler(r)
 
-	logger.Info("starting server")
+	logger.WithField("address", address).Info("starting server")
 
 	if err := http.ListenAndServe(address, n); err != nil {
 		logger.Fatalf("server error: %s", err)

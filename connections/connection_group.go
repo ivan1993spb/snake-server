@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/ivan1993spb/snake-server/game"
 )
 
@@ -12,17 +14,20 @@ type ConnectionGroup struct {
 	counter int
 	mutex   *sync.RWMutex
 
+	logger logrus.FieldLogger
+
 	game      *game.Game
 	broadcast *GroupBroadcast
 }
 
-func NewConnectionGroup(connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
+func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
 	if connectionLimit > 0 {
 		return &ConnectionGroup{
 			limit:     connectionLimit,
 			mutex:     &sync.RWMutex{},
 			game:      g,
 			broadcast: NewGroupBroadcast(),
+			logger:    logger,
 		}, nil
 	}
 

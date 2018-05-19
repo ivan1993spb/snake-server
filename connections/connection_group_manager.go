@@ -3,20 +3,26 @@ package connections
 import (
 	"errors"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ConnectionGroupManager struct {
 	groups      map[int]*ConnectionGroup
 	groupsMutex *sync.RWMutex
 	groupLimit  int
+	logger      logrus.FieldLogger
 }
 
-func NewConnectionGroupManager(groupLimit int) (*ConnectionGroupManager, error) {
+func NewConnectionGroupManager(logger logrus.FieldLogger, groupLimit int) (*ConnectionGroupManager, error) {
+	// TODO: Create argument connections limit.
+
 	if groupLimit > 0 {
 		return &ConnectionGroupManager{
 			groups:      map[int]*ConnectionGroup{},
 			groupsMutex: &sync.RWMutex{},
 			groupLimit:  groupLimit,
+			logger:      logger,
 		}, nil
 	}
 

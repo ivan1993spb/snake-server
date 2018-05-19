@@ -1,12 +1,16 @@
 package game
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/playground"
 )
 
 type Game struct {
-	world *World
+	world  *World
+	logger logrus.FieldLogger
+	stop   chan struct{}
 }
 
 type ErrCreateGame struct {
@@ -17,7 +21,7 @@ func (e *ErrCreateGame) Error() string {
 	return "cannot create game: " + e.Err.Error()
 }
 
-func NewGame(width, height uint8) (*Game, error) {
+func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 	area, err := engine.NewArea(width, height)
 	if err != nil {
 		return nil, &ErrCreateGame{Err: err}
@@ -32,12 +36,19 @@ func NewGame(width, height uint8) (*Game, error) {
 	world := NewWorld(pg)
 
 	return &Game{
-		world: world,
+		world:  world,
+		logger: logger,
 	}, nil
 }
 
 func (g *Game) Start() {
 	g.world.start()
+
+	go func() {
+		//for event := range g.world.Events(make(chan struct{}), 16) {
+
+		//}
+	}()
 }
 
 func (g *Game) Stop() {

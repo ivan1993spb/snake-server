@@ -76,7 +76,7 @@ func (cw *ConnectionWorker) Start(game *game.Game, broadcast *GroupBroadcast) er
 	chOutputBytes := cw.encode(chStop, chOutputMessages, chOutputMessagesBroadcast)
 	cw.write(chOutputBytes, chStop)
 
-	player := player.NewPlayer(game)
+	player := player.NewPlayer(cw.logger, game)
 	player.Start(chStop)
 
 	cw.chStop = chStop
