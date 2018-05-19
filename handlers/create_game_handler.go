@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/game"
 )
 
 const URLRouteCreateGame = "/games"
@@ -86,16 +85,13 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Infof("create game: width=%d, height=%d", mapWidth, mapHeight)
-	g, err := game.NewGame(h.logger, uint8(mapWidth), uint8(mapHeight))
-	if err != nil {
-		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	h.logger.WithFields(logrus.Fields{
+		"width":  mapWidth,
+		"height": mapHeight,
+	}).Debug("create game")
 
-	h.logger.Infof("create group: limit=%d", connectionLimit)
-	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, g)
+	h.logger.WithField("connection_limit", connectionLimit).Info("create group")
+	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

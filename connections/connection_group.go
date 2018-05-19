@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"fmt"
 	"github.com/ivan1993spb/snake-server/broadcast"
 	"github.com/ivan1993spb/snake-server/game"
 )
@@ -23,7 +24,12 @@ type ConnectionGroup struct {
 	stop chan struct{}
 }
 
-func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
+func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8) (*ConnectionGroup, error) {
+	g, err := game.NewGame(logger, width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create connection group: %s", err)
+	}
+
 	if connectionLimit > 0 {
 		return &ConnectionGroup{
 			limit:     connectionLimit,
