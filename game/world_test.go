@@ -29,7 +29,10 @@ func Test_World_Events(t *testing.T) {
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}, 0),
 	}
-	world.start()
+
+	stopWorld := make(chan struct{})
+	world.start(stopWorld)
+	defer close(stopWorld)
 
 	stop := make(chan struct{})
 
@@ -58,7 +61,6 @@ func Test_World_Events(t *testing.T) {
 
 	close(stop)
 
-	world.stop()
 }
 
 func Test_World_UpdateObject(t *testing.T) {
@@ -84,8 +86,9 @@ func Test_World_UpdateObject(t *testing.T) {
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}, 0),
 	}
-	world.start()
-	defer world.stop()
+	stop := make(chan struct{})
+	world.start(stop)
+	defer close(stop)
 
 	err = world.UpdateObject(object, engine.Location{engine.NewDot(0, 0)}, engine.Location{engine.NewDot(1, 1)})
 	require.Nil(t, err)
@@ -107,4 +110,8 @@ func Test_World_UpdateObject(t *testing.T) {
 	require.False(t, pg.EntityExists(object, engine.Location{engine.NewDot(3, 3)}))
 	require.False(t, pg.LocationExists(engine.Location{engine.NewDot(3, 3)}))
 	require.True(t, pg.LocationExists(engine.Location{engine.NewDot(0, 5)}))
+}
+
+func Benchmark_World_UpdateObject(b *testing.B) {
+	// TODO: Implement benchmark.
 }

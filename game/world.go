@@ -20,7 +20,7 @@ type World struct {
 	chMain      chan Event
 	chsProxy    []chan Event
 	chsProxyMux *sync.RWMutex
-	stopGlobal  chan struct{}
+	stopGlobal  <-chan struct{}
 	flagStarted bool
 }
 
@@ -30,7 +30,6 @@ func NewWorld(pg *playground.Playground) *World {
 		chMain:      make(chan Event, worldEventsChanMainBufferSize),
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
-		stopGlobal:  make(chan struct{}, 0),
 	}
 }
 
@@ -41,11 +40,14 @@ func (w *World) event(event Event) {
 	}
 }
 
-func (w *World) start() {
+func (w *World) start(stop <-chan struct{}) {
 	if w.flagStarted {
 		return
 	}
 	w.flagStarted = true
+	w.stopGlobal = stop
+
+	// TODO: Use stop as global stopper.
 
 	go func() {
 		for {
@@ -145,20 +147,6 @@ func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 			}
 		}
 	}
-}
-
-func (w *World) stop() {
-	close(w.stopGlobal)
-	close(w.chMain)
-
-	w.chsProxyMux.Lock()
-	defer w.chsProxyMux.Unlock()
-
-	for _, ch := range w.chsProxy {
-		close(ch)
-	}
-
-	w.chsProxy = w.chsProxy[:0]
 }
 
 func (w *World) ObjectExists(object interface{}) bool {

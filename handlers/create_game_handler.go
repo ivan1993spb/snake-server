@@ -94,9 +94,6 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("start game")
-	g.Start()
-
 	h.logger.Infof("create group: limit=%d", connectionLimit)
 	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, g)
 	if err != nil {
@@ -105,10 +102,8 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("initialized group")
-
-	group.StartBroadcast()
-	h.logger.Info("start broadcasting")
+	h.logger.Info("start group")
+	group.Start()
 
 	id, err := h.groupManager.Add(group)
 	if err != nil {

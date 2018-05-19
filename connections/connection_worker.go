@@ -53,7 +53,7 @@ func (e ErrStartConnectionWorker) Error() string {
 	return "error start connection worker: " + string(e)
 }
 
-func (cw *ConnectionWorker) Start(game *game.Game, broadcast *GroupBroadcast) error {
+func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *GroupBroadcast) error {
 	if cw.flagStarted {
 		return ErrStartConnectionWorker("connection worker already started")
 	}
@@ -81,7 +81,10 @@ func (cw *ConnectionWorker) Start(game *game.Game, broadcast *GroupBroadcast) er
 
 	cw.chStop = chStop
 
-	<-chStop
+	select {
+	case <-chStop:
+	case <-stop:
+	}
 
 	cw.stopInputs()
 

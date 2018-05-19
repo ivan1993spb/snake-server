@@ -21,7 +21,6 @@ func NewPlayer(logger logrus.FieldLogger, game *game.Game) *Player {
 
 func (p *Player) Start(stop <-chan struct{}) {
 	s, _ := snake.NewSnake(p.game.World())
-	// TODO: Pass stop channel?
 	s.Run(stop)
 
 	go func() {

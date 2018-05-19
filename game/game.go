@@ -10,7 +10,6 @@ import (
 type Game struct {
 	world  *World
 	logger logrus.FieldLogger
-	stop   chan struct{}
 }
 
 type ErrCreateGame struct {
@@ -41,18 +40,10 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 	}, nil
 }
 
-func (g *Game) Start() {
-	g.world.start()
+func (g *Game) Start(stop <-chan struct{}) {
+	g.world.start(stop)
 
-	go func() {
-		//for event := range g.world.Events(make(chan struct{}), 16) {
-
-		//}
-	}()
-}
-
-func (g *Game) Stop() {
-	g.world.stop()
+	// TODO: Start observers.
 }
 
 func (g *Game) World() *World {

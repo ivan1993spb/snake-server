@@ -18,6 +18,8 @@ type ConnectionGroup struct {
 
 	game      *game.Game
 	broadcast *GroupBroadcast
+
+	stop chan struct{}
 }
 
 func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
@@ -28,6 +30,7 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.
 			game:      g,
 			broadcast: NewGroupBroadcast(),
 			logger:    logger,
+			stop:      make(chan struct{}),
 		}, nil
 	}
 
@@ -93,7 +96,7 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 		cg.mutex.Unlock()
 	}()
 
-	if err := connectionWorker.Start(cg.game, cg.broadcast); err != nil {
+	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast); err != nil {
 		return &ErrRunConnection{
 			Err: err,
 		}
@@ -102,14 +105,11 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 	return nil
 }
 
-func (cg *ConnectionGroup) Game() *game.Game {
-	return cg.game
+func (cg *ConnectionGroup) Start() {
+	cg.broadcast.Start(cg.stop)
+	cg.game.Start(cg.stop)
 }
 
-func (cg *ConnectionGroup) StartBroadcast() {
-	cg.broadcast.Start()
-}
-
-func (cg *ConnectionGroup) StopBroadcast() {
-	cg.broadcast.Stop()
+func (cg *ConnectionGroup) Stop() {
+	close(cg.stop)
 }

@@ -12,7 +12,7 @@ const (
 )
 
 type GroupBroadcast struct {
-	chStop chan struct{}
+	chStop <-chan struct{}
 	chMain chan OutputMessage
 	chs    []chan OutputMessage
 	chsMux *sync.RWMutex
@@ -22,7 +22,6 @@ type GroupBroadcast struct {
 
 func NewGroupBroadcast() *GroupBroadcast {
 	return &GroupBroadcast{
-		chStop: make(chan struct{}),
 		chMain: make(chan OutputMessage, broadcastMainChanBufferSize),
 		chs:    make([]chan OutputMessage, 0),
 		chsMux: &sync.RWMutex{},
@@ -36,11 +35,12 @@ func (gb *GroupBroadcast) BroadcastMessage(message OutputMessage) {
 	}
 }
 
-func (gb *GroupBroadcast) Start() {
+func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
 	if gb.flagStarted {
 		return
 	}
 	gb.flagStarted = true
+	gb.chStop = stop
 
 	go func() {
 		for {
@@ -105,7 +105,10 @@ func (gb *GroupBroadcast) OutputMessages(stop <-chan struct{}, buffer uint) <-ch
 				return
 			case <-gb.chStop:
 				return
-			case message := <-ch:
+			case message, ok := <-ch:
+				if !ok {
+					return
+				}
 				gb.send(chOut, message, stop, broadcastSendTimeout)
 			}
 		}
@@ -142,18 +145,4 @@ func (gb *GroupBroadcast) send(ch chan OutputMessage, message OutputMessage, sto
 			}
 		}
 	}
-}
-
-func (gb *GroupBroadcast) Stop() {
-	close(gb.chStop)
-	close(gb.chMain)
-
-	gb.chsMux.Lock()
-	defer gb.chsMux.Unlock()
-
-	for _, ch := range gb.chs {
-		close(ch)
-	}
-
-	gb.chs = gb.chs[:0]
 }
