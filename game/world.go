@@ -50,6 +50,7 @@ func (w *World) start() {
 	go func() {
 		for {
 			select {
+			// TODO: fix case if chMain closed
 			case event := <-w.chMain:
 				w.broadcast(event)
 			case <-w.stopGlobal:
