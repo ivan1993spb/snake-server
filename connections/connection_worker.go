@@ -10,6 +10,7 @@ import (
 
 	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/player"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 const (
@@ -69,20 +70,22 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
+	p := player.NewPlayer(cw.logger, game)
+	p.Start(chStop)
+
 	// Output
 	chOutputMessages := cw.listenGameEvents(game.Events(chStop, chanEventsBuffer), chStop)
 	chOutputMessagesBroadcast := broadcast.OutputMessages(chStop, chanBroadcastBuffer)
 	chOutputBytes := cw.encode(chStop, chOutputMessages, chOutputMessagesBroadcast)
 	cw.write(chOutputBytes, chStop)
 
-	p := player.NewPlayer(cw.logger, game)
-	p.Start(chStop)
-
 	cw.chStop = chStop
 
 	select {
 	case <-chStop:
+		// On connection error
 	case <-stop:
+		// External stop
 	}
 
 	cw.stopInputs()
@@ -299,7 +302,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 	return chout
 }
 
-func (cw *ConnectionWorker) listenGameEvents(chin <-chan game.Event, stop <-chan struct{}) <-chan OutputMessage {
+func (cw *ConnectionWorker) listenGameEvents(chin <-chan world.Event, stop <-chan struct{}) <-chan OutputMessage {
 	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
 	go func() {

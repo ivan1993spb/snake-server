@@ -8,17 +8,14 @@ import (
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/objects/apple"
 	"github.com/ivan1993spb/snake-server/objects/corpse"
-	"github.com/ivan1993spb/snake-server/objects/mouse"
-	"github.com/ivan1993spb/snake-server/objects/wall"
-	"github.com/ivan1993spb/snake-server/objects/watermelon"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 const (
 	snakeStartLength    = 3
-	snakeStartSpeed     = time.Second * 4
+	snakeStartSpeed     = time.Second
 	snakeSpeedFactor    = 1.02
 	snakeStrengthFactor = 1
 )
@@ -41,7 +38,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	world *game.World
+	world *world.World
 
 	dots   []*engine.Dot
 	length uint16
@@ -53,7 +50,7 @@ type Snake struct {
 }
 
 // NewSnake creates new snake
-func NewSnake(world *game.World) (*Snake, error) {
+func NewSnake(world *world.World) (*Snake, error) {
 	var (
 		dir      = engine.RandomDirection()
 		err      error
@@ -144,17 +141,15 @@ func (s *Snake) move() error {
 	}
 
 	if object := s.world.GetObjectByDot(dot); object != nil {
+		// TODO: Use interfaces to interact objects.
 		switch object := object.(type) {
 		case *apple.Apple:
+			s.length += object.NutritionalValue(dot)
 		case *corpse.Corpse:
-			object.NutritionalValue(dot)
-
-		case *mouse.Mouse:
+			s.length += object.NutritionalValue(dot)
 		case *Snake:
-			//object.Strength()
 			s.Die()
-		case *wall.Wall:
-		case *watermelon.Watermelon:
+			corpse.NewCorpse(s.world, engine.Location(s.dots))
 		}
 
 		// TODO: Reload ticker.

@@ -1,4 +1,4 @@
-package game
+package world
 
 import (
 	"sync"
@@ -31,7 +31,7 @@ func Test_World_Events(t *testing.T) {
 	}
 
 	stopWorld := make(chan struct{})
-	world.start(stopWorld)
+	world.Start(stopWorld)
 	defer close(stopWorld)
 
 	stop := make(chan struct{})
@@ -87,7 +87,7 @@ func Test_World_UpdateObject(t *testing.T) {
 		stopGlobal:  make(chan struct{}, 0),
 	}
 	stop := make(chan struct{})
-	world.start(stop)
+	world.Start(stop)
 	defer close(stop)
 
 	err = world.UpdateObject(object, engine.Location{engine.NewDot(0, 0)}, engine.Location{engine.NewDot(1, 1)})

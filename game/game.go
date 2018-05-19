@@ -5,10 +5,11 @@ import (
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/playground"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 type Game struct {
-	world  *World
+	world  *world.World
 	logger logrus.FieldLogger
 }
 
@@ -32,7 +33,7 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 	}
 
 	pg := playground.NewPlayground(scene)
-	world := NewWorld(pg)
+	world := world.NewWorld(pg)
 
 	return &Game{
 		world:  world,
@@ -41,15 +42,33 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 }
 
 func (g *Game) Start(stop <-chan struct{}) {
-	g.world.start(stop)
+	g.world.Start(stop)
+
+	go func() {
+		for event := range g.world.Events(stop, 32) {
+			g.logger.Debugln("game event", event)
+		}
+	}()
+
+	go func() {
+		//apple.NewApple(g.world)
+		//for event := range g.world.Events(stop, 32) {
+		//	if event.Type == EventTypeObjectDelete {
+		//		switch event.Payload.(type) {
+		//		case *apple.Apple:
+		//			apple.NewApple(g.world)
+		//		}
+		//	}
+		//}
+	}()
 
 	// TODO: Start observers.
 }
 
-func (g *Game) World() *World {
+func (g *Game) World() *world.World {
 	return g.world
 }
 
-func (g *Game) Events(stop <-chan struct{}, buffer uint) <-chan Event {
+func (g *Game) Events(stop <-chan struct{}, buffer uint) <-chan world.Event {
 	return g.world.Events(stop, buffer)
 }

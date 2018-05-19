@@ -1,4 +1,4 @@
-package game
+package world
 
 import (
 	"sync"
@@ -41,7 +41,7 @@ func (w *World) event(event Event) {
 	}
 }
 
-func (w *World) start(stop <-chan struct{}) {
+func (w *World) Start(stop <-chan struct{}) {
 	if w.flagStarted {
 		return
 	}

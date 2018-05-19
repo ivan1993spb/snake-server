@@ -2,11 +2,11 @@ package apple
 
 import (
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 type Apple struct {
-	world    game.World
+	world    *world.World
 	location engine.Location
 }
 
@@ -16,8 +16,8 @@ func (e ErrCreateApple) Error() string {
 	return "cannot create apple: " + string(e)
 }
 
-// CreateApple creates and locates new apple
-func CreateApple(world game.World) (*Apple, error) {
+// NewApple creates and locates new apple
+func NewApple(world *world.World) (*Apple, error) {
 	apple := &Apple{}
 
 	location, err := world.CreateObjectRandomDot(apple)
@@ -31,9 +31,11 @@ func CreateApple(world game.World) (*Apple, error) {
 	return apple, nil
 }
 
-func (a *Apple) NutritionalValue(dot *engine.Dot) int8 {
+func (a *Apple) NutritionalValue(dot *engine.Dot) uint16 {
 	if a.location.Equals(engine.Location{dot}) {
+		// TODO: Handle error.
 		a.world.DeleteObject(a, a.location)
+		return 1
 	}
 
 	return 0

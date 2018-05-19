@@ -1,4 +1,4 @@
-package game
+package world
 
 type EventType uint8
 

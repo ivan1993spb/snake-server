@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/playground"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 func Test_NewSnake(t *testing.T) {
@@ -40,7 +40,7 @@ func Test_Snake_setMovementDirection(t *testing.T) {
 
 	pg := playground.NewPlayground(scene)
 	require.NotNil(t, pg, "cannot initialize playground")
-	world := game.NewWorld(pg)
+	world := world.NewWorld(pg)
 	require.NotNil(t, world, "cannot initialize world")
 
 	snake := &Snake{
@@ -85,7 +85,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 
 	pg := playground.NewPlayground(scene)
 	require.NotNil(t, pg, "cannot initialize playground")
-	world := game.NewWorld(pg)
+	world := world.NewWorld(pg)
 	require.NotNil(t, world, "cannot initialize world")
 
 	// First case east
@@ -207,7 +207,7 @@ func Test_Snake_move_validLocation(t *testing.T) {
 
 	pg := playground.NewPlayground(scene)
 	require.NotNil(t, pg, "cannot initialize playground")
-	world := game.NewWorld(pg)
+	world := world.NewWorld(pg)
 	require.NotNil(t, world, "cannot initialize world")
 
 	snake := &Snake{
