@@ -18,32 +18,54 @@ import (
 const (
 	defaultAddress     = ":8080"
 	defaultGroupsLimit = 10
+	defaultConnsLimit  = 100
 )
 
 var (
 	address     string
 	groupsLimit int
+	connsLimit  int
 	seed        int64
+	flagJSONLog bool
+	logLevel    string
 )
 
 func init() {
 	flag.StringVar(&address, "address", defaultAddress, "address to serve")
 	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
+	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
+	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
+	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
 	flag.Parse()
 }
 
-func main() {
+func logger() logrus.FieldLogger {
 	logger := logrus.New()
-	logger.Info("preparing to start server")
+	if flagJSONLog {
+		logger.Formatter = &logrus.JSONFormatter{}
+	}
+	if level, err := logrus.ParseLevel(logLevel); err != nil {
+		logger.SetLevel(logrus.InfoLevel)
+	} else {
+		logger.SetLevel(level)
+	}
+	return logger
+}
 
-	logger.Infoln("address:", address)
-	logger.Infoln("group limit:", groupsLimit)
-	logger.Infoln("seed:", seed)
+func main() {
+	logger := logger()
+
+	logger.WithFields(logrus.Fields{
+		"conns_limit":  connsLimit,
+		"groups_limit": groupsLimit,
+		"seed":         seed,
+		"log_level":    logLevel,
+	}).Info("preparing to start server")
 
 	rand.Seed(seed)
 
-	groupManager, err := connections.NewConnectionGroupManager(groupsLimit)
+	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit, connsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
@@ -58,7 +80,7 @@ func main() {
 	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
 	n.UseHandler(r)
 
-	logger.Info("starting server")
+	logger.WithField("address", address).Info("starting server")
 
 	if err := http.ListenAndServe(address, n); err != nil {
 		logger.Fatalf("server error: %s", err)

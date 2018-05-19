@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 const (
@@ -23,11 +23,11 @@ const (
 )
 
 type Watermelon struct {
-	world    game.World
+	world    *world.World
 	location engine.Location
 }
 
-func CreateWatermelon(world game.World) (*Watermelon, error) {
+func CreateWatermelon(world *world.World) (*Watermelon, error) {
 
 	watermelon := &Watermelon{}
 
@@ -43,7 +43,7 @@ func CreateWatermelon(world game.World) (*Watermelon, error) {
 	return watermelon, nil
 }
 
-func (w *Watermelon) NutritionalValue(dot *engine.Dot) int8 {
+func (w *Watermelon) NutritionalValue(dot engine.Dot) int8 {
 	for _, dot := range w.location {
 		if dot.Equals(dot) {
 			location := w.location.Delete(dot)

@@ -1,10 +1,12 @@
 package engine
 
+// TODO: Check using Dot instead Dot.
+
 // Location is set of dots
-type Location []*Dot
+type Location []Dot
 
 // contains returns true if object contains passed dot
-func (l Location) Contains(dot *Dot) bool {
+func (l Location) Contains(dot Dot) bool {
 	if len(l) > 0 {
 		for _, d := range l {
 			if d.Equals(dot) {
@@ -17,7 +19,7 @@ func (l Location) Contains(dot *Dot) bool {
 }
 
 // Delete deletes dot from object
-func (l Location) Delete(dot *Dot) Location {
+func (l Location) Delete(dot Dot) Location {
 	if len(l) > 0 {
 		for i := range l {
 			if l[i].Equals(dot) {
@@ -28,7 +30,7 @@ func (l Location) Delete(dot *Dot) Location {
 	return Location{}
 }
 
-func (l Location) Add(dot *Dot) Location {
+func (l Location) Add(dot Dot) Location {
 	return append(l, dot)
 }
 
@@ -47,7 +49,7 @@ func (l Location) Reverse() Location {
 	return Location{}
 }
 
-func (l Location) Dot(i uint16) *Dot {
+func (l Location) Dot(i uint16) Dot {
 	return l[i]
 }
 

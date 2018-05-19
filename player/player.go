@@ -1,22 +1,36 @@
 package player
 
 import (
-	"github.com/ivan1993spb/snake-server/game"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ivan1993spb/snake-server/objects/snake"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 type Player struct {
-	game *game.Game
+	world  *world.World
+	logger logrus.FieldLogger
 }
 
-func NewPlayer(game *game.Game) *Player {
+func NewPlayer(logger logrus.FieldLogger, world *world.World) *Player {
 	return &Player{
-		game: game,
+		logger: logger,
+		world:  world,
 	}
 }
 
-func (p *Player) Start() {
-	s, _ := snake.NewSnake(p.game.World())
-	// TODO: Pass stop channel?
-	s.Run(p.game.Events(make(chan struct{})))
+func (p *Player) Start(stop <-chan struct{}) <-chan interface{} {
+	s, _ := snake.NewSnake(p.world)
+	s.Run(stop)
+
+	chout := make(chan interface{})
+
+	go func() {
+		<-stop
+		s.Die()
+		close(chout)
+	}()
+
+	return chout
+
 }

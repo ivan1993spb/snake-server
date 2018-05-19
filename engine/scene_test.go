@@ -9,7 +9,7 @@ import (
 
 func Test_Scene_Locate(t *testing.T) {
 	scene := &Scene{
-		area: &Area{
+		area: Area{
 			width:  100,
 			height: 100,
 		},
@@ -17,8 +17,16 @@ func Test_Scene_Locate(t *testing.T) {
 		locationsMutex: &sync.RWMutex{},
 	}
 
-	location := Location{&Dot{1, 1}, &Dot{1, 2}}
+	location := Location{Dot{1, 1}, Dot{1, 2}}
 	err := scene.Locate(location)
 	require.Nil(t, err)
 	require.Equal(t, []Location{location}, scene.locations)
+}
+
+func Benchmark_Scene_Locate(b *testing.B) {
+	// TODO: Implement benchmark.
+}
+
+func Benchmark_Scene_Relocate(b *testing.B) {
+	// TODO: Implement benchmark.
 }

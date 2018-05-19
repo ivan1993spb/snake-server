@@ -25,7 +25,7 @@ type responseGetGamesHandler struct {
 }
 
 type getGamesHandler struct {
-	logger       *logrus.Logger
+	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
 }
 
@@ -35,7 +35,7 @@ func (e ErrGetGamesHandler) Error() string {
 	return "get game handler error: " + string(e)
 }
 
-func NewGetGamesHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+func NewGetGamesHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &getGamesHandler{
 		logger:       logger,
 		groupManager: groupManager,

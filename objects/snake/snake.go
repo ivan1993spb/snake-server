@@ -4,20 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
-	"github.com/ivan1993spb/snake-server/objects/apple"
+	"github.com/ivan1993spb/snake-server/objects"
 	"github.com/ivan1993spb/snake-server/objects/corpse"
-	"github.com/ivan1993spb/snake-server/objects/mouse"
-	"github.com/ivan1993spb/snake-server/objects/wall"
-	"github.com/ivan1993spb/snake-server/objects/watermelon"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 const (
 	snakeStartLength    = 3
-	snakeStartSpeed     = time.Second * 4
+	snakeStartSpeed     = time.Second
 	snakeSpeedFactor    = 1.02
 	snakeStrengthFactor = 1
 )
@@ -40,17 +38,19 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	world game.World
+	world *world.World
 
-	dots   []*engine.Dot
+	dots   []engine.Dot
 	length uint16
+
+	mux *sync.RWMutex
 
 	// Motion direction
 	direction engine.Direction
 }
 
 // NewSnake creates new snake
-func NewSnake(world game.World) (*Snake, error) {
+func NewSnake(world *world.World) (*Snake, error) {
 	var (
 		dir      = engine.RandomDirection()
 		err      error
@@ -71,77 +71,102 @@ func NewSnake(world game.World) (*Snake, error) {
 	}
 
 	if dir == engine.DirectionSouth || dir == engine.DirectionEast {
+		// TODO: Reverse?
 		reversedDots := location.Reverse()
 		location = reversedDots
 	}
 
 	snake.world = world
-	snake.dots = []*engine.Dot(location)
+	snake.dots = []engine.Dot(location)
 	snake.length = snakeStartLength
 	snake.direction = dir
+	snake.mux = &sync.RWMutex{}
 
 	return snake, nil
 }
 
+func (s *Snake) String() string {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	return fmt.Sprintf("snake %s", s.dots)
+}
+
 func (s *Snake) Die() {
-	s.world.DeleteObject(s, s.dots)
+	s.mux.Lock()
+	s.world.DeleteObject(s, engine.Location(s.dots))
+	s.mux.Unlock()
+	corpse.NewCorpse(s.world, s.dots)
 }
 
 func (s *Snake) Feed(f int8) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	if f > 0 {
 		s.length += uint16(f)
 	}
 }
 
 func (s *Snake) Strength() float32 {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	return snakeStrengthFactor * float32(s.length)
 }
 
-func (s *Snake) Run(ch <-chan game.Event) error {
+func (s *Snake) Run(stop <-chan struct{}) {
 	go func() {
 		var ticker = time.NewTicker(s.calculateDelay())
+		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ticker.C:
-			}
-
-			// Calculate next position
-			dot, err := s.getNextHeadDot()
-			if err != nil {
-				// TODO How to emit error ?
-				//s.p.OccurredError(s, err)
+				s.move()
+			case <-stop:
 				return
-			}
-
-			// TODO: Delete this logic
-			if object := s.world.GetObjectByDot(dot); object != nil {
-				switch object := object.(type) {
-				case *apple.Apple:
-					object.NutritionalValue(dot)
-				case *corpse.Corpse:
-					object.NutritionalValue(dot)
-				case *mouse.Mouse:
-				case *Snake:
-				case *wall.Wall:
-				case *watermelon.Watermelon:
-					object.NutritionalValue(dot)
-				}
-
-				ticker = time.NewTicker(s.calculateDelay())
-			}
-
-			tmpLocation := make(engine.Location, len(s.dots)+1)
-			copy(tmpLocation[1:], s.dots)
-			tmpLocation[0] = dot
-			s.world.UpdateObject(s, s.dots, tmpLocation)
-			s.dots = tmpLocation
-
-			if s.length < uint16(len(s.dots)) {
-				s.dots = s.dots[:len(s.dots)-1]
 			}
 		}
 	}()
+}
+
+func (s *Snake) move() error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	// Calculate next position
+	dot, err := s.getNextHeadDot()
+	if err != nil {
+		// TODO How to emit error ?
+		//s.p.OccurredError(s, err)
+		return err
+	}
+
+	if object := s.world.GetObjectByDot(dot); object != nil {
+		// TODO: Use interfaces to interact objects.
+		if food, ok := object.(objects.Food); ok {
+			s.length += food.NutritionalValue(dot)
+		} else {
+			s.Die()
+			return nil
+		}
+
+		// TODO: Reload ticker.
+		//ticker = time.NewTicker(s.calculateDelay())
+	}
+
+	tmpDots := make([]engine.Dot, len(s.dots)+1)
+	copy(tmpDots[1:], s.dots)
+	tmpDots[0] = dot
+
+	if s.length < uint16(len(tmpDots)) {
+		tmpDots = tmpDots[:len(tmpDots)-1]
+	}
+
+	// TODO: Handle error.
+	if err := s.world.UpdateObject(s, engine.Location(s.dots), tmpDots); err != nil {
+		return err
+	}
+
+	s.dots = tmpDots
 
 	return nil
 }
@@ -152,16 +177,17 @@ func (s *Snake) calculateDelay() time.Duration {
 
 // getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
-func (s *Snake) getNextHeadDot() (*engine.Dot, error) {
+func (s *Snake) getNextHeadDot() (engine.Dot, error) {
 	if len(s.dots) > 0 {
 		return s.world.Navigate(s.dots[0], s.direction, 1)
 	}
 
-	return nil, fmt.Errorf("cannot get next head dots: errEmptyDotList")
+	return engine.Dot{}, fmt.Errorf("cannot get next head dots: errEmptyDotList")
 }
 
 func (s *Snake) Command(cmd Command) error {
 	if direction, ok := snakeCommands[cmd]; ok {
+		// TODO: Handle err.
 		s.setMovementDirection(direction)
 		return nil
 	}
@@ -181,8 +207,9 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 			return errors.New("next direction cannot be opposite to current direction")
 		} else {
 			s.direction = nextDir
+			return nil
 		}
 	}
 
-	return nil
+	return errors.New("invalid direction")
 }

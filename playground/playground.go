@@ -2,6 +2,7 @@ package playground
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -20,12 +21,17 @@ type Playground struct {
 	entitiesMutex *sync.RWMutex
 }
 
-func NewPlayground(scene *engine.Scene) *Playground {
+func NewPlayground(width, height uint8) (*Playground, error) {
+	scene, err := engine.NewScene(width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create playground: %s", err)
+	}
+
 	return &Playground{
 		scene:         scene,
 		entities:      []entity{},
 		entitiesMutex: &sync.RWMutex{},
-	}
+	}, nil
 }
 
 func (pg *Playground) unsafeObjectExists(object interface{}) bool {
@@ -88,7 +94,7 @@ func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} 
 	return pg.unsafeGetObjectByLocation(location)
 }
 
-func (pg *Playground) unsafeGetObjectByDot(dot *engine.Dot) interface{} {
+func (pg *Playground) unsafeGetObjectByDot(dot engine.Dot) interface{} {
 	for i := range pg.entities {
 		if pg.entities[i].location.Contains(dot) {
 			return pg.entities[i].object
@@ -97,13 +103,13 @@ func (pg *Playground) unsafeGetObjectByDot(dot *engine.Dot) interface{} {
 	return nil
 }
 
-func (pg *Playground) GetObjectByDot(dot *engine.Dot) interface{} {
+func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
 	pg.entitiesMutex.RLock()
 	defer pg.entitiesMutex.RUnlock()
 	return pg.unsafeGetObjectByDot(dot)
 }
 
-func (pg *Playground) unsafeGetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+func (pg *Playground) unsafeGetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
 	for i := range pg.entities {
 		if pg.entities[i].location.Contains(dot) {
 			return pg.entities[i].object, pg.entities[i].location
@@ -112,13 +118,13 @@ func (pg *Playground) unsafeGetEntityByDot(dot *engine.Dot) (interface{}, engine
 	return nil, nil
 }
 
-func (pg *Playground) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+func (pg *Playground) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
 	pg.entitiesMutex.RLock()
 	defer pg.entitiesMutex.RUnlock()
 	return pg.unsafeGetEntityByDot(dot)
 }
 
-func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
+func (pg *Playground) unsafeGetObjectsByDots(dots []engine.Dot) []interface{} {
 	if len(dots) == 0 {
 		return nil
 	}
@@ -145,7 +151,7 @@ func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
 	return objects
 }
 
-func (pg *Playground) GetObjectsByDots(dots []*engine.Dot) []interface{} {
+func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 	if len(dots) == 0 {
 		return nil
 	}
@@ -247,7 +253,7 @@ type ErrCreateObjectAvailableDots struct {
 }
 
 func (e *ErrCreateObjectAvailableDots) Error() string {
-	return "error on creating objects available dots"
+	return "error on creating objects available dots: " + e.Err.Error()
 }
 
 func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *ErrCreateObjectAvailableDots) {
@@ -290,7 +296,7 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 func (pg *Playground) unsafeDeleteEntity(object interface{}, location engine.Location) error {
 	for i := range pg.entities {
 		if pg.entities[i].object == object && pg.entities[i].location.Equals(location) {
-			pg.entities = append(pg.entities[:i], pg.entities[:i+1]...)
+			pg.entities = append(pg.entities[:i], pg.entities[i+1:]...)
 			return nil
 		}
 	}
@@ -363,10 +369,12 @@ type ErrUpdateObject struct {
 }
 
 func (e *ErrUpdateObject) Error() string {
-	return "update object error"
+	return "update object error: " + e.Err.Error()
 }
 
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
+	// TODO: Create checking old == new.
+
 	if old.Empty() || new.Empty() {
 		return &ErrUpdateObject{
 			Err: ErrEmptyLocation,
@@ -589,7 +597,7 @@ func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
 
-	if !pg.unsafeObjectExists(object) {
+	if pg.unsafeObjectExists(object) {
 		return nil, ErrCreateObjectRandomDot("object to create already created")
 	}
 
@@ -631,7 +639,7 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	return location.Copy(), nil
 }
 
-func (pg *Playground) Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error) {
+func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return pg.scene.Navigate(dot, dir, dis)
 }
 

@@ -2,10 +2,11 @@ package corpse
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/game"
+	"github.com/ivan1993spb/snake-server/world"
 )
 
 // Time for which corpse will be lie on playground
@@ -13,15 +14,17 @@ const corpseMaxExperience = time.Second * 15
 
 // Snakes can eat corpses
 type Corpse struct {
-	world       game.World
+	world       *world.World
 	location    engine.Location
-	nippedPiece *engine.Dot // last nipped piece
+	nippedPiece engine.Dot // last nipped piece
 	stop        chan struct{}
 }
 
-// Corpses are created when a snake dies
-func CreateCorpse(world game.World, location engine.Location) (*Corpse, error) {
-	// TODO: Check location
+// Corpse are created when a snake dies
+func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
+	// TODO: Check location.
+
+	// TODO: Pass stopper.
 
 	corpse := &Corpse{}
 
@@ -36,7 +39,11 @@ func CreateCorpse(world game.World, location engine.Location) (*Corpse, error) {
 	return nil, errors.New("")
 }
 
-func (c *Corpse) NutritionalValue(dot *engine.Dot) int8 {
+func (c *Corpse) String() string {
+	return fmt.Sprint("corpse ", c.location)
+}
+
+func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 	if c.location.Contains(dot) {
 		newDots := c.location.Delete(dot)
 

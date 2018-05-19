@@ -4,6 +4,10 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
+	"fmt"
+	"github.com/ivan1993spb/snake-server/broadcast"
 	"github.com/ivan1993spb/snake-server/game"
 )
 
@@ -11,15 +15,29 @@ type ConnectionGroup struct {
 	limit   int
 	counter int
 	mutex   *sync.RWMutex
-	game    *game.Game
+
+	logger logrus.FieldLogger
+
+	game      *game.Game
+	broadcast *broadcast.GroupBroadcast
+
+	stop chan struct{}
 }
 
-func NewConnectionGroup(connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
+func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8) (*ConnectionGroup, error) {
+	g, err := game.NewGame(logger, width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create connection group: %s", err)
+	}
+
 	if connectionLimit > 0 {
 		return &ConnectionGroup{
-			limit: connectionLimit,
-			mutex: &sync.RWMutex{},
-			game:  g,
+			limit:     connectionLimit,
+			mutex:     &sync.RWMutex{},
+			game:      g,
+			broadcast: broadcast.NewGroupBroadcast(),
+			logger:    logger,
+			stop:      make(chan struct{}),
 		}, nil
 	}
 
@@ -27,7 +45,15 @@ func NewConnectionGroup(connectionLimit int, g *game.Game) (*ConnectionGroup, er
 }
 
 func (cg *ConnectionGroup) GetLimit() int {
+	cg.mutex.RLock()
+	defer cg.mutex.RUnlock()
 	return cg.limit
+}
+
+func (cg *ConnectionGroup) SetLimit(limit int) {
+	cg.mutex.Lock()
+	cg.limit = limit
+	cg.mutex.Unlock()
 }
 
 func (cg *ConnectionGroup) GetCount() int {
@@ -85,7 +111,7 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 		cg.mutex.Unlock()
 	}()
 
-	if err := connectionWorker.Start(cg.game); err != nil {
+	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast); err != nil {
 		return &ErrRunConnection{
 			Err: err,
 		}
@@ -94,6 +120,11 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 	return nil
 }
 
-func (cg *ConnectionGroup) Game() *game.Game {
-	return cg.game
+func (cg *ConnectionGroup) Start() {
+	cg.broadcast.Start(cg.stop)
+	cg.game.Start(cg.stop)
+}
+
+func (cg *ConnectionGroup) Stop() {
+	close(cg.stop)
 }

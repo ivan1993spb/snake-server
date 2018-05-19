@@ -2,6 +2,7 @@ package engine
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -22,7 +23,7 @@ func (e *ErrLocated) Error() string {
 }
 
 type ErrDotsOccupied struct {
-	Dots []*Dot // List of occupied dots
+	Dots []Dot // List of occupied dots
 }
 
 func (e *ErrDotsOccupied) Error() string {
@@ -31,13 +32,18 @@ func (e *ErrDotsOccupied) Error() string {
 
 // Scene contains locations
 type Scene struct {
-	area           *Area
+	area           Area
 	locations      []Location
 	locationsMutex *sync.RWMutex
 }
 
 // NewScene returns new empty scene
-func NewScene(area *Area) (*Scene, error) {
+func NewScene(width, height uint8) (*Scene, error) {
+	area, err := NewUsefulArea(width, height)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create scene: %s", err)
+	}
+
 	return &Scene{
 		area:           area,
 		locations:      make([]Location, 0),
@@ -62,7 +68,7 @@ func (s *Scene) Located(location Location) bool {
 }
 
 // unsafeDotOccupied returns true if passed dot already used by a location on scene
-func (s *Scene) unsafeDotOccupied(dot *Dot) bool {
+func (s *Scene) unsafeDotOccupied(dot Dot) bool {
 	if s.area.Contains(dot) {
 		for _, location := range s.locations {
 			if location.Contains(dot) {
@@ -73,14 +79,14 @@ func (s *Scene) unsafeDotOccupied(dot *Dot) bool {
 	return false
 }
 
-func (s *Scene) DotOccupied(dot *Dot) bool {
+func (s *Scene) DotOccupied(dot Dot) bool {
 	s.locationsMutex.RLock()
 	defer s.locationsMutex.RUnlock()
 	return s.unsafeDotOccupied(dot)
 }
 
 // unsafeGetLocationByDot returns location which contains passed dot
-func (s *Scene) unsafeGetLocationByDot(dot *Dot) Location {
+func (s *Scene) unsafeGetLocationByDot(dot Dot) Location {
 	if s.area.Contains(dot) {
 		for _, location := range s.locations {
 			if location.Contains(dot) {
@@ -91,7 +97,7 @@ func (s *Scene) unsafeGetLocationByDot(dot *Dot) Location {
 	return nil
 }
 
-func (s *Scene) GetLocationByDot(dot *Dot) Location {
+func (s *Scene) GetLocationByDot(dot Dot) Location {
 	s.locationsMutex.RLock()
 	defer s.locationsMutex.RUnlock()
 	return s.unsafeGetLocationByDot(dot)
@@ -115,7 +121,7 @@ func (s *Scene) unsafeLocate(location Location) *ErrLocate {
 	}
 
 	location = location.Copy()
-	occupiedDots := make([]*Dot, 0)
+	occupiedDots := make([]Dot, 0)
 
 	// Check each dot of passed location
 	for i := uint16(0); i < location.DotCount(); i++ {
@@ -364,7 +370,7 @@ func (s *Scene) LocateRandomRect(rw, rh uint8) (Location, error) {
 	return s.unsafeLocateRandomRect(rw, rh)
 }
 
-func (s *Scene) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
+func (s *Scene) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	return s.area.Navigate(dot, dir, dis)
 }
 

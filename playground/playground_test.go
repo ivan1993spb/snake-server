@@ -10,16 +10,13 @@ import (
 )
 
 func Test_Playground_ObjectExists(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
 	objectExists := &struct{}{}
 
-	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
 
 	pg := &Playground{
@@ -27,7 +24,7 @@ func Test_Playground_ObjectExists(t *testing.T) {
 		entities: []entity{
 			{
 				object:   objectExists,
-				location: engine.Location{engine.NewDot(0, 0)},
+				location: engine.Location{engine.Dot{0, 0}},
 			},
 		},
 		entitiesMutex: &sync.RWMutex{},
@@ -41,15 +38,12 @@ func Test_Playground_ObjectExists(t *testing.T) {
 }
 
 func Test_Playground_CreateObject(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
 	object := &struct{}{}
-	location := engine.Location{engine.NewDot(0, 0)}
+	location := engine.Location{engine.Dot{0, 0}}
 
 	pg := &Playground{
 		scene:         scene,
@@ -62,10 +56,7 @@ func Test_Playground_CreateObject(t *testing.T) {
 }
 
 func Test_Playground_CreateObjectRandomRect(t *testing.T) {
-	area, err := engine.NewArea(100, 100)
-	require.Nil(t, err, "cannot create area")
-	require.NotNil(t, area, "cannot create area")
-	scene, err := engine.NewScene(area)
+	scene, err := engine.NewScene(100, 100)
 	require.Nil(t, err, "cannot create scene")
 	require.NotNil(t, scene, "cannot create scene")
 
@@ -80,4 +71,66 @@ func Test_Playground_CreateObjectRandomRect(t *testing.T) {
 	location, err := pg.CreateObjectRandomRect(object, 10, 10)
 	require.Nil(t, err)
 	require.Len(t, location, 100)
+}
+
+func Test_Playground_UpdateObject(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{}{}
+
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{object, engine.Location{engine.Dot{0, 0}}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
+	require.Nil(t, err)
+
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{0, 0}}, engine.Location{engine.Dot{1, 1}})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.Dot{1, 1}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
+
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{1, 1}}, engine.Location{engine.Dot{2, 2}})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.Dot{2, 2}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{1, 1}}))
+
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{2, 2}}, engine.Location{engine.Dot{0, 0}})
+	require.Nil(t, err)
+	require.True(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{2, 2}}))
+}
+
+func Benchmark_Playground_UpdateObject(b *testing.B) {
+	// TODO: Implement benchmark.
+}
+
+func Test_Playground_DeleteObject(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{}{}
+
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{object, engine.Location{engine.Dot{0, 0}}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
+	require.Nil(t, err)
+
+	err = pg.DeleteObject(object, engine.Location{engine.Dot{0, 0}})
+	require.Nil(t, err)
+	require.False(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
+	require.Len(t, pg.entities, 0)
 }

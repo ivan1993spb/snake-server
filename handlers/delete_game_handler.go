@@ -20,7 +20,7 @@ type responseDeleteGameHandler struct {
 }
 
 type deleteGameHandler struct {
-	logger       *logrus.Logger
+	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
 }
 
@@ -30,7 +30,7 @@ func (e ErrDeleteGameHandler) Error() string {
 	return "delete game handler error: " + string(e)
 }
 
-func NewDeleteGameHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+func NewDeleteGameHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &deleteGameHandler{
 		logger:       logger,
 		groupManager: groupManager,
@@ -72,8 +72,8 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("stop game")
-	group.Game().Stop()
+	h.logger.Info("stop group")
+	group.Stop()
 
 	if err := h.groupManager.Delete(group); err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))

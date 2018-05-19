@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/game"
 )
 
 const URLRouteCreateGame = "/games"
@@ -29,7 +28,7 @@ type responseCreateGameHandler struct {
 }
 
 type createGameHandler struct {
-	logger       *logrus.Logger
+	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
 }
 
@@ -39,7 +38,7 @@ func (e ErrCreateGameHandler) Error() string {
 	return "create game handler error: " + string(e)
 }
 
-func NewCreateGameHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+func NewCreateGameHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &createGameHandler{
 		logger:       logger,
 		groupManager: groupManager,
@@ -86,26 +85,21 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Infof("create game: width=%d, height=%d", mapWidth, mapHeight)
-	g, err := game.NewGame(uint8(mapWidth), uint8(mapHeight))
+	h.logger.WithFields(logrus.Fields{
+		"width":  mapWidth,
+		"height": mapHeight,
+	}).Debug("create game")
+
+	h.logger.WithField("connection_limit", connectionLimit).Info("create group")
+	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info("start game")
-	g.Start()
-
-	h.logger.Infof("create group: limit=%d", connectionLimit)
-	group, err := connections.NewConnectionGroup(connectionLimit, g)
-	if err != nil {
-		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	h.logger.Info("initialized group")
+	h.logger.Info("start group")
+	group.Start()
 
 	id, err := h.groupManager.Add(group)
 	if err != nil {
@@ -113,6 +107,8 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrGroupLimitReached:
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		case connections.ErrConnsLimitReached:
 			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -127,7 +123,7 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(responseCreateGameHandler{
 		ID:     id,
-		Limit:  connectionLimit,
+		Limit:  group.GetLimit(),
 		Width:  uint8(mapWidth),
 		Height: uint8(mapHeight),
 	})
