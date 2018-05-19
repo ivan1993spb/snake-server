@@ -13,12 +13,13 @@ import (
 )
 
 const (
-	chanOutputMessageBuffer      = 128
-	chanReadMessagesBuffer       = 128
-	chanDecodeMessageBuffer      = 128
-	chanEncodeMessageBuffer      = 128
-	chanProxyInputMessageBuffer  = 64
-	chanListenInputMessageBuffer = 32
+	chanOutputMessageBuffer     = 128
+	chanReadMessagesBuffer      = 128
+	chanDecodeMessageBuffer     = 128
+	chanEncodeMessageBuffer     = 128
+	chanProxyInputMessageBuffer = 64
+	chanBroadcastBuffer         = 32
+	chanEventsBuffer            = 32
 
 	sendInputMessageTimeout = time.Millisecond * 50
 
@@ -69,15 +70,13 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
 	// Output
-	// TODO: Create buffer const.
-	chOutputMessages := cw.listenGameEvents(game.Events(chStop, 32), chStop)
-	// TODO: Create buffer const.
-	chOutputMessagesBroadcast := broadcast.OutputMessages(chStop, 32)
+	chOutputMessages := cw.listenGameEvents(game.Events(chStop, chanEventsBuffer), chStop)
+	chOutputMessagesBroadcast := broadcast.OutputMessages(chStop, chanBroadcastBuffer)
 	chOutputBytes := cw.encode(chStop, chOutputMessages, chOutputMessagesBroadcast)
 	cw.write(chOutputBytes, chStop)
 
-	player := player.NewPlayer(cw.logger, game)
-	player.Start(chStop)
+	p := player.NewPlayer(cw.logger, game)
+	p.Start(chStop)
 
 	cw.chStop = chStop
 
@@ -182,16 +181,14 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 	}()
 }
 
-func (cw *ConnectionWorker) Input(stop <-chan struct{}) <-chan InputMessage {
-	// TODO: Create param buffer.
-
+func (cw *ConnectionWorker) Input(stop <-chan struct{}, buffer uint) <-chan InputMessage {
 	chProxy := make(chan InputMessage, chanProxyInputMessageBuffer)
 
 	cw.chsInputMux.Lock()
 	cw.chsInput = append(cw.chsInput, chProxy)
 	cw.chsInputMux.Unlock()
 
-	chout := make(chan InputMessage, chanListenInputMessageBuffer)
+	chout := make(chan InputMessage, buffer)
 
 	go func() {
 		defer close(chout)
