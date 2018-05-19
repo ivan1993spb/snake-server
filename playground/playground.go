@@ -363,10 +363,12 @@ type ErrUpdateObject struct {
 }
 
 func (e *ErrUpdateObject) Error() string {
-	return "update object error"
+	return "update object error: " + e.Err.Error()
 }
 
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
+	// TODO: Create checking old == new.
+
 	if old.Empty() || new.Empty() {
 		return &ErrUpdateObject{
 			Err: ErrEmptyLocation,
