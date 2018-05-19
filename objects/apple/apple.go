@@ -3,6 +3,8 @@ package apple
 import (
 	"fmt"
 
+	"github.com/pquerna/ffjson/ffjson"
+
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -45,4 +47,8 @@ func (a *Apple) NutritionalValue(dot engine.Dot) uint16 {
 	}
 
 	return 0
+}
+
+func (a *Apple) MarshalJSON() ([]byte, error) {
+	return ffjson.Marshal(a.location)
 }
