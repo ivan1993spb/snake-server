@@ -22,3 +22,11 @@ func Test_Scene_Locate(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, []Location{location}, scene.locations)
 }
+
+func Benchmark_Scene_Locate(b *testing.B) {
+	// TODO: Implement benchmark.
+}
+
+func Benchmark_Scene_Relocate(b *testing.B) {
+	// TODO: Implement benchmark.
+}

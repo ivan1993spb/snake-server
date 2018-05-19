@@ -118,3 +118,7 @@ func Test_Playground_UpdateObject(t *testing.T) {
 	require.True(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
 	require.False(t, scene.Located(engine.Location{engine.NewDot(2, 2)}))
 }
+
+func Benchmark_Playground_UpdateObject(b *testing.B) {
+	// TODO: Implement benchmark.
+}
