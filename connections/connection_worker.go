@@ -10,7 +10,6 @@ import (
 
 	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/player"
-	"github.com/ivan1993spb/snake-server/world"
 )
 
 const (
@@ -70,13 +69,15 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
-	p := player.NewPlayer(cw.logger, game)
-	p.Start(chStop)
+	// TODO: Pass to player channel to listen commands: cw.Input()
+
+	p := player.NewPlayer(cw.logger, game.World())
 
 	// Output
-	chOutputMessages := cw.listenGameEvents(game.Events(chStop, chanEventsBuffer), chStop)
-	chOutputMessagesBroadcast := broadcast.OutputMessages(chStop, chanBroadcastBuffer)
-	chOutputBytes := cw.encode(chStop, chOutputMessages, chOutputMessagesBroadcast)
+	chPlayer := p.Start(chStop)
+	chGame := game.ListenEvents(chStop, chanEventsBuffer)
+	chBroadcast := broadcast.ListenMessages(chStop, chanBroadcastBuffer)
+	chOutputBytes := cw.encode(chStop, cw.listenBroadcast(chStop, chBroadcast), cw.listenPlayer(chStop, chPlayer), cw.listenGame(chStop, chGame))
 	cw.write(chOutputBytes, chStop)
 
 	cw.chStop = chStop
@@ -302,7 +303,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 	return chout
 }
 
-func (cw *ConnectionWorker) listenGameEvents(chin <-chan world.Event, stop <-chan struct{}) <-chan OutputMessage {
+func (cw *ConnectionWorker) listenGame(stop <-chan struct{}, chin <-chan game.Event) <-chan OutputMessage {
 	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
 	go func() {
@@ -310,13 +311,66 @@ func (cw *ConnectionWorker) listenGameEvents(chin <-chan world.Event, stop <-cha
 
 		for {
 			select {
-			// TODO: Fix case of closing channel chin.
 			case event := <-chin:
-				// TODO: Do stuff.
-
 				outputMessage := OutputMessage{
-					Type:    OutputMessageTypeGameEvent,
+					Type:    OutputMessageTypeGame,
 					Payload: event,
+				}
+
+				select {
+				case chout <- outputMessage:
+				case <-stop:
+					return
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan interface{}) <-chan OutputMessage {
+	chout := make(chan OutputMessage, chanOutputMessageBuffer)
+
+	go func() {
+		defer close(chout)
+
+		for {
+			select {
+			case event := <-chin:
+				outputMessage := OutputMessage{
+					Type:    OutputMessageTypePlayer,
+					Payload: event,
+				}
+
+				select {
+				case chout <- outputMessage:
+				case <-stop:
+					return
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) listenBroadcast(stop <-chan struct{}, chin <-chan BroadcastMessage) <-chan OutputMessage {
+	chout := make(chan OutputMessage, chanOutputMessageBuffer)
+
+	go func() {
+		defer close(chout)
+
+		for {
+			select {
+			case message := <-chin:
+				outputMessage := OutputMessage{
+					Type:    OutputMessageTypeBroadcast,
+					Payload: message,
 				}
 
 				select {

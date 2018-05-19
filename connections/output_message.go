@@ -3,15 +3,15 @@ package connections
 type OutputMessageType uint8
 
 const (
-	OutputMessageTypeGameEvent OutputMessageType = iota
-	OutputMessageTypeGroupNotice
-	OutputMessageTypeConnectionNotice
+	OutputMessageTypeGame OutputMessageType = iota
+	OutputMessageTypePlayer
+	OutputMessageTypeBroadcast
 )
 
 var outputMessageTypeLabels = map[OutputMessageType]string{
-	OutputMessageTypeGameEvent:        "game_event",
-	OutputMessageTypeGroupNotice:      "group_notice",
-	OutputMessageTypeConnectionNotice: "connection_notice",
+	OutputMessageTypeGame:      "game",
+	OutputMessageTypePlayer:    "player",
+	OutputMessageTypeBroadcast: "broadcast",
 }
 
 func (t OutputMessageType) String() string {

@@ -11,10 +11,12 @@ const (
 	broadcastSendTimeout        = time.Millisecond * 100
 )
 
+type BroadcastMessage string
+
 type GroupBroadcast struct {
 	chStop chan struct{}
-	chMain chan OutputMessage
-	chs    []chan OutputMessage
+	chMain chan BroadcastMessage
+	chs    []chan BroadcastMessage
 	chsMux *sync.RWMutex
 
 	flagStarted bool
@@ -23,13 +25,13 @@ type GroupBroadcast struct {
 func NewGroupBroadcast() *GroupBroadcast {
 	return &GroupBroadcast{
 		chStop: make(chan struct{}),
-		chMain: make(chan OutputMessage, broadcastMainChanBufferSize),
-		chs:    make([]chan OutputMessage, 0),
+		chMain: make(chan BroadcastMessage, broadcastMainChanBufferSize),
+		chs:    make([]chan BroadcastMessage, 0),
 		chsMux: &sync.RWMutex{},
 	}
 }
 
-func (gb *GroupBroadcast) BroadcastMessage(message OutputMessage) {
+func (gb *GroupBroadcast) BroadcastMessage(message BroadcastMessage) {
 	select {
 	case gb.chMain <- message:
 	case <-gb.chStop:
@@ -64,7 +66,7 @@ func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
 	}()
 }
 
-func (gb *GroupBroadcast) broadcast(message OutputMessage) {
+func (gb *GroupBroadcast) broadcast(message BroadcastMessage) {
 	gb.chsMux.RLock()
 	defer gb.chsMux.RUnlock()
 
@@ -76,8 +78,8 @@ func (gb *GroupBroadcast) broadcast(message OutputMessage) {
 	}
 }
 
-func (gb *GroupBroadcast) createChan() chan OutputMessage {
-	ch := make(chan OutputMessage, broadcastChanBufferSize)
+func (gb *GroupBroadcast) createChan() chan BroadcastMessage {
+	ch := make(chan BroadcastMessage, broadcastChanBufferSize)
 
 	gb.chsMux.Lock()
 	gb.chs = append(gb.chs, ch)
@@ -86,7 +88,7 @@ func (gb *GroupBroadcast) createChan() chan OutputMessage {
 	return ch
 }
 
-func (gb *GroupBroadcast) deleteChan(ch chan OutputMessage) {
+func (gb *GroupBroadcast) deleteChan(ch chan BroadcastMessage) {
 	gb.chsMux.Lock()
 	for i := range gb.chs {
 		if gb.chs[i] == ch {
@@ -98,9 +100,9 @@ func (gb *GroupBroadcast) deleteChan(ch chan OutputMessage) {
 	gb.chsMux.Unlock()
 }
 
-func (gb *GroupBroadcast) OutputMessages(stop <-chan struct{}, buffer uint) <-chan OutputMessage {
+func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-chan BroadcastMessage {
 	ch := gb.createChan()
-	chOut := make(chan OutputMessage, buffer)
+	chOut := make(chan BroadcastMessage, buffer)
 
 	go func() {
 		defer close(chOut)
@@ -124,7 +126,7 @@ func (gb *GroupBroadcast) OutputMessages(stop <-chan struct{}, buffer uint) <-ch
 	return chOut
 }
 
-func (gb *GroupBroadcast) send(ch chan OutputMessage, message OutputMessage, stop <-chan struct{}, timeout time.Duration) {
+func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessage, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 	if cap(ch) == 0 {

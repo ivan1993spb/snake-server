@@ -62,6 +62,16 @@ func (g *Game) World() *world.World {
 	return g.world
 }
 
-func (g *Game) Events(stop <-chan struct{}, buffer uint) <-chan world.Event {
-	return g.world.Events(stop, buffer)
+func (g *Game) ListenEvents(stop <-chan struct{}, buffer uint) <-chan Event {
+	chout := make(chan Event, buffer)
+	go func() {
+		defer close(chout)
+		for worldEvent := range g.world.Events(stop, buffer) {
+			chout <- Event{
+				Type:    worldEventTypeToGameEventType(worldEvent.Type),
+				Payload: worldEvent.Payload,
+			}
+		}
+	}()
+	return chout
 }
