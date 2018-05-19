@@ -5,6 +5,10 @@ Server for online arcade game - snake.
 
 // TODO: Create screen shot
 
+## Game rules
+
+// TODO: Write game rules
+
 ## Installation
 
 ### Install from source
@@ -19,6 +23,8 @@ Server for online arcade game - snake.
 * Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub.
 * `docker run --rm --net host ivan1993spb/snake-server` to start server
 * `docker run --rm ivan1993spb/snake-server -h` for usage information
+
+// TODO: Create link to dockerhub and tag list
 
 ## CLI arguments
 
