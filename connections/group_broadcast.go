@@ -12,7 +12,7 @@ const (
 )
 
 type GroupBroadcast struct {
-	chStop <-chan struct{}
+	chStop chan struct{}
 	chMain chan OutputMessage
 	chs    []chan OutputMessage
 	chsMux *sync.RWMutex
@@ -22,6 +22,7 @@ type GroupBroadcast struct {
 
 func NewGroupBroadcast() *GroupBroadcast {
 	return &GroupBroadcast{
+		chStop: make(chan struct{}),
 		chMain: make(chan OutputMessage, broadcastMainChanBufferSize),
 		chs:    make([]chan OutputMessage, 0),
 		chsMux: &sync.RWMutex{},
@@ -40,7 +41,13 @@ func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
 		return
 	}
 	gb.flagStarted = true
-	gb.chStop = stop
+
+	go func() {
+		select {
+		case <-stop:
+		}
+		gb.stop()
+	}()
 
 	go func() {
 		for {
@@ -145,4 +152,17 @@ func (gb *GroupBroadcast) send(ch chan OutputMessage, message OutputMessage, sto
 			}
 		}
 	}
+}
+func (gb *GroupBroadcast) stop() {
+	close(gb.chStop)
+	close(gb.chMain)
+
+	gb.chsMux.Lock()
+	defer gb.chsMux.Unlock()
+
+	for _, ch := range gb.chs {
+		close(ch)
+	}
+
+	gb.chs = gb.chs[:0]
 }
