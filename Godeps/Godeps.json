@@ -8,13 +8,13 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
-			"Comment": "v1.1.0-12-g8991bc2",
-			"Rev": "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+			"Comment": "v1.1.0-9-gecdeabc",
+			"Rev": "ecdeabc65495df2dec95d7c4a4c3e021903035e5"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Comment": "v1.6.1-16-gded0c29",
-			"Rev": "ded0c29b24f96f46cf349e6701b099db601cf8ec"
+			"Comment": "v1.4.0-13-gac112f7",
+			"Rev": "ac112f7d75a0714af1bd86ab17749b31f7809640"
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
@@ -23,6 +23,7 @@
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
 		},
 		{
@@ -39,35 +40,40 @@
 		},
 		{
 			"ImportPath": "github.com/sirupsen/logrus",
-			"Comment": "v1.0.4",
-			"Rev": "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+			"Comment": "v1.0.5-24-g0dad3b6",
+			"Rev": "0dad3b6953e73d351ec8ebfd8a8c6b088d320381"
+		},
+		{
+			"ImportPath": "github.com/sirupsen/logrus/hooks/test",
+			"Comment": "v1.0.5-24-g0dad3b6",
+			"Rev": "0dad3b6953e73d351ec8ebfd8a8c6b088d320381"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.2.1-14-gc679ae2",
-			"Rev": "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
+			"Comment": "v1.1.4-71-g890a5c3",
+			"Rev": "890a5c3458b43e6104ff5da8dfa139d013d77544"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
-			"Comment": "v1.2.1-14-gc679ae2",
-			"Rev": "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
+			"Comment": "v1.1.4-71-g890a5c3",
+			"Rev": "890a5c3458b43e6104ff5da8dfa139d013d77544"
 		},
 		{
 			"ImportPath": "github.com/urfave/negroni",
-			"Comment": "v0.3.0-13-g22c5532",
-			"Rev": "22c5532ea862c34fdad414e90f8cc00b4f6f4cab"
+			"Comment": "v0.3.0-4-g89f5378",
+			"Rev": "89f5378aa22c125b79e751f6d7670d3a172a0ced"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
-			"Rev": "0efb9460aaf800c6376acf625be2853bceac2e06"
+			"Rev": "1a580b3eff7814fc9b40602fd35256c63b50f491"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "ff2a66f350cefa5c93a634eadb5d25bb60c85a9c"
+			"Rev": "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/windows",
-			"Rev": "ff2a66f350cefa5c93a634eadb5d25bb60c85a9c"
+			"Rev": "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 		}
 	]
 }
