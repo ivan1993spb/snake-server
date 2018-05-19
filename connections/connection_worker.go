@@ -119,12 +119,12 @@ func (cw *ConnectionWorker) read() (<-chan []byte, <-chan struct{}) {
 		for {
 			messageType, data, err := cw.conn.ReadMessage()
 			if err != nil {
-				// TODO: Handle error?
+				cw.logger.Errorln("read input message error:", err)
 				return
 			}
 
 			if websocket.TextMessage != messageType {
-				// TODO: Handle case - unexpected message type?
+				cw.logger.Warning("unexpected input message type")
 				continue
 			}
 
@@ -148,7 +148,7 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 			case data := <-chin:
 				var inputMessage *InputMessage
 				if err := decoder.Decode(data, &inputMessage); err != nil {
-					// TODO: Handler error.
+					cw.logger.Errorln("decode input message error:", err)
 				} else {
 					chout <- *inputMessage
 				}
@@ -258,7 +258,7 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 			select {
 			case data := <-chin:
 				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
-					// TODO: Handler error.
+					cw.logger.Errorln("write output message error:", err)
 				}
 			case <-stop:
 				return
@@ -285,7 +285,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 						return
 					}
 					if data, err := ffjson.Marshal(message); err != nil {
-						// TODO: Handler error.
+						cw.logger.Errorln("encode output message error:", err)
 					} else {
 						chout <- data
 					}
@@ -318,8 +318,6 @@ func (cw *ConnectionWorker) listenGameEvents(chin <-chan game.Event, stop <-chan
 					Type:    OutputMessageTypeGameEvent,
 					Payload: event,
 				}
-
-				cw.logger.Info(event)
 
 				select {
 				case chout <- outputMessage:
