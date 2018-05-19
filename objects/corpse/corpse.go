@@ -2,6 +2,7 @@ package corpse
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -36,6 +37,10 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	}
 
 	return nil, errors.New("")
+}
+
+func (c *Corpse) String() string {
+	return fmt.Sprintln("corpse", c.location)
 }
 
 func (c *Corpse) NutritionalValue(dot *engine.Dot) uint16 {
