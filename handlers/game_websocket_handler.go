@@ -22,7 +22,7 @@ var upgrader = websocket.Upgrader{
 }
 
 type gameWebSocketHandler struct {
-	logger       *logrus.Logger
+	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
 }
 
@@ -32,7 +32,7 @@ func (e ErrGameWebSocketHandler) Error() string {
 	return "game websocket handler error: " + string(e)
 }
 
-func NewGameWebSocketHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+func NewGameWebSocketHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &gameWebSocketHandler{
 		logger:       logger,
 		groupManager: groupManager,

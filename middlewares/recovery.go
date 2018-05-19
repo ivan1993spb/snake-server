@@ -17,7 +17,7 @@ func (t *textPanicFormatter) FormatPanicError(rw http.ResponseWriter, r *http.Re
 	fmt.Fprintf(rw, http.StatusText(http.StatusInternalServerError))
 }
 
-func NewRecovery(logger *logrus.Logger) negroni.Handler {
+func NewRecovery(logger logrus.FieldLogger) negroni.Handler {
 	middleware := negroni.NewRecovery()
 	middleware.PrintStack = false
 	middleware.Logger = logger

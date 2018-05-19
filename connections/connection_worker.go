@@ -29,7 +29,7 @@ const (
 
 type ConnectionWorker struct {
 	conn   *websocket.Conn
-	logger *logrus.Logger
+	logger logrus.FieldLogger
 
 	chStop      <-chan struct{}
 	chsInput    []chan InputMessage
@@ -38,7 +38,7 @@ type ConnectionWorker struct {
 	flagStarted bool
 }
 
-func NewConnectionWorker(conn *websocket.Conn, logger *logrus.Logger) *ConnectionWorker {
+func NewConnectionWorker(conn *websocket.Conn, logger logrus.FieldLogger) *ConnectionWorker {
 	return &ConnectionWorker{
 		conn:        conn,
 		logger:      logger,

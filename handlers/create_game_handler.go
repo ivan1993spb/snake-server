@@ -29,7 +29,7 @@ type responseCreateGameHandler struct {
 }
 
 type createGameHandler struct {
-	logger       *logrus.Logger
+	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
 }
 
@@ -39,7 +39,7 @@ func (e ErrCreateGameHandler) Error() string {
 	return "create game handler error: " + string(e)
 }
 
-func NewCreateGameHandler(logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+func NewCreateGameHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
 	return &createGameHandler{
 		logger:       logger,
 		groupManager: groupManager,
