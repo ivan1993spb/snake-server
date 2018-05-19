@@ -290,7 +290,7 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 func (pg *Playground) unsafeDeleteEntity(object interface{}, location engine.Location) error {
 	for i := range pg.entities {
 		if pg.entities[i].object == object && pg.entities[i].location.Equals(location) {
-			pg.entities = append(pg.entities[:i], pg.entities[:i+1]...)
+			pg.entities = append(pg.entities[:i], pg.entities[i+1:]...)
 			return nil
 		}
 	}

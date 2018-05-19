@@ -122,3 +122,30 @@ func Test_Playground_UpdateObject(t *testing.T) {
 func Benchmark_Playground_UpdateObject(b *testing.B) {
 	// TODO: Implement benchmark.
 }
+
+func Test_Playground_DeleteObject(t *testing.T) {
+	area, err := engine.NewArea(100, 100)
+	require.Nil(t, err, "cannot create area")
+	require.NotNil(t, area, "cannot create area")
+	scene, err := engine.NewScene(area)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{}{}
+
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{object, engine.Location{engine.NewDot(0, 0)}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err)
+
+	err = pg.DeleteObject(object, engine.Location{engine.NewDot(0, 0)})
+	require.Nil(t, err)
+	require.False(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
+	require.Len(t, pg.entities, 0)
+}
