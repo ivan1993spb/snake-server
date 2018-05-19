@@ -13,14 +13,14 @@ const corpseMaxExperience = time.Second * 15
 
 // Snakes can eat corpses
 type Corpse struct {
-	world       game.World
+	world       *game.World
 	location    engine.Location
 	nippedPiece *engine.Dot // last nipped piece
 	stop        chan struct{}
 }
 
-// Corpses are created when a snake dies
-func CreateCorpse(world game.World, location engine.Location) (*Corpse, error) {
+// Corpse are created when a snake dies
+func NewCorpse(world *game.World, location engine.Location) (*Corpse, error) {
 	// TODO: Check location
 
 	corpse := &Corpse{}
