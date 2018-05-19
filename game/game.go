@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/objects/apple"
 	"github.com/ivan1993spb/snake-server/playground"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -51,15 +52,15 @@ func (g *Game) Start(stop <-chan struct{}) {
 	}()
 
 	go func() {
-		//apple.NewApple(g.world)
-		//for event := range g.world.Events(stop, 32) {
-		//	if event.Type == EventTypeObjectDelete {
-		//		switch event.Payload.(type) {
-		//		case *apple.Apple:
-		//			apple.NewApple(g.world)
-		//		}
-		//	}
-		//}
+		apple.NewApple(g.world)
+		for event := range g.world.Events(stop, 32) {
+			if event.Type == world.EventTypeObjectDelete {
+				switch event.Payload.(type) {
+				case *apple.Apple:
+					apple.NewApple(g.world)
+				}
+			}
+		}
 	}()
 
 	// TODO: Start observers.

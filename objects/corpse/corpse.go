@@ -40,7 +40,7 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 }
 
 func (c *Corpse) String() string {
-	return fmt.Sprintln("corpse", c.location)
+	return fmt.Sprint("corpse ", c.location)
 }
 
 func (c *Corpse) NutritionalValue(dot *engine.Dot) uint16 {

@@ -19,12 +19,18 @@ func NewPlayer(logger logrus.FieldLogger, game *game.Game) *Player {
 	}
 }
 
-func (p *Player) Start(stop <-chan struct{}) {
+func (p *Player) Start(stop <-chan struct{}) <-chan interface{} {
 	s, _ := snake.NewSnake(p.game.World())
 	s.Run(stop)
+
+	chout := make(chan interface{})
 
 	go func() {
 		<-stop
 		s.Die()
+		close(chout)
 	}()
+
+	return chout
+
 }
