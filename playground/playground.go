@@ -247,7 +247,7 @@ type ErrCreateObjectAvailableDots struct {
 }
 
 func (e *ErrCreateObjectAvailableDots) Error() string {
-	return "error on creating objects available dots"
+	return "error on creating objects available dots: " + e.Err.Error()
 }
 
 func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *ErrCreateObjectAvailableDots) {
@@ -591,7 +591,7 @@ func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
 
-	if !pg.unsafeObjectExists(object) {
+	if pg.unsafeObjectExists(object) {
 		return nil, ErrCreateObjectRandomDot("object to create already created")
 	}
 
