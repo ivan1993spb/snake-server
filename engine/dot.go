@@ -10,6 +10,8 @@ type Dot struct {
 	y uint8
 }
 
+// TODO: Check using Dot instead *Dot.
+
 // NewDot creates dot object
 func NewDot(x, y uint8) *Dot {
 	return &Dot{

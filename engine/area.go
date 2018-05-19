@@ -6,6 +6,8 @@ import (
 	"math/rand"
 )
 
+// TODO: Try use Area instead *Area.
+
 type Area struct {
 	width  uint8
 	height uint8
