@@ -70,7 +70,10 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
+	// TODO: Send to player map width and height.
 	// TODO: Pass to player channel to listen commands: cw.Input()
+
+	// TODO: Send to client all objects on map.
 
 	p := player.NewPlayer(cw.logger, game.World())
 
