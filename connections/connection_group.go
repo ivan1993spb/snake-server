@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/ivan1993spb/snake-server/broadcast"
 	"github.com/ivan1993spb/snake-server/game"
 )
 
@@ -17,7 +18,7 @@ type ConnectionGroup struct {
 	logger logrus.FieldLogger
 
 	game      *game.Game
-	broadcast *GroupBroadcast
+	broadcast *broadcast.GroupBroadcast
 
 	stop chan struct{}
 }
@@ -28,7 +29,7 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, g *game.
 			limit:     connectionLimit,
 			mutex:     &sync.RWMutex{},
 			game:      g,
-			broadcast: NewGroupBroadcast(),
+			broadcast: broadcast.NewGroupBroadcast(),
 			logger:    logger,
 			stop:      make(chan struct{}),
 		}, nil

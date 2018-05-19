@@ -8,6 +8,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
+	"github.com/ivan1993spb/snake-server/broadcast"
 	"github.com/ivan1993spb/snake-server/game"
 	"github.com/ivan1993spb/snake-server/player"
 )
@@ -54,7 +55,7 @@ func (e ErrStartConnectionWorker) Error() string {
 	return "error start connection worker: " + string(e)
 }
 
-func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *GroupBroadcast) error {
+func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast) error {
 	if cw.flagStarted {
 		return ErrStartConnectionWorker("connection worker already started")
 	}
@@ -359,7 +360,7 @@ func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan inter
 	return chout
 }
 
-func (cw *ConnectionWorker) listenBroadcast(stop <-chan struct{}, chin <-chan BroadcastMessage) <-chan OutputMessage {
+func (cw *ConnectionWorker) listenBroadcast(stop <-chan struct{}, chin <-chan broadcast.BroadcastMessage) <-chan OutputMessage {
 	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
 	go func() {

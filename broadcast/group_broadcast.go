@@ -1,4 +1,4 @@
-package connections
+package broadcast
 
 import (
 	"sync"
