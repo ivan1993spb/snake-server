@@ -36,21 +36,21 @@ func Test_Snake_setMovementDirection(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(10, 0),
-			engine.NewDot(9, 0),
-			engine.NewDot(8, 0),
-			engine.NewDot(7, 0),
+		dots: []engine.Dot{
+			{10, 0},
+			{9, 0},
+			{8, 0},
+			{7, 0},
 		},
 		direction: engine.DirectionEast,
 		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(10, 0),
-		engine.NewDot(9, 0),
-		engine.NewDot(8, 0),
-		engine.NewDot(7, 0),
+		engine.Dot{10, 0},
+		engine.Dot{9, 0},
+		engine.Dot{8, 0},
+		engine.Dot{7, 0},
 	})
 	require.Nil(t, err, "cannot create object")
 
@@ -74,107 +74,107 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(10, 0),
-			engine.NewDot(9, 0),
-			engine.NewDot(8, 0),
-			engine.NewDot(7, 0),
+		dots: []engine.Dot{
+			{10, 0},
+			{9, 0},
+			{8, 0},
+			{7, 0},
 		},
 		direction: engine.DirectionEast,
 		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(10, 0),
-		engine.NewDot(9, 0),
-		engine.NewDot(8, 0),
-		engine.NewDot(7, 0),
+		engine.Dot{10, 0},
+		engine.Dot{9, 0},
+		engine.Dot{8, 0},
+		engine.Dot{7, 0},
 	})
 	require.Nil(t, err, "cannot create object")
 
 	dot, err := snake.getNextHeadDot()
 	require.Nil(t, err)
-	require.Equal(t, engine.NewDot(11, 0), dot)
+	require.Equal(t, engine.Dot{11, 0}, dot)
 
 	// Second case west
 
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(2, 5),
-			engine.NewDot(3, 5),
-			engine.NewDot(4, 5),
-			engine.NewDot(5, 5),
+		dots: []engine.Dot{
+			{2, 5},
+			{3, 5},
+			{4, 5},
+			{5, 5},
 		},
 		direction: engine.DirectionWest,
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(2, 5),
-		engine.NewDot(3, 5),
-		engine.NewDot(4, 5),
-		engine.NewDot(5, 5),
+		engine.Dot{2, 5},
+		engine.Dot{3, 5},
+		engine.Dot{4, 5},
+		engine.Dot{5, 5},
 	})
 	require.Nil(t, err, "cannot create object")
 
 	dot, err = snake.getNextHeadDot()
 	require.Nil(t, err)
-	require.Equal(t, engine.NewDot(1, 5), dot)
+	require.Equal(t, engine.Dot{1, 5}, dot)
 
 	// Third case north
 
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(10, 10),
-			engine.NewDot(10, 11),
-			engine.NewDot(10, 12),
-			engine.NewDot(10, 13),
+		dots: []engine.Dot{
+			{10, 10},
+			{10, 11},
+			{10, 12},
+			{10, 13},
 		},
 		direction: engine.DirectionNorth,
 		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(10, 10),
-		engine.NewDot(10, 11),
-		engine.NewDot(10, 12),
-		engine.NewDot(10, 13),
+		engine.Dot{10, 10},
+		engine.Dot{10, 11},
+		engine.Dot{10, 12},
+		engine.Dot{10, 13},
 	})
 	require.Nil(t, err, "cannot create object")
 
 	dot, err = snake.getNextHeadDot()
 	require.Nil(t, err)
-	require.Equal(t, engine.NewDot(10, 9), dot)
+	require.Equal(t, engine.Dot{10, 9}, dot)
 
 	// Fourth case south
 
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(20, 24),
-			engine.NewDot(20, 21),
-			engine.NewDot(20, 20),
-			engine.NewDot(20, 19),
+		dots: []engine.Dot{
+			{20, 24},
+			{20, 21},
+			{20, 20},
+			{20, 19},
 		},
 		direction: engine.DirectionSouth,
 		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(20, 24),
-		engine.NewDot(20, 21),
-		engine.NewDot(20, 20),
-		engine.NewDot(20, 19),
+		engine.Dot{20, 24},
+		engine.Dot{20, 21},
+		engine.Dot{20, 20},
+		engine.Dot{20, 19},
 	})
 	require.Nil(t, err, "cannot create object")
 
 	dot, err = snake.getNextHeadDot()
 	require.Nil(t, err)
-	require.Equal(t, engine.NewDot(20, 25), dot)
+	require.Equal(t, engine.Dot{20, 25}, dot)
 }
 
 func Test_Snake_move_validLocation(t *testing.T) {
@@ -185,53 +185,53 @@ func Test_Snake_move_validLocation(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []*engine.Dot{
-			engine.NewDot(10, 0),
-			engine.NewDot(9, 0),
-			engine.NewDot(8, 0),
-			engine.NewDot(7, 0),
+		dots: []engine.Dot{
+			{10, 0},
+			{9, 0},
+			{8, 0},
+			{7, 0},
 		},
 		direction: engine.DirectionEast,
 		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{
-		engine.NewDot(10, 0),
-		engine.NewDot(9, 0),
-		engine.NewDot(8, 0),
-		engine.NewDot(7, 0),
+		engine.Dot{10, 0},
+		engine.Dot{9, 0},
+		engine.Dot{8, 0},
+		engine.Dot{7, 0},
 	})
 	require.Nil(t, err, "cannot create object")
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []*engine.Dot{
-		engine.NewDot(11, 0),
-		engine.NewDot(10, 0),
-		engine.NewDot(9, 0),
-		engine.NewDot(8, 0),
+	require.Equal(t, []engine.Dot{
+		{11, 0},
+		{10, 0},
+		{9, 0},
+		{8, 0},
 	}, snake.dots)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []*engine.Dot{
-		engine.NewDot(12, 0),
-		engine.NewDot(11, 0),
-		engine.NewDot(10, 0),
-		engine.NewDot(9, 0),
+	require.Equal(t, []engine.Dot{
+		{12, 0},
+		{11, 0},
+		{10, 0},
+		{9, 0},
 	}, snake.dots)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []*engine.Dot{
-		engine.NewDot(13, 0),
-		engine.NewDot(12, 0),
-		engine.NewDot(11, 0),
-		engine.NewDot(10, 0),
+	require.Equal(t, []engine.Dot{
+		{13, 0},
+		{12, 0},
+		{11, 0},
+		{10, 0},
 	}, snake.dots)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []*engine.Dot{
-		engine.NewDot(14, 0),
-		engine.NewDot(13, 0),
-		engine.NewDot(12, 0),
-		engine.NewDot(11, 0),
+	require.Equal(t, []engine.Dot{
+		{14, 0},
+		{13, 0},
+		{12, 0},
+		{11, 0},
 	}, snake.dots)
 }

@@ -37,7 +37,7 @@ func (a *Apple) String() string {
 	return fmt.Sprintf("apple %s", a.location)
 }
 
-func (a *Apple) NutritionalValue(dot *engine.Dot) uint16 {
+func (a *Apple) NutritionalValue(dot engine.Dot) uint16 {
 	if a.location.Equals(engine.Location{dot}) {
 		// TODO: Handle error.
 		a.world.DeleteObject(a, a.location)

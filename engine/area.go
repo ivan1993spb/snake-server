@@ -6,8 +6,6 @@ import (
 	"math/rand"
 )
 
-// TODO: Try use Area instead *Area.
-
 const (
 	minAreaWidth  = 10
 	minAreaHeight = 10
@@ -29,46 +27,46 @@ func (e *ErrInvalidAreaSize) Error() string {
 	return "invalid area size"
 }
 
-func NewArea(width, height uint8) (*Area, error) {
+func NewArea(width, height uint8) (Area, error) {
 	if width*height == 0 {
-		return nil, &ErrInvalidAreaSize{
+		return Area{}, &ErrInvalidAreaSize{
 			Width:  width,
 			Height: height,
 		}
 	}
 
-	return &Area{
+	return Area{
 		width:  width,
 		height: height,
 	}, nil
 }
 
 // Size returns area size
-func (a *Area) Size() uint16 {
+func (a Area) Size() uint16 {
 	return uint16(a.width) * uint16(a.height)
 }
 
-func (a *Area) Width() uint8 {
+func (a Area) Width() uint8 {
 	return a.width
 }
 
-func (a *Area) Height() uint8 {
+func (a Area) Height() uint8 {
 	return a.height
 }
 
-func (a *Area) Contains(dot *Dot) bool {
-	return a.width > dot.x && a.height > dot.y
+func (a Area) Contains(dot Dot) bool {
+	return a.width > dot.X && a.height > dot.Y
 }
 
-// NewRandomDot generates random dot on area with starting coordinates x and y
-func (a *Area) NewRandomDot(x, y uint8) *Dot {
-	return &Dot{
-		x: x + uint8(rand.Intn(int(a.width))),
-		y: y + uint8(rand.Intn(int(a.height))),
+// NewRandomDot generates random dot on area with starting coordinates X and Y
+func (a Area) NewRandomDot(x, y uint8) Dot {
+	return Dot{
+		X: x + uint8(rand.Intn(int(a.width))),
+		Y: y + uint8(rand.Intn(int(a.height))),
 	}
 }
 
-func (a *Area) NewRandomRect(rw, rh, sx, sy uint8) (*Rect, error) {
+func (a Area) NewRandomRect(rw, rh, sx, sy uint8) (*Rect, error) {
 	if rw > a.width || rh > a.height {
 		return nil, errors.New("cannot get random rect on square: invalid Width or Height")
 	}
@@ -100,7 +98,7 @@ func (e *ErrNavigation) Error() string {
 }
 
 type ErrAreaNotContainsDot struct {
-	Dot *Dot
+	Dot Dot
 }
 
 func (e *ErrAreaNotContainsDot) Error() string {
@@ -108,7 +106,7 @@ func (e *ErrAreaNotContainsDot) Error() string {
 }
 
 // Navigate calculates and returns dot placed on distance dis dots from passed dot in direction dir
-func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
+func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	// If distance is zero return passed dot
 	if dis == 0 {
 		return dot, nil
@@ -116,7 +114,7 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 
 	// Area must contain passed dot
 	if !a.Contains(dot) {
-		return nil, &ErrNavigation{
+		return Dot{}, &ErrNavigation{
 			Err: &ErrAreaNotContainsDot{
 				Dot: dot,
 			},
@@ -131,28 +129,28 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 
 		// North
 		if dir == DirectionNorth {
-			if dis > dot.y {
-				return &Dot{
-					x: dot.x,
-					y: a.height - dis + dot.y,
+			if dis > dot.Y {
+				return Dot{
+					X: dot.X,
+					Y: a.height - dis + dot.Y,
 				}, nil
 			}
-			return &Dot{
-				x: dot.x,
-				y: dot.y - dis,
+			return Dot{
+				X: dot.X,
+				Y: dot.Y - dis,
 			}, nil
 		}
 
 		// South
-		if dot.y+dis+1 > a.height {
-			return &Dot{
-				x: dot.x,
-				y: dis - a.height + dot.y,
+		if dot.Y+dis+1 > a.height {
+			return Dot{
+				X: dot.X,
+				Y: dis - a.height + dot.Y,
 			}, nil
 		}
-		return &Dot{
-			x: dot.x,
-			y: dot.y + dis,
+		return Dot{
+			X: dot.X,
+			Y: dot.Y + dis,
 		}, nil
 
 	case DirectionWest, DirectionEast:
@@ -162,32 +160,32 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 
 		// East
 		if dir == DirectionEast {
-			if a.width > dot.x+dis {
-				return &Dot{
-					x: dot.x + dis,
-					y: dot.y,
+			if a.width > dot.X+dis {
+				return Dot{
+					X: dot.X + dis,
+					Y: dot.Y,
 				}, nil
 			}
-			return &Dot{
-				x: dis - a.width + dot.x,
-				y: dot.y,
+			return Dot{
+				X: dis - a.width + dot.X,
+				Y: dot.Y,
 			}, nil
 		}
 
 		// West
-		if dis > dot.x {
-			return &Dot{
-				x: a.width - dis + dot.x,
-				y: dot.y,
+		if dis > dot.X {
+			return Dot{
+				X: a.width - dis + dot.X,
+				Y: dot.Y,
 			}, nil
 		}
-		return &Dot{
-			x: dot.x - dis,
-			y: dot.y,
+		return Dot{
+			X: dot.X - dis,
+			Y: dot.Y,
 		}, nil
 	}
 
-	return nil, &ErrNavigation{
+	return Dot{}, &ErrNavigation{
 		Err: &ErrInvalidDirection{
 			Direction: dir,
 		},
@@ -195,7 +193,7 @@ func (a *Area) Navigate(dot *Dot, dir Direction, dis uint8) (*Dot, error) {
 }
 
 // Implementing json.Marshaler interface
-func (a *Area) MarshalJSON() ([]byte, error) {
+func (a Area) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]uint8{
 		a.width,
 		a.height,

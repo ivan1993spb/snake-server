@@ -43,7 +43,7 @@ func CreateWatermelon(world *world.World) (*Watermelon, error) {
 	return watermelon, nil
 }
 
-func (w *Watermelon) NutritionalValue(dot *engine.Dot) int8 {
+func (w *Watermelon) NutritionalValue(dot engine.Dot) int8 {
 	for _, dot := range w.location {
 		if dot.Equals(dot) {
 			location := w.location.Delete(dot)

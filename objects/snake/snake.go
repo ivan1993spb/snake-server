@@ -40,7 +40,7 @@ var snakeCommands = map[Command]engine.Direction{
 type Snake struct {
 	world *world.World
 
-	dots   []*engine.Dot
+	dots   []engine.Dot
 	length uint16
 
 	mux *sync.RWMutex
@@ -77,7 +77,7 @@ func NewSnake(world *world.World) (*Snake, error) {
 	}
 
 	snake.world = world
-	snake.dots = []*engine.Dot(location)
+	snake.dots = []engine.Dot(location)
 	snake.length = snakeStartLength
 	snake.direction = dir
 	snake.mux = &sync.RWMutex{}
@@ -156,7 +156,7 @@ func (s *Snake) move() error {
 		//ticker = time.NewTicker(s.calculateDelay())
 	}
 
-	tmpDots := make([]*engine.Dot, len(s.dots)+1)
+	tmpDots := make([]engine.Dot, len(s.dots)+1)
 	copy(tmpDots[1:], s.dots)
 	tmpDots[0] = dot
 
@@ -180,12 +180,12 @@ func (s *Snake) calculateDelay() time.Duration {
 
 // getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
-func (s *Snake) getNextHeadDot() (*engine.Dot, error) {
+func (s *Snake) getNextHeadDot() (engine.Dot, error) {
 	if len(s.dots) > 0 {
 		return s.world.Navigate(s.dots[0], s.direction, 1)
 	}
 
-	return nil, fmt.Errorf("cannot get next head dots: errEmptyDotList")
+	return engine.Dot{}, fmt.Errorf("cannot get next head dots: errEmptyDotList")
 }
 
 func (s *Snake) Command(cmd Command) error {

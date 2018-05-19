@@ -47,7 +47,7 @@ func CreateLongWall(world *world.World) (*Wall, error) {
 	return wall, nil
 }
 
-func (w *Wall) Break(dot *engine.Dot) {
+func (w *Wall) Break(dot engine.Dot) {
 	if w.location.Contains(dot) {
 		location := w.location.Delete(dot)
 

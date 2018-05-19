@@ -94,7 +94,7 @@ func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} 
 	return pg.unsafeGetObjectByLocation(location)
 }
 
-func (pg *Playground) unsafeGetObjectByDot(dot *engine.Dot) interface{} {
+func (pg *Playground) unsafeGetObjectByDot(dot engine.Dot) interface{} {
 	for i := range pg.entities {
 		if pg.entities[i].location.Contains(dot) {
 			return pg.entities[i].object
@@ -103,13 +103,13 @@ func (pg *Playground) unsafeGetObjectByDot(dot *engine.Dot) interface{} {
 	return nil
 }
 
-func (pg *Playground) GetObjectByDot(dot *engine.Dot) interface{} {
+func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
 	pg.entitiesMutex.RLock()
 	defer pg.entitiesMutex.RUnlock()
 	return pg.unsafeGetObjectByDot(dot)
 }
 
-func (pg *Playground) unsafeGetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+func (pg *Playground) unsafeGetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
 	for i := range pg.entities {
 		if pg.entities[i].location.Contains(dot) {
 			return pg.entities[i].object, pg.entities[i].location
@@ -118,13 +118,13 @@ func (pg *Playground) unsafeGetEntityByDot(dot *engine.Dot) (interface{}, engine
 	return nil, nil
 }
 
-func (pg *Playground) GetEntityByDot(dot *engine.Dot) (interface{}, engine.Location) {
+func (pg *Playground) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
 	pg.entitiesMutex.RLock()
 	defer pg.entitiesMutex.RUnlock()
 	return pg.unsafeGetEntityByDot(dot)
 }
 
-func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
+func (pg *Playground) unsafeGetObjectsByDots(dots []engine.Dot) []interface{} {
 	if len(dots) == 0 {
 		return nil
 	}
@@ -151,7 +151,7 @@ func (pg *Playground) unsafeGetObjectsByDots(dots []*engine.Dot) []interface{} {
 	return objects
 }
 
-func (pg *Playground) GetObjectsByDots(dots []*engine.Dot) []interface{} {
+func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 	if len(dots) == 0 {
 		return nil
 	}
@@ -639,7 +639,7 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	return location.Copy(), nil
 }
 
-func (pg *Playground) Navigate(dot *engine.Dot, dir engine.Direction, dis uint8) (*engine.Dot, error) {
+func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return pg.scene.Navigate(dot, dir, dis)
 }
 

@@ -16,7 +16,7 @@ func Test_Playground_ObjectExists(t *testing.T) {
 
 	objectExists := &struct{}{}
 
-	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
 
 	pg := &Playground{
@@ -24,7 +24,7 @@ func Test_Playground_ObjectExists(t *testing.T) {
 		entities: []entity{
 			{
 				object:   objectExists,
-				location: engine.Location{engine.NewDot(0, 0)},
+				location: engine.Location{engine.Dot{0, 0}},
 			},
 		},
 		entitiesMutex: &sync.RWMutex{},
@@ -43,7 +43,7 @@ func Test_Playground_CreateObject(t *testing.T) {
 	require.NotNil(t, scene, "cannot create scene")
 
 	object := &struct{}{}
-	location := engine.Location{engine.NewDot(0, 0)}
+	location := engine.Location{engine.Dot{0, 0}}
 
 	pg := &Playground{
 		scene:         scene,
@@ -83,28 +83,28 @@ func Test_Playground_UpdateObject(t *testing.T) {
 	pg := &Playground{
 		scene: scene,
 		entities: []entity{
-			{object, engine.Location{engine.NewDot(0, 0)}},
+			{object, engine.Location{engine.Dot{0, 0}}},
 		},
 		entitiesMutex: &sync.RWMutex{},
 	}
 
-	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
 
-	err = pg.UpdateObject(object, engine.Location{engine.NewDot(0, 0)}, engine.Location{engine.NewDot(1, 1)})
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{0, 0}}, engine.Location{engine.Dot{1, 1}})
 	require.Nil(t, err)
-	require.True(t, scene.Located(engine.Location{engine.NewDot(1, 1)}))
-	require.False(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
+	require.True(t, scene.Located(engine.Location{engine.Dot{1, 1}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
 
-	err = pg.UpdateObject(object, engine.Location{engine.NewDot(1, 1)}, engine.Location{engine.NewDot(2, 2)})
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{1, 1}}, engine.Location{engine.Dot{2, 2}})
 	require.Nil(t, err)
-	require.True(t, scene.Located(engine.Location{engine.NewDot(2, 2)}))
-	require.False(t, scene.Located(engine.Location{engine.NewDot(1, 1)}))
+	require.True(t, scene.Located(engine.Location{engine.Dot{2, 2}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{1, 1}}))
 
-	err = pg.UpdateObject(object, engine.Location{engine.NewDot(2, 2)}, engine.Location{engine.NewDot(0, 0)})
+	err = pg.UpdateObject(object, engine.Location{engine.Dot{2, 2}}, engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
-	require.True(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
-	require.False(t, scene.Located(engine.Location{engine.NewDot(2, 2)}))
+	require.True(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{2, 2}}))
 }
 
 func Benchmark_Playground_UpdateObject(b *testing.B) {
@@ -121,16 +121,16 @@ func Test_Playground_DeleteObject(t *testing.T) {
 	pg := &Playground{
 		scene: scene,
 		entities: []entity{
-			{object, engine.Location{engine.NewDot(0, 0)}},
+			{object, engine.Location{engine.Dot{0, 0}}},
 		},
 		entitiesMutex: &sync.RWMutex{},
 	}
 
-	err = scene.Locate(engine.Location{engine.NewDot(0, 0)})
+	err = scene.Locate(engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
 
-	err = pg.DeleteObject(object, engine.Location{engine.NewDot(0, 0)})
+	err = pg.DeleteObject(object, engine.Location{engine.Dot{0, 0}})
 	require.Nil(t, err)
-	require.False(t, scene.Located(engine.Location{engine.NewDot(0, 0)}))
+	require.False(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
 	require.Len(t, pg.entities, 0)
 }

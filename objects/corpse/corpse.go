@@ -16,7 +16,7 @@ const corpseMaxExperience = time.Second * 15
 type Corpse struct {
 	world       *world.World
 	location    engine.Location
-	nippedPiece *engine.Dot // last nipped piece
+	nippedPiece engine.Dot // last nipped piece
 	stop        chan struct{}
 }
 
@@ -43,7 +43,7 @@ func (c *Corpse) String() string {
 	return fmt.Sprint("corpse ", c.location)
 }
 
-func (c *Corpse) NutritionalValue(dot *engine.Dot) uint16 {
+func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 	if c.location.Contains(dot) {
 		newDots := c.location.Delete(dot)
 

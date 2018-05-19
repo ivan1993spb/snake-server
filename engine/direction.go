@@ -50,30 +50,30 @@ func RandomDirection() Direction {
 }
 
 // CalculateDirection calculates direction by two passed dots
-func CalculateDirection(from, to *Dot) Direction {
+func CalculateDirection(from, to Dot) Direction {
 	if !from.Equals(to) {
 		var diffX, diffY uint8
 
-		if from.x > to.x {
-			diffX = from.x - to.x
+		if from.X > to.X {
+			diffX = from.X - to.X
 		} else {
-			diffX = to.x - from.x
+			diffX = to.X - from.X
 		}
-		if from.y > to.y {
-			diffY = from.y - to.y
+		if from.Y > to.Y {
+			diffY = from.Y - to.Y
 		} else {
-			diffY = to.y - from.y
+			diffY = to.Y - from.Y
 		}
 
 		if diffX > diffY {
-			if to.x > from.x {
+			if to.X > from.X {
 				return DirectionEast
 			}
 			return DirectionWest
 		}
 
 		if diffY > diffX {
-			if to.y > from.y {
+			if to.Y > from.Y {
 				return DirectionSouth
 			}
 			return DirectionNorth
