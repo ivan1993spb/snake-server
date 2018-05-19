@@ -53,7 +53,7 @@ func (e ErrStartConnectionWorker) Error() string {
 	return "error start connection worker: " + string(e)
 }
 
-func (cw *ConnectionWorker) Start(game *game.Game) error {
+func (cw *ConnectionWorker) Start(game *game.Game, broadcast *GroupBroadcast) error {
 	if cw.flagStarted {
 		return ErrStartConnectionWorker("connection worker already started")
 	}
@@ -69,9 +69,11 @@ func (cw *ConnectionWorker) Start(game *game.Game) error {
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
 	// Output
-	// TODO: Create buffer const
+	// TODO: Create buffer const.
 	chOutputMessages := cw.listenGameEvents(game.Events(chStop, 32), chStop)
-	chOutputBytes := cw.encode(chOutputMessages, chStop)
+	// TODO: Create buffer const.
+	chOutputMessagesBroadcast := broadcast.OutputMessages(chStop, 32)
+	chOutputBytes := cw.encode(chStop, chOutputMessages, chOutputMessagesBroadcast)
 	cw.write(chOutputBytes, chStop)
 
 	player := player.NewPlayer(game)
@@ -178,6 +180,8 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 }
 
 func (cw *ConnectionWorker) Input(stop <-chan struct{}) <-chan InputMessage {
+	// TODO: Create param buffer.
+
 	chProxy := make(chan InputMessage, chanProxyInputMessageBuffer)
 
 	cw.chsInputMux.Lock()
@@ -260,24 +264,36 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 	}()
 }
 
-func (cw *ConnectionWorker) encode(chin <-chan OutputMessage, stop <-chan struct{}) <-chan []byte {
+func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputMessage) <-chan []byte {
 	chout := make(chan []byte, chanEncodeMessageBuffer)
 
-	go func() {
-		defer close(chout)
+	wg := sync.WaitGroup{}
+	wg.Add(len(chins))
 
-		for {
-			select {
-			case message := <-chin:
-				if data, err := ffjson.Marshal(message); err != nil {
-					// TODO: Handler error.
-				} else {
-					chout <- data
+	for _, chin := range chins {
+		go func(chin <-chan OutputMessage) {
+			defer wg.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				case message, ok := <-chin:
+					if !ok {
+						return
+					}
+					if data, err := ffjson.Marshal(message); err != nil {
+						// TODO: Handler error.
+					} else {
+						chout <- data
+					}
 				}
-			case <-stop:
-				return
 			}
-		}
+		}(chin)
+	}
+
+	go func() {
+		wg.Wait()
+		close(chout)
 	}()
 
 	return chout
@@ -291,6 +307,7 @@ func (cw *ConnectionWorker) listenGameEvents(chin <-chan game.Event, stop <-chan
 
 		for {
 			select {
+			// TODO: Fix case of closing channel chin.
 			case event := <-chin:
 				// TODO: Do stuff.
 

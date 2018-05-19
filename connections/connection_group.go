@@ -11,15 +11,18 @@ type ConnectionGroup struct {
 	limit   int
 	counter int
 	mutex   *sync.RWMutex
-	game    *game.Game
+
+	game      *game.Game
+	broadcast *GroupBroadcast
 }
 
 func NewConnectionGroup(connectionLimit int, g *game.Game) (*ConnectionGroup, error) {
 	if connectionLimit > 0 {
 		return &ConnectionGroup{
-			limit: connectionLimit,
-			mutex: &sync.RWMutex{},
-			game:  g,
+			limit:     connectionLimit,
+			mutex:     &sync.RWMutex{},
+			game:      g,
+			broadcast: NewGroupBroadcast(),
 		}, nil
 	}
 
@@ -85,7 +88,7 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 		cg.mutex.Unlock()
 	}()
 
-	if err := connectionWorker.Start(cg.game); err != nil {
+	if err := connectionWorker.Start(cg.game, cg.broadcast); err != nil {
 		return &ErrRunConnection{
 			Err: err,
 		}
@@ -96,4 +99,12 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 
 func (cg *ConnectionGroup) Game() *game.Game {
 	return cg.game
+}
+
+func (cg *ConnectionGroup) StartBroadcast() {
+	cg.broadcast.Start()
+}
+
+func (cg *ConnectionGroup) StopBroadcast() {
+	cg.broadcast.Stop()
 }

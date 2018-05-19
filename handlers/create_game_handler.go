@@ -107,6 +107,9 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("initialized group")
 
+	group.StartBroadcast()
+	h.logger.Info("start broadcasting")
+
 	id, err := h.groupManager.Add(group)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
