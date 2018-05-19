@@ -21,7 +21,20 @@ func (t OutputMessageType) String() string {
 	return "unknown"
 }
 
+var outputMessageTypeJSONs = map[OutputMessageType][]byte{
+	OutputMessageTypeGame:      []byte(`"game"`),
+	OutputMessageTypePlayer:    []byte(`"player"`),
+	OutputMessageTypeBroadcast: []byte(`"broadcast"`),
+}
+
+func (t OutputMessageType) MarshalJSON() ([]byte, error) {
+	if json, ok := outputMessageTypeJSONs[t]; ok {
+		return json, nil
+	}
+	return []byte(`"unknown"`), nil
+}
+
 type OutputMessage struct {
-	Type    OutputMessageType
-	Payload interface{}
+	Type    OutputMessageType `json:"type"`
+	Payload interface{}       `json:"payload"`
 }
