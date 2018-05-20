@@ -26,6 +26,10 @@ Python client repo: https://github.com/ivan1993spb/snake-client
 
 ### Install from docker-hub
 
+See docker-hub repo: https://hub.docker.com/r/ivan1993spb/snake-server
+
+* Install docker: [fast installation script](https://get.docker.com/)
+* Choose image tag: https://hub.docker.com/r/ivan1993spb/snake-server/tags/
 * Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub.
 * `docker run --rm --net host ivan1993spb/snake-server` to start server
 * `docker run --rm ivan1993spb/snake-server -h` for usage information
