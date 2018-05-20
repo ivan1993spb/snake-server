@@ -202,7 +202,29 @@ Game objects:
 
 Input messages - when client sends to server a game commands.
 
-// TODO: Describe input messages.
+Input message structure:
+
+```
+{"type": input_message_type, "payload": input_message_payload}
+```
+
+There is only one message type: *snake*
+
+Commands sends in field `payload`. Commands:
+
+* *north*
+* *east*
+* *south*
+* *west*
+
+Examples:
+
+```
+{"type":"snake","payload":"north"}
+{"type":"snake","payload":"east"}
+{"type":"snake","payload":"south"}
+{"type":"snake","payload":"west"}
+```
 
 ## Game on client side
 
