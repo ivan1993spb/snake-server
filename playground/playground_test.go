@@ -134,3 +134,104 @@ func Test_Playground_DeleteObject(t *testing.T) {
 	require.False(t, scene.Located(engine.Location{engine.Dot{0, 0}}))
 	require.Len(t, pg.entities, 0)
 }
+
+func Test_Playground_CreateObjectAvailableDots_EmptyScene(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	pg := &Playground{
+		scene:         scene,
+		entities:      []entity{},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	object := &struct{}{}
+	location := engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}
+
+	actualLocation, err := pg.CreateObjectAvailableDots(object, location)
+	require.Nil(t, err)
+	require.Equal(t, location, actualLocation)
+}
+
+func Test_Playground_CreateObjectAvailableDots_LocationNotAvailable(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	locatedObject := &struct{ int }{0}
+
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{locatedObject, engine.Location{
+				engine.Dot{0, 0},
+				engine.Dot{0, 1},
+				engine.Dot{0, 2},
+			}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	require.Nil(t, scene.Locate(engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}))
+
+	object := &struct{}{}
+
+	location := engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}
+
+	actualLocation, err := pg.CreateObjectAvailableDots(object, location)
+	require.NotNil(t, err)
+	require.Nil(t, actualLocation)
+}
+
+func Test_Playground_CreateObjectAvailableDots_LocationsIntersects(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	locatedObject := &struct{ int }{0}
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{locatedObject, engine.Location{
+				engine.Dot{0, 0},
+				engine.Dot{0, 1},
+				engine.Dot{0, 2},
+			}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	require.Nil(t, scene.Locate(engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}))
+
+	object := &struct{}{}
+
+	location := engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{1, 1},
+		engine.Dot{1, 2},
+	}
+
+	actualLocation, err := pg.CreateObjectAvailableDots(object, location)
+	require.Nil(t, err)
+	require.Equal(t, engine.Location{
+		engine.Dot{1, 1},
+		engine.Dot{1, 2},
+	}, actualLocation)
+}
