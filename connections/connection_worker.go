@@ -62,7 +62,9 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	cw.flagStarted = true
 
+	// TODO: Handle panic.
 	cw.conn.SetCloseHandler(cw.handleCloseConnection)
+
 	cw.conn.SetReadLimit(readMessageLimit)
 
 	// Input
@@ -70,7 +72,6 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 
-	// TODO: Send to player map width and height.
 	// TODO: Pass to player channel to listen commands: cw.Input()
 
 	// TODO: Send to client all objects on map.
@@ -153,11 +154,11 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 		for {
 			select {
 			case data := <-chin:
-				var inputMessage *InputMessage
+				var inputMessage InputMessage
 				if err := decoder.Decode(data, &inputMessage); err != nil {
 					cw.logger.Errorln("decode input message error:", err)
 				} else {
-					chout <- *inputMessage
+					chout <- inputMessage
 				}
 			case <-stop:
 				return
@@ -335,7 +336,7 @@ func (cw *ConnectionWorker) listenGame(stop <-chan struct{}, chin <-chan game.Ev
 	return chout
 }
 
-func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan interface{}) <-chan OutputMessage {
+func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan player.Message) <-chan OutputMessage {
 	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
 	go func() {
