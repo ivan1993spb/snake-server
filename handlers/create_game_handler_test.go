@@ -30,7 +30,7 @@ func Test_CreateGameHandler_ServeHTTP_CreatesGroup(t *testing.T) {
 	r := mux.NewRouter()
 	r.Path(URLRouteCreateGame).Methods(MethodCreateGame).Handler(handler)
 
-	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
+	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger, "api"))
 	n.UseHandler(r)
 
 	data := &url.Values{}
