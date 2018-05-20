@@ -9,9 +9,7 @@ Server for online arcade game - snake.
 
 // TODO: Write game rules.
 
-## Client
-
-Known clients:
+## Known clients
 
 * Python client repo: https://github.com/ivan1993spb/snake-client
 
@@ -47,7 +45,7 @@ Arguments:
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 
-## API Description
+## API description
 
 API methods provide JSON format.
 
@@ -91,13 +89,20 @@ curl -X DELETE http://localhost:8080/games/0
 
 Connects to game Web-Socket.
 
-* Returns playground size: width and height `{width: w, height: h}`
-* Initialize gamer's objects and session
-* Returns snake id
+* Returns playground size
+* Initialize game session
 * Returns all objects on playground
+* Creates snake
+* Returns snake id
 * Pushes events and objects from game
 
-## Game objects
+## Game Web-Socket messages description
+
+There are input and output messages.
+
+### Output messages
+
+Output messages - when server sends to client a game data.
 
 Primitives
 
@@ -122,6 +127,12 @@ Message types:
 * Object: `{"type": "object", "object": {}}` - delete, update or create
 * Error: `{"type": "error", "message": "text"}`
 * Notice: `{"type": "notice", "message": "text"}`
+
+### Input messages
+
+Input messages - when client sends to server a game commands.
+
+// TODO: Describe input messages.
 
 ## License
 
