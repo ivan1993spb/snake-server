@@ -72,9 +72,6 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info("stop group")
-	group.Stop()
-
 	if err := h.groupManager.Delete(group); err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
 
@@ -88,6 +85,9 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	h.logger.Info("stop group")
+	group.Stop()
 
 	h.logger.Infoln("group deleted:", id)
 
