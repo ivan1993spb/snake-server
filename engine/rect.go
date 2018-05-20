@@ -44,7 +44,7 @@ func (r Rect) DotCount() uint16 {
 }
 
 func (r Rect) Dot(i uint16) Dot {
-	return Dot{uint8(i/uint16(r.w)) + r.x, uint8(i%uint16(r.h)) + r.y}
+	return Dot{uint8(i%uint16(r.w)) + r.x, uint8(i/uint16(r.w)) + r.y}
 }
 
 // Implementing json.Marshaler interface

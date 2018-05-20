@@ -30,3 +30,18 @@ func Benchmark_Scene_Locate(b *testing.B) {
 func Benchmark_Scene_Relocate(b *testing.B) {
 	// TODO: Implement benchmark.
 }
+
+func Test_Scene_LocateRandomRect(t *testing.T) {
+	scene := &Scene{
+		area: Area{
+			width:  100,
+			height: 100,
+		},
+		locations:      []Location{},
+		locationsMutex: &sync.RWMutex{},
+	}
+
+	location, err := scene.LocateRandomRect(1, 5)
+	require.Nil(t, err)
+	require.Equal(t, []Location{location}, scene.locations)
+}
