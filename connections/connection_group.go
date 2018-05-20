@@ -2,11 +2,11 @@ package connections
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/sirupsen/logrus"
 
-	"fmt"
 	"github.com/ivan1993spb/snake-server/broadcast"
 	"github.com/ivan1993spb/snake-server/game"
 )
