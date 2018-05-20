@@ -109,6 +109,12 @@ func (s *Snake) setID(id string) {
 	s.id = id
 }
 
+func (s *Snake) GetID() string {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	return s.id
+}
+
 func (s *Snake) setWorld(world *world.World) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -152,10 +158,13 @@ func (s *Snake) strength() float32 {
 	return snakeStrengthFactor * float32(s.length)
 }
 
-func (s *Snake) Run(stop <-chan struct{}) {
+func (s *Snake) Run(stop <-chan struct{}) <-chan struct{} {
+	snakeStop := make(chan struct{})
+
 	go func() {
 		var ticker = time.NewTicker(s.calculateDelay())
 		defer ticker.Stop()
+		defer close(snakeStop)
 
 		for {
 			select {
@@ -169,6 +178,8 @@ func (s *Snake) Run(stop <-chan struct{}) {
 			}
 		}
 	}()
+
+	return snakeStop
 }
 
 func (s *Snake) move() error {
