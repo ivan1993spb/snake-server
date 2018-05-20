@@ -2,7 +2,6 @@ package connections
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 )
 
@@ -31,5 +30,5 @@ func (t *InputMessageType) UnmarshalJSON(data []byte) error {
 
 type InputMessage struct {
 	Type    InputMessageType `json:"type"`
-	Payload json.RawMessage  `json:"payload"`
+	Payload string           `json:"payload"`
 }

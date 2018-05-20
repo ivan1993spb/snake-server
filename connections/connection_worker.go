@@ -19,8 +19,10 @@ const (
 	chanDecodeMessageBuffer     = 128
 	chanEncodeMessageBuffer     = 128
 	chanProxyInputMessageBuffer = 64
+	chanInputMessagesBuffer     = 32
 	chanBroadcastBuffer         = 32
 	chanEventsBuffer            = 32
+	chanSnakeCommandsBuffer     = 32
 
 	sendInputMessageTimeout = time.Millisecond * 50
 
@@ -73,13 +75,12 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputBytes, chStop := cw.read()
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
-
-	// TODO: Pass to player channel to listen commands: cw.Input()
+	chCommands := cw.listenSnakeCommands(chStop, cw.Input(chStop, chanInputMessagesBuffer))
 
 	p := player.NewPlayer(cw.logger, game.World())
 
 	// Output
-	chPlayer := p.Start(chStop)
+	chPlayer := p.Start(chStop, chCommands)
 	chGame := game.ListenEvents(chStop, chanEventsBuffer)
 	chBroadcast := broadcast.ListenMessages(chStop, chanBroadcastBuffer)
 	chOutputBytes := cw.encode(chStop, cw.listenBroadcast(chStop, chBroadcast), cw.listenPlayer(chStop, chPlayer), cw.listenGame(chStop, chGame))
@@ -382,6 +383,29 @@ func (cw *ConnectionWorker) listenBroadcast(stop <-chan struct{}, chin <-chan br
 
 				select {
 				case chout <- outputMessage:
+				case <-stop:
+					return
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-chan InputMessage) <-chan string {
+	chout := make(chan string, chanSnakeCommandsBuffer)
+
+	go func() {
+		defer close(chout)
+
+		for {
+			select {
+			case message := <-chin:
+				select {
+				case chout <- message.Payload:
 				case <-stop:
 					return
 				}

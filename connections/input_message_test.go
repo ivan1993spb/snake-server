@@ -1,7 +1,6 @@
 package connections
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/pquerna/ffjson/ffjson"
@@ -12,7 +11,7 @@ func Test_InputMessageType_UnmarshalJSON_CorrectData(t *testing.T) {
 	data := []byte(`{"type": "snake", "payload": "north"}`)
 	expected := InputMessage{
 		Type:    InputMessageTypeSnakeCommand,
-		Payload: json.RawMessage(`"north"`),
+		Payload: "north",
 	}
 	var inputMessage InputMessage
 	err := ffjson.Unmarshal(data, &inputMessage)

@@ -10,6 +10,7 @@ import (
 )
 
 const countdown = 5
+
 const chanMessageBuffer = 16
 
 type Player struct {
@@ -24,7 +25,7 @@ func NewPlayer(logger logrus.FieldLogger, world *world.World) *Player {
 	}
 }
 
-func (p *Player) Start(stop <-chan struct{}) <-chan Message {
+func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message {
 	chout := make(chan Message, chanMessageBuffer)
 	localStopper := make(chan struct{})
 
@@ -83,6 +84,8 @@ func (p *Player) Start(stop <-chan struct{}) <-chan Message {
 				Payload: MessageSnake(s.GetID()),
 			}
 
+			p.processSnakeCommands(snakeStop, chin, s)
+
 			select {
 			case <-snakeStop:
 			case <-localStopper:
@@ -95,5 +98,15 @@ func (p *Player) Start(stop <-chan struct{}) <-chan Message {
 	return chout
 }
 
-func (p *Player) SnakeCommand() {
+func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, s *snake.Snake) {
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case command := <-chin:
+				s.Command(snake.Command(command))
+			}
+		}
+	}()
 }

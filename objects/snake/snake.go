@@ -26,10 +26,10 @@ const (
 type Command string
 
 const (
-	CommandToNorth Command = "n"
-	CommandToEast  Command = "e"
-	CommandToSouth Command = "s"
-	CommandToWest  Command = "w"
+	CommandToNorth Command = "north"
+	CommandToEast  Command = "east"
+	CommandToSouth Command = "south"
+	CommandToWest  Command = "west"
 )
 
 var snakeCommands = map[Command]engine.Direction{
