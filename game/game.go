@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/ivan1993spb/snake-server/observers"
+	//"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -37,7 +37,8 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
-	observers.AppleObserver{}.Observe(stop, g.world)
+	// TODO: Run observers.
+	//observers.AppleObserver{}.Observe(stop, g.world)
 
 	go func() {
 		// TODO: Create buffer const.
