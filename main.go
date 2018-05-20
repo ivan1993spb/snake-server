@@ -17,8 +17,8 @@ import (
 
 const (
 	defaultAddress     = ":8080"
-	defaultGroupsLimit = 10
-	defaultConnsLimit  = 100
+	defaultGroupsLimit = 100
+	defaultConnsLimit  = 1000
 )
 
 var (
