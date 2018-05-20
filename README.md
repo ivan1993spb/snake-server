@@ -102,16 +102,90 @@ There are input and output messages.
 
 ### Output messages
 
-Output messages - when server sends to client a game data.
+Output messages - when server sends to client a data.
 
-Primitives
+Output message structure:
 
-* Area: `[width, height]`
-* Direction: `"n"`, `"w"`, `"s"`, `"e"`
+```
+{"type": output_message_type, "payload": output_message_payload}
+```
+
+Output message can be type of:
+
+* *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of objects on playground
+* *player* - message payload contains a player info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`
+* *broadcast* - message payload contains a group broadcast messages. Output message of type *broadcast* is **string**
+
+Examples:
+
+```
+{"type":"player","payload": ... }
+{"type":"game","payload": ... }
+{"type":"broadcast","payload": ... }
+```
+
+#### Game events
+
+Output message type: *game*
+
+Game events types:
+
+* *error* - payload contains **string**: error description
+* *create* - payload contains game object that was created
+* *delete* - payload contains game object that was deleted
+* *update* - payload contains game object that was upadted
+* *checked* - payload contains game object that was checked by another game object
+
+Examples:
+
+```
+{"type":"game","payload":{"type":"update","payload":{"id":"c4203c7b00","dots":[[233,236],[233,235],[233,234]]}}}
+{"type":"game","payload":{"type":"update","payload":{"id":"c420425240","dots":[[120,130],[120,129],[120,128]]}}}
+```
+
+#### Player messages
+
+Output message type: *player*
+
+Player messages types:
+
+* *size* - payload contains playground size **object**: `{"width":10,"height":10}`
+* *snake* - payload contains **string**: snake identifier
+* *notice* - payload contains **string**: a notification
+* *error* - payload contains **string**: error description
+* *countdown* - payload contains **int**: number of seconds for countdown
+* *objects* - payload contains list of all objects on playground
+
+Examples:
+
+```
+{"type":"player","payload":{"type":"notice","payload":"welcome to snake server!"}}
+{"type":"player","payload":{"type":"size","payload":{"width":255,"height":255}}}
+{"type":"player","payload":{"type":"objects","payload":[{"id":"c4203c7b00","dots":[[233,235],[233,234],[233,233]]},{"id":"c420425240","dots":[[120,129],[120,128],[120,127]]},{"id":"c420311800","dots":[[60,166],[61,166],[62,166]]},{"id":"c4203c7c00","dots":[[40,46],[41,46],[42,46]]}]}}
+{"type":"player","payload":{"type":"countdown","payload":5}}
+```
+
+#### Braodcast messages
+
+Output message type: *broadcast*
+
+Payload of output message of type *broadcast* contains **string** - a group notice that sends to all players in game group. 
+
+Examples:
+
+```
+{"type":"broadcast","payload":"hello world!"}
+```
+
+### Game primitives
+
+Primitives that used to explain game objects:
+
+* Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
 * Dot list: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
-* Location: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
-* Rect: `[x, y, width, height]`
+
+### Game objects
 
 Game objects:
 
@@ -122,17 +196,17 @@ Game objects:
 * Wall: `{"type": "wall", "id": 5, "dots": [[x, y], [x, y], [x, y]]}`
 * Watermelon: `{"type": "watermelon", "id": 6, "dots": [[x, y], [x, y], [x, y]]}`
 
-Message types:
-
-* Object: `{"type": "object", "object": {}}` - delete, update or create
-* Error: `{"type": "error", "message": "text"}`
-* Notice: `{"type": "notice", "message": "text"}`
+// TODO: Fix this topic
 
 ### Input messages
 
 Input messages - when client sends to server a game commands.
 
 // TODO: Describe input messages.
+
+## Game on client side
+
+// TODO: Describe topic
 
 ## License
 
