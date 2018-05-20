@@ -67,6 +67,8 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	cw.conn.SetReadLimit(readMessageLimit)
 
+	broadcast.BroadcastMessage("user joined your game group")
+
 	// Input
 	chInputBytes, chStop := cw.read()
 	chInputMessages := cw.decode(chInputBytes, chStop)
@@ -91,6 +93,8 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	case <-stop:
 		// External stop
 	}
+
+	broadcast.BroadcastMessage("user left your game group")
 
 	cw.stopInputs()
 
