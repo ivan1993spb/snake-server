@@ -51,11 +51,48 @@ func Test_Area_Navigate_SquareArea100x100(t *testing.T) {
 		{Dot{0, 0}, DirectionEast, 1, Dot{1, 0}, nil},
 		{Dot{0, 0}, DirectionNorth, 1, Dot{0, 99}, nil},
 		{Dot{0, 0}, DirectionSouth, 1, Dot{0, 1}, nil},
+
+		{Dot{99, 0}, DirectionEast, 1, Dot{0, 0}, nil},
+		{Dot{0, 99}, DirectionSouth, 1, Dot{0, 0}, nil},
 	}
 
 	area := Area{
 		width:  100,
 		height: 100,
+	}
+
+	for i, test := range tests {
+		actualDot, actualErr := area.Navigate(test.inputDot, test.inputDir, test.inputDis)
+		require.Equal(t, test.expectedDot, actualDot, fmt.Sprintf("number %d", i))
+		require.Equal(t, test.expectedErr, actualErr, fmt.Sprintf("number %d", i))
+	}
+}
+
+func Test_Area_Navigate_SquareMaxArea255x255(t *testing.T) {
+	tests := []struct {
+		inputDot    Dot
+		inputDir    Direction
+		inputDis    uint8
+		expectedDot Dot
+		expectedErr error
+	}{
+		{Dot{0, 0}, DirectionWest, 0, Dot{0, 0}, nil},
+		{Dot{0, 0}, DirectionEast, 0, Dot{0, 0}, nil},
+		{Dot{0, 0}, DirectionNorth, 0, Dot{0, 0}, nil},
+		{Dot{0, 0}, DirectionSouth, 0, Dot{0, 0}, nil},
+
+		{Dot{0, 0}, DirectionWest, 1, Dot{254, 0}, nil},
+		{Dot{0, 0}, DirectionEast, 1, Dot{1, 0}, nil},
+		{Dot{0, 0}, DirectionNorth, 1, Dot{0, 254}, nil},
+		{Dot{0, 0}, DirectionSouth, 1, Dot{0, 1}, nil},
+
+		{Dot{254, 0}, DirectionEast, 1, Dot{0, 0}, nil},
+		{Dot{0, 254}, DirectionSouth, 1, Dot{0, 0}, nil},
+	}
+
+	area := Area{
+		width:  255,
+		height: 255,
 	}
 
 	for i, test := range tests {

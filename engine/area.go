@@ -113,7 +113,7 @@ type ErrAreaNotContainsDot struct {
 }
 
 func (e *ErrAreaNotContainsDot) Error() string {
-	return "area does not contain dot"
+	return "area does not contain dot: " + e.Dot.String()
 }
 
 // Navigate calculates and returns dot placed on distance dis dots from passed dot in direction dir
@@ -153,15 +153,15 @@ func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 		}
 
 		// South
-		if dot.Y+dis+1 > a.height {
+		if a.height > dot.Y+dis {
 			return Dot{
 				X: dot.X,
-				Y: dis - a.height + dot.Y,
+				Y: dot.Y + dis,
 			}, nil
 		}
 		return Dot{
 			X: dot.X,
-			Y: dot.Y + dis,
+			Y: dis - a.height + dot.Y,
 		}, nil
 
 	case DirectionWest, DirectionEast:
