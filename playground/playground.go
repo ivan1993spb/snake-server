@@ -15,6 +15,8 @@ type entity struct {
 
 var ErrEmptyLocation = errors.New("empty location")
 
+// TODO: Use this map github.com/orcaman/concurrent-map or sync.Map ?
+
 type Playground struct {
 	scene         *engine.Scene
 	entities      []entity
@@ -360,7 +362,6 @@ func (pg *Playground) unsafeUpdateEntity(object interface{}, old, new engine.Loc
 		}
 	}
 
-	// TODO: Create special error.
 	return errors.New("cannot update entity: entity not found")
 }
 
@@ -373,7 +374,9 @@ func (e *ErrUpdateObject) Error() string {
 }
 
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
-	// TODO: Create checking old == new.
+	if old.Equals(new) {
+		return nil
+	}
 
 	if old.Empty() || new.Empty() {
 		return &ErrUpdateObject{
