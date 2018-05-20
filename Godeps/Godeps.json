@@ -39,6 +39,11 @@
 			"Rev": "d49c2bc1aa135aad0c6f4fc2056623ec78f5d5ac"
 		},
 		{
+			"ImportPath": "github.com/rs/cors",
+			"Comment": "v1.4.0-1-g694cf2a",
+			"Rev": "694cf2ad010fcf91ee35161f5bfdad8f42ed1b9a"
+		},
+		{
 			"ImportPath": "github.com/sirupsen/logrus",
 			"Comment": "v1.0.5-24-g0dad3b6",
 			"Rev": "0dad3b6953e73d351ec8ebfd8a8c6b088d320381"

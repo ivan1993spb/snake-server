@@ -70,14 +70,15 @@ func main() {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
 
-	r := mux.NewRouter()
+	r := mux.NewRouter().StrictSlash(false)
 	r.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
 	r.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 
-	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger))
+	// TODO: Use middlewares only for HTTP, not for WS connections!
+	n := negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger), middlewares.NewCORS())
 	n.UseHandler(r)
 
 	logger.WithField("address", address).Info("starting server")
