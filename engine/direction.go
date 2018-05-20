@@ -22,10 +22,10 @@ const (
 )
 
 var directionsJSON = map[Direction][]byte{
-	DirectionNorth: []byte(`"n"`),
-	DirectionEast:  []byte(`"e"`),
-	DirectionSouth: []byte(`"s"`),
-	DirectionWest:  []byte(`"w"`),
+	DirectionNorth: []byte(`"north"`),
+	DirectionEast:  []byte(`"east"`),
+	DirectionSouth: []byte(`"south"`),
+	DirectionWest:  []byte(`"west"`),
 }
 
 var directionsLabels = map[Direction]string{
