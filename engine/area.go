@@ -11,8 +11,6 @@ const (
 	minAreaHeight = 10
 )
 
-// TODO: Create constructor checking for minimal area width and height.
-
 type Area struct {
 	width  uint8
 	height uint8

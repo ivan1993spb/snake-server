@@ -1,7 +1,5 @@
 package engine
 
-// TODO: Check using Dot instead Dot.
-
 // Location is set of dots
 type Location []Dot
 
