@@ -40,7 +40,7 @@ func init() {
 	flag.Parse()
 }
 
-func logger() logrus.FieldLogger {
+func logger() *logrus.Logger {
 	logger := logrus.New()
 	if flagJSONLog {
 		logger.Formatter = &logrus.JSONFormatter{}
@@ -82,7 +82,12 @@ func main() {
 	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
 	// Use middlewares for API routes
-	rootRouter.NewRoute().Handler(negroni.New(middlewares.NewRecovery(logger), middlewares.NewLogger(logger), middlewares.NewCORS(), negroni.Wrap(apiRouter)))
+	rootRouter.NewRoute().Handler(negroni.New(
+		middlewares.NewRecovery(logger),
+		middlewares.NewLogger(logger, "api"),
+		middlewares.NewCORS(),
+		negroni.Wrap(apiRouter),
+	))
 
 	n := negroni.New()
 	n.UseHandler(rootRouter)
