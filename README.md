@@ -34,8 +34,6 @@ See docker-hub repo: https://hub.docker.com/r/ivan1993spb/snake-server
 * `docker run --rm --net host ivan1993spb/snake-server` to start server
 * `docker run --rm ivan1993spb/snake-server -h` for usage information
 
-// TODO: Create link to dockerhub and tag list
-
 ## CLI arguments
 
 Use `snake-server -help` for help info.
