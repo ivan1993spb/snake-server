@@ -657,3 +657,17 @@ func (pg *Playground) Width() uint8 {
 func (pg *Playground) Height() uint8 {
 	return pg.scene.Height()
 }
+
+func (pg *Playground) unsafeGetObjects() []interface{} {
+	objects := make([]interface{}, len(pg.entities))
+	for i, entity := range pg.entities {
+		objects[i] = entity.object
+	}
+	return objects
+}
+
+func (pg *Playground) GetObjects() []interface{} {
+	pg.entitiesMutex.RLock()
+	defer pg.entitiesMutex.RUnlock()
+	return pg.unsafeGetObjects()
+}

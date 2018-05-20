@@ -74,8 +74,6 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	// TODO: Pass to player channel to listen commands: cw.Input()
 
-	// TODO: Send to client all objects on map.
-
 	p := player.NewPlayer(cw.logger, game.World())
 
 	// Output

@@ -48,6 +48,11 @@ func (p *Player) Start(stop <-chan struct{}) <-chan Message {
 			},
 		}
 
+		chout <- Message{
+			Type:    MessageTypeObjects,
+			Payload: MessageObjects(p.world.GetObjects()),
+		}
+
 		for {
 			chout <- Message{
 				Type:    MessageTypeCountdown,

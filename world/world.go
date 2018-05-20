@@ -358,3 +358,7 @@ func (w *World) Width() uint8 {
 func (w *World) Height() uint8 {
 	return w.pg.Height()
 }
+
+func (w *World) GetObjects() []interface{} {
+	return w.pg.GetObjects()
+}

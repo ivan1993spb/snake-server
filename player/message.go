@@ -8,6 +8,7 @@ const (
 	MessageTypeNotice
 	MessageTypeError
 	MessageTypeCountdown
+	MessageTypeObjects
 )
 
 var messageTypeJSONs = map[MessageType][]byte{
@@ -16,6 +17,7 @@ var messageTypeJSONs = map[MessageType][]byte{
 	MessageTypeNotice:    []byte(`"notice"`),
 	MessageTypeError:     []byte(`"error"`),
 	MessageTypeCountdown: []byte(`"countdown"`),
+	MessageTypeObjects:   []byte(`"objects"`),
 }
 
 func (t MessageType) MarshalJSON() ([]byte, error) {
@@ -31,6 +33,7 @@ var messageTypeLabels = map[MessageType]string{
 	MessageTypeNotice:    "notice",
 	MessageTypeError:     "error",
 	MessageTypeCountdown: "countdown",
+	MessageTypeObjects:   "objects",
 }
 
 func (t MessageType) String() string {
@@ -57,3 +60,5 @@ type MessageNotice string
 type MessageError string
 
 type MessageCountdown uint
+
+type MessageObjects []interface{}
