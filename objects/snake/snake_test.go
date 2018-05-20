@@ -17,11 +17,13 @@ func Test_NewSnake(t *testing.T) {
 func Test_Snake_calculateDelay(t *testing.T) {
 	firstSnake := &Snake{
 		length: 10,
+		mux:    &sync.RWMutex{},
 	}
 	require.NotZero(t, firstSnake.calculateDelay())
 
 	secondSnake := &Snake{
 		length: 11,
+		mux:    &sync.RWMutex{},
 	}
 	require.NotZero(t, secondSnake.calculateDelay())
 
@@ -108,6 +110,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 			{5, 5},
 		},
 		direction: engine.DirectionWest,
+		mux:       &sync.RWMutex{},
 	}
 
 	err = world.CreateObject(snake, engine.Location{

@@ -11,8 +11,8 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/objects"
-	"github.com/ivan1993spb/snake-server/objects/corpse"
+	//"github.com/ivan1993spb/snake-server/objects"
+	//"github.com/ivan1993spb/snake-server/objects/corpse"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -41,16 +41,16 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	id    uint64
+	id string
+
 	world *world.World
 
 	dots   []engine.Dot
 	length uint16
 
-	mux *sync.RWMutex
-
-	// Motion direction
 	direction engine.Direction
+
+	mux *sync.RWMutex
 }
 
 // NewSnake creates new snake
@@ -61,7 +61,9 @@ func NewSnake(world *world.World) (*Snake, error) {
 		location engine.Location
 	)
 
-	snake := &Snake{}
+	snake := newDefaultSnake()
+	snake.setWorld(world)
+	snake.setID(fmt.Sprintf("%x", *(*uint64)(unsafe.Pointer(&snake))))
 
 	switch dir {
 	case engine.DirectionNorth, engine.DirectionSouth:
@@ -69,9 +71,9 @@ func NewSnake(world *world.World) (*Snake, error) {
 	case engine.DirectionEast, engine.DirectionWest:
 		location, err = world.CreateObjectRandomRect(snake, uint8(snakeStartLength), 1)
 	}
+
 	if err != nil {
-		// TODO: Create error.
-		return nil, err
+		return nil, fmt.Errorf("cannot create snake: %s", err)
 	}
 
 	if dir == engine.DirectionSouth || dir == engine.DirectionEast {
@@ -80,14 +82,44 @@ func NewSnake(world *world.World) (*Snake, error) {
 		location = reversedDots
 	}
 
-	snake.id = *(*uint64)(unsafe.Pointer(&snake))
-	snake.world = world
-	snake.dots = []engine.Dot(location)
-	snake.length = snakeStartLength
-	snake.direction = dir
-	snake.mux = &sync.RWMutex{}
+	snake.relocate([]engine.Dot(location))
+	snake.setDirection(dir)
 
 	return snake, nil
+}
+
+func newDefaultSnake() *Snake {
+	return &Snake{
+		dots:      make([]engine.Dot, snakeStartLength),
+		length:    snakeStartLength,
+		direction: engine.DirectionEast,
+		mux:       &sync.RWMutex{},
+	}
+}
+
+func (s *Snake) relocate(dots []engine.Dot) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.dots = dots
+}
+
+func (s *Snake) setID(id string) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.id = id
+}
+
+func (s *Snake) setWorld(world *world.World) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.world = world
+}
+
+func (s *Snake) setDirection(dir engine.Direction) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	// TODO: Use atomic.
+	s.direction = dir
 }
 
 func (s *Snake) String() string {
@@ -97,23 +129,26 @@ func (s *Snake) String() string {
 }
 
 func (s *Snake) Die() {
-	s.mux.Lock()
+	s.mux.RLock()
 	s.world.DeleteObject(s, engine.Location(s.dots))
-	s.mux.Unlock()
-	corpse.NewCorpse(s.world, s.dots)
+	s.mux.RUnlock()
+	//corpse.NewCorpse(s.world, s.dots)
 }
 
-func (s *Snake) Feed(f int8) {
+func (s *Snake) feed(f int8) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+	// TODO: Use atomic.
 	if f > 0 {
 		s.length += uint16(f)
 	}
 }
 
-func (s *Snake) Strength() float32 {
+func (s *Snake) strength() float32 {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+	// TODO: Use atomic.
+
 	return snakeStrengthFactor * float32(s.length)
 }
 
@@ -125,7 +160,10 @@ func (s *Snake) Run(stop <-chan struct{}) {
 		for {
 			select {
 			case <-ticker.C:
-				s.move()
+				if err := s.move(); err != nil {
+					fmt.Println("!!!!!!!!!!!", err, s)
+					return
+				}
 			case <-stop:
 				return
 			}
@@ -134,9 +172,6 @@ func (s *Snake) Run(stop <-chan struct{}) {
 }
 
 func (s *Snake) move() error {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
 	// Calculate next position
 	dot, err := s.getNextHeadDot()
 	if err != nil {
@@ -146,20 +181,24 @@ func (s *Snake) move() error {
 	}
 
 	if object := s.world.GetObjectByDot(dot); object != nil {
+		s.Die()
+		return errors.New("die collusion")
 		// TODO: Use interfaces to interact objects.
-		if food, ok := object.(objects.Food); ok {
-			s.length += food.NutritionalValue(dot)
-		} else {
-			s.Die()
-			return nil
-		}
+		//if food, ok := object.(objects.Food); ok {
+		//	s.length += food.NutritionalValue(dot)
+		//} else {
+		//	//s.Die()
+		//	return nil
+		//}
 
 		// TODO: Reload ticker.
 		//ticker = time.NewTicker(s.calculateDelay())
 	}
 
+	s.mux.RLock()
 	tmpDots := make([]engine.Dot, len(s.dots)+1)
 	copy(tmpDots[1:], s.dots)
+	s.mux.RUnlock()
 	tmpDots[0] = dot
 
 	if s.length < uint16(len(tmpDots)) {
@@ -168,21 +207,27 @@ func (s *Snake) move() error {
 
 	// TODO: Handle error.
 	if err := s.world.UpdateObject(s, engine.Location(s.dots), tmpDots); err != nil {
-		return err
+		return fmt.Errorf("update snake error: %s", err)
 	}
 
-	s.dots = tmpDots
+	s.relocate(tmpDots)
 
 	return nil
 }
 
 func (s *Snake) calculateDelay() time.Duration {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	// TODO: Use atomic.
 	return time.Duration(math.Pow(snakeSpeedFactor, float64(s.length)) * float64(snakeStartSpeed))
 }
 
 // getNextHeadDot calculates new position of snake's head by its
 // direction and current head position
 func (s *Snake) getNextHeadDot() (engine.Dot, error) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
 	if len(s.dots) > 0 {
 		return s.world.Navigate(s.dots[0], s.direction, 1)
 	}
@@ -211,7 +256,7 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 		if rNextDir == currDir {
 			return errors.New("next direction cannot be opposite to current direction")
 		} else {
-			s.direction = nextDir
+			s.setDirection(nextDir)
 			return nil
 		}
 	}
@@ -220,6 +265,8 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 }
 
 func (s *Snake) MarshalJSON() ([]byte, error) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	return ffjson.Marshal(&snake{
 		ID:   s.id,
 		Dots: s.dots,
@@ -227,6 +274,6 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 }
 
 type snake struct {
-	ID   uint64       `json:"id"`
+	ID   string       `json:"id"`
 	Dots []engine.Dot `json:"dots"`
 }
