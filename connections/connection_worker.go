@@ -76,6 +76,7 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 	chCommands := cw.listenSnakeCommands(chStop, cw.Input(chStop, chanInputMessagesBuffer))
+	cw.listenPlayerBroadcasts(chStop, cw.Input(chStop, chanInputMessagesBuffer), broadcast)
 
 	p := player.NewPlayer(cw.logger, game.World())
 
@@ -404,10 +405,12 @@ func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-cha
 		for {
 			select {
 			case message := <-chin:
-				select {
-				case chout <- message.Payload:
-				case <-stop:
-					return
+				if message.Type == InputMessageTypeSnakeCommand {
+					select {
+					case chout <- message.Payload:
+					case <-stop:
+						return
+					}
 				}
 			case <-stop:
 				return
@@ -416,4 +419,19 @@ func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-cha
 	}()
 
 	return chout
+}
+
+func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-chan InputMessage, b *broadcast.GroupBroadcast) {
+	go func() {
+		for {
+			select {
+			case message := <-chin:
+				if message.Type == InputMessageTypeBroadcast {
+					b.BroadcastMessage(broadcast.BroadcastMessage(message.Payload))
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
 }

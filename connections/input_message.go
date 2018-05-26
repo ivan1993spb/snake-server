@@ -9,10 +9,12 @@ type InputMessageType uint8
 
 const (
 	InputMessageTypeSnakeCommand InputMessageType = iota
+	InputMessageTypeBroadcast
 )
 
 var inputMessageTypeJSONs = map[InputMessageType][]byte{
 	InputMessageTypeSnakeCommand: []byte(`"snake"`),
+	InputMessageTypeBroadcast:    []byte(`"broadcast"`),
 }
 
 var ErrUnknownInputMessageType = errors.New("unknown input message type")
