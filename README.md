@@ -3,13 +3,11 @@
 
 Server for online arcade game - snake.
 
-// TODO: Create screen shot.
-
 ## Game rules
 
 // TODO: Write game rules.
 
-## Known clients
+## Client
 
 * Python client repo: https://github.com/ivan1993spb/snake-client
 
@@ -208,9 +206,12 @@ Input message structure:
 {"type": input_message_type, "payload": input_message_payload}
 ```
 
-There is only one message type: *snake*
+Input message types:
 
-Commands sends in field `payload`. Commands:
+* *snake* - when player sends a game command in message payload to control snake
+* *broadcast* - when player sends a short phrase or emoji to broadcast for game group
+
+Accepted game commands:
 
 * *north*
 * *east*
@@ -224,7 +225,13 @@ Examples:
 {"type":"snake","payload":"east"}
 {"type":"snake","payload":"south"}
 {"type":"snake","payload":"west"}
+{"type":"broadcast","payload":"xD"}
+{"type":"broadcast","payload":"ok!"}
+{"type":"broadcast","payload":"hello!"}
+{"type":"broadcast","payload":";)"}
 ```
+
+**Input message size is limited.**
 
 ## Game on client side
 
