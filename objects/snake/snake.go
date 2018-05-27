@@ -170,7 +170,6 @@ func (s *Snake) Run(stop <-chan struct{}) <-chan struct{} {
 			select {
 			case <-ticker.C:
 				if err := s.move(); err != nil {
-					fmt.Println("!!!!!!!!!!!", err, s)
 					return
 				}
 			case <-stop:
