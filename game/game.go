@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	//"github.com/ivan1993spb/snake-server/observers"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -38,7 +38,7 @@ func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
 	// TODO: Run observers.
-	//observers.AppleObserver{}.Observe(stop, g.world)
+	observers.AppleObserver{}.Observe(stop, g.world)
 
 	go func() {
 		// TODO: Create buffer const.
