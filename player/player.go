@@ -32,33 +32,18 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 	go func() {
 		<-stop
 		close(localStopper)
-		close(chout)
 	}()
 
 	go func() {
-		chout <- Message{
-			Type:    MessageTypeNotice,
-			Payload: MessageNotice("welcome to snake server!"),
-		}
+		defer close(chout)
 
-		chout <- Message{
-			Type: MessageTypeSize,
-			Payload: MessageSize{
-				Width:  p.world.Width(),
-				Height: p.world.Height(),
-			},
-		}
-
-		chout <- Message{
-			Type:    MessageTypeObjects,
-			Payload: MessageObjects(p.world.GetObjects()),
-		}
+		chout <- NewMessageNotice("welcome to snake server!")
+		chout <- NewMessageSize(p.world.Width(), p.world.Height())
+		chout <- NewMessageObjects(p.world.GetObjects())
 
 		for {
-			chout <- Message{
-				Type:    MessageTypeCountdown,
-				Payload: MessageCountdown(countdown),
-			}
+			chout <- NewMessageCountdown(countdown)
+
 			timer := time.NewTimer(time.Second * countdown)
 			select {
 			case <-timer.C:
@@ -70,19 +55,13 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 
 			s, err := snake.NewSnake(p.world)
 			if err != nil {
-				chout <- Message{
-					Type:    MessageTypeError,
-					Payload: MessageError("cannot create snake"),
-				}
+				chout <- NewMessageError("cannot create snake")
 				p.logger.Errorln("cannot create snake to player:", err)
 				continue
 			}
 			snakeStop := s.Run(localStopper)
 
-			chout <- Message{
-				Type:    MessageTypeSnake,
-				Payload: MessageSnake(s.GetID()),
-			}
+			chout <- NewMessageSnake(s.GetID())
 
 			p.processSnakeCommands(snakeStop, chin, s)
 

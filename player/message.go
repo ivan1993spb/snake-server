@@ -53,12 +53,57 @@ type MessageSize struct {
 	Height uint8 `json:"height"`
 }
 
+func NewMessageSize(w, h uint8) Message {
+	return Message{
+		Type: MessageTypeSize,
+		Payload: MessageSize{
+			Width:  w,
+			Height: h,
+		},
+	}
+}
+
 type MessageSnake string
+
+func NewMessageSnake(id string) Message {
+	return Message{
+		Type:    MessageTypeSnake,
+		Payload: MessageSnake(id),
+	}
+}
 
 type MessageNotice string
 
+func NewMessageNotice(notice string) Message {
+	return Message{
+		Type:    MessageTypeNotice,
+		Payload: MessageNotice(notice),
+	}
+}
+
 type MessageError string
+
+func NewMessageError(errorStr string) Message {
+	return Message{
+		Type:    MessageTypeError,
+		Payload: MessageError(errorStr),
+	}
+}
 
 type MessageCountdown uint
 
+func NewMessageCountdown(countdown uint) Message {
+	return Message{
+		Type:    MessageTypeCountdown,
+		Payload: MessageCountdown(countdown),
+	}
+}
+
 type MessageObjects []interface{}
+
+func NewMessageObjects(objects []interface{}) Message {
+	return Message{
+		Type:    MessageTypeObjects,
+		Payload: MessageObjects(objects),
+	}
+}
