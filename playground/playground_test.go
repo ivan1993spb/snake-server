@@ -235,3 +235,45 @@ func Test_Playground_CreateObjectAvailableDots_LocationsIntersects(t *testing.T)
 		engine.Dot{1, 2},
 	}, actualLocation)
 }
+
+func Test_Playground_UpdateObjectAvailableDots_SuccessfullyUpdates(t *testing.T) {
+	scene, err := engine.NewScene(100, 100)
+	require.Nil(t, err, "cannot create scene")
+	require.NotNil(t, scene, "cannot create scene")
+
+	object := &struct{ int }{0}
+	pg := &Playground{
+		scene: scene,
+		entities: []entity{
+			{object, engine.Location{
+				engine.Dot{0, 0},
+				engine.Dot{0, 1},
+				engine.Dot{0, 2},
+			}},
+		},
+		entitiesMutex: &sync.RWMutex{},
+	}
+
+	require.Nil(t, scene.Locate(engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}))
+
+	actualLocation, err := pg.UpdateObjectAvailableDots(object, engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 1},
+		engine.Dot{0, 2},
+	}, engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 2},
+		engine.Dot{0, 3},
+	})
+
+	require.Nil(t, err)
+	require.Equal(t, engine.Location{
+		engine.Dot{0, 0},
+		engine.Dot{0, 2},
+		engine.Dot{0, 3},
+	}, actualLocation)
+}

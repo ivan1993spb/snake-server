@@ -487,8 +487,8 @@ type ErrUpdateObjectAvailableDots struct {
 	Err error
 }
 
-func (err *ErrUpdateObjectAvailableDots) Error() string {
-	return "error update object available dots"
+func (e *ErrUpdateObjectAvailableDots) Error() string {
+	return "error update object available dots: " + e.Err.Error()
 }
 
 func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *ErrUpdateObjectAvailableDots) {
@@ -640,6 +640,16 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	pg.unsafeCreateEntity(object, location.Copy())
 
 	return location.Copy(), nil
+}
+
+func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
+	if margin == 0 {
+		// TODO: Handle this case.
+	}
+
+	// TODO: Implement method.
+
+	return engine.Location{}, nil
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
