@@ -13,10 +13,21 @@ Server for online arcade game - snake.
 
 ## Installation
 
+Download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
+
+Also you can build server from source or pull docker image.
+
 ### Install from source
 
+With make install:
+
 * `go get -u github.com/ivan1993spb/snake-server` to load source code
-* `go install github.com/ivan1993spb/snake-server` to install server
+* `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+* `make build`
+* `make install`
+
+Then:
+
 * `snake-server` to start server
 * Use `snake-server -h` to see usage information
 
@@ -83,6 +94,15 @@ curl -X DELETE http://localhost:8080/games/0
 {"id":0}
 ```
 
+### Request `GET /capacity`
+
+Returns server capacity.
+
+```
+curl -X GET http://localhost:8080/capacity
+{"capacity":0.02}
+```
+
 ### Request `GET /games/{id}/ws`
 
 Connects to game Web-Socket.
@@ -92,7 +112,7 @@ Connects to game Web-Socket.
 * Returns all objects on playground
 * Creates snake
 * Returns snake id
-* Pushes events and objects from game
+* Pushes game events and objects
 
 ## Game Web-Socket messages description
 
@@ -131,7 +151,7 @@ Game events types:
 * *error* - payload contains **string**: error description
 * *create* - payload contains game object that was created
 * *delete* - payload contains game object that was deleted
-* *update* - payload contains game object that was upadted
+* *update* - payload contains game object that was updated
 * *checked* - payload contains game object that was checked by another game object
 
 Examples:
@@ -163,7 +183,7 @@ Examples:
 {"type":"player","payload":{"type":"countdown","payload":5}}
 ```
 
-#### Braodcast messages
+#### Broadcast messages
 
 Output message type: *broadcast*
 
@@ -231,7 +251,7 @@ Examples:
 {"type":"broadcast","payload":";)"}
 ```
 
-**Input message size is limited.**
+**Input message size is limited: maximum 128 bytes**
 
 ## Game on client side
 
