@@ -38,9 +38,6 @@ func NewDeleteGameHandler(logger logrus.FieldLogger, groupManager *connections.C
 }
 
 func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info("delete game handler start")
-	defer h.logger.Info("delete game handler end")
-
 	vars := mux.Vars(r)
 
 	id, err := strconv.Atoi(vars["id"])
@@ -91,7 +88,7 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Infoln("group deleted:", id)
 
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	err = json.NewEncoder(w).Encode(responseDeleteGameHandler{
 		ID: id,
