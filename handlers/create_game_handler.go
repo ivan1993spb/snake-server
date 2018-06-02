@@ -46,9 +46,6 @@ func NewCreateGameHandler(logger logrus.FieldLogger, groupManager *connections.C
 }
 
 func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info("create game handler start")
-	defer h.logger.Info("create game handler end")
-
 	connectionLimit, err := strconv.Atoi(r.PostFormValue(postFieldConnectionLimit))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
@@ -116,10 +113,10 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("start group")
 	group.Start()
 
-	h.logger.Infoln("created group with id:", id)
+	h.logger.WithField("group_id", id).Infoln("created group")
 
 	w.WriteHeader(http.StatusCreated)
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	err = json.NewEncoder(w).Encode(responseCreateGameHandler{
 		ID:     id,
