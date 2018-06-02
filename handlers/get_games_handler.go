@@ -13,15 +13,18 @@ const URLRouteGetGames = "/games"
 
 const MethodGetGames = http.MethodGet
 
-// TODO: Create width and height?
 type responseGetGamesEntity struct {
-	ID    int `json:"id"`
-	Limit int `json:"limit"`
-	Count int `json:"count"`
+	ID     int `json:"id"`
+	Limit  int `json:"limit"`
+	Count  int `json:"count"`
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 type responseGetGamesHandler struct {
 	Games []responseGetGamesEntity `json:"games"`
+	Limit int                      `json:"limit"`
+	Count int                      `json:"count"`
 }
 
 type getGamesHandler struct {
@@ -43,21 +46,25 @@ func NewGetGamesHandler(logger logrus.FieldLogger, groupManager *connections.Con
 }
 
 func (h *getGamesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info("get games handler start")
-	defer h.logger.Info("get games handler end")
+	groupCount := h.groupManager.GroupCount()
 
 	response := responseGetGamesHandler{
-		Games: []responseGetGamesEntity{},
+		Games: make([]responseGetGamesEntity, 0, groupCount),
+		Limit: h.groupManager.GroupLimit(),
+		Count: groupCount,
 	}
+
 	for id, group := range h.groupManager.Groups() {
 		response.Games = append(response.Games, responseGetGamesEntity{
-			ID:    id,
-			Limit: group.GetLimit(),
-			Count: group.GetCount(),
+			ID:     id,
+			Limit:  group.GetLimit(),
+			Count:  group.GetCount(),
+			Width:  int(group.GetWorldWidth()),
+			Height: int(group.GetWorldHeight()),
 		})
 	}
 
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrGetGamesHandler(err.Error()))
