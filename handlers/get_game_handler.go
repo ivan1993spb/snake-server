@@ -15,11 +15,12 @@ const URLRouteGetGameByID = "/games/{id}"
 
 const MethodGetGame = http.MethodGet
 
-// TODO: Create width and height?
 type responseGetGameHandler struct {
-	ID    int `json:"id"`
-	Limit int `json:"limit"`
-	Count int `json:"count"`
+	ID     int `json:"id"`
+	Limit  int `json:"limit"`
+	Count  int `json:"count"`
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 type getGameHandler struct {
@@ -41,9 +42,6 @@ func NewGetGameHandler(logger logrus.FieldLogger, groupManager *connections.Conn
 }
 
 func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info("get game handler start")
-	defer h.logger.Info("get game handler end")
-
 	vars := mux.Vars(r)
 
 	id, err := strconv.Atoi(vars["id"])
@@ -68,12 +66,14 @@ func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	err = json.NewEncoder(w).Encode(responseGetGameHandler{
-		ID:    id,
-		Limit: group.GetLimit(),
-		Count: group.GetCount(),
+		ID:     id,
+		Limit:  group.GetLimit(),
+		Count:  group.GetCount(),
+		Width:  int(group.GetWorldWidth()),
+		Height: int(group.GetWorldHeight()),
 	})
 	if err != nil {
 		h.logger.Error(ErrGetGameHandler(err.Error()))
