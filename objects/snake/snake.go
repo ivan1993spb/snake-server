@@ -11,8 +11,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
-	//"github.com/ivan1993spb/snake-server/objects"
-	//"github.com/ivan1993spb/snake-server/objects/corpse"
+	"github.com/ivan1993spb/snake-server/objects"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -141,12 +140,12 @@ func (s *Snake) Die() {
 	//corpse.NewCorpse(s.world, s.dots)
 }
 
-func (s *Snake) feed(f int8) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	// TODO: Use atomic.
+func (s *Snake) feed(f uint16) {
 	if f > 0 {
-		s.length += uint16(f)
+		s.mux.Lock()
+		defer s.mux.Unlock()
+		// TODO: Use atomic.
+		s.length += f
 	}
 }
 
@@ -191,15 +190,12 @@ func (s *Snake) move() error {
 	}
 
 	if object := s.world.GetObjectByDot(dot); object != nil {
-		s.Die()
-		return errors.New("die collusion")
-		// TODO: Use interfaces to interact objects.
-		//if food, ok := object.(objects.Food); ok {
-		//	s.length += food.NutritionalValue(dot)
-		//} else {
-		//	//s.Die()
-		//	return nil
-		//}
+		if food, ok := object.(objects.Food); ok {
+			s.feed(food.NutritionalValue(dot))
+		} else {
+			s.Die()
+			return errors.New("die collusion")
+		}
 
 		// TODO: Reload ticker.
 		//ticker = time.NewTicker(s.calculateDelay())
@@ -274,16 +270,24 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 	return errors.New("invalid direction")
 }
 
+func (s *Snake) GetLocation() engine.Location {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	return engine.Location(s.dots).Copy()
+}
+
 func (s *Snake) MarshalJSON() ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return ffjson.Marshal(&snake{
 		ID:   s.id,
 		Dots: s.dots,
+		Type: "snake",
 	})
 }
 
 type snake struct {
 	ID   string       `json:"id"`
 	Dots []engine.Dot `json:"dots"`
+	Type string       `json:"type"`
 }
