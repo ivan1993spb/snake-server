@@ -25,17 +25,12 @@ const (
 	chanSnakeCommandsBuffer     = 32
 
 	sendInputMessageTimeout = time.Millisecond * 50
-
-	sendCloseConnectionTimeout = time.Second
-
-	readMessageLimit = 1024
 )
 
 type ConnectionWorker struct {
 	conn   *websocket.Conn
 	logger logrus.FieldLogger
 
-	chStop      <-chan struct{}
 	chsInput    []chan InputMessage
 	chsInputMux *sync.RWMutex
 
@@ -64,19 +59,14 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	cw.flagStarted = true
 
-	// TODO: Handle panic.
-	cw.conn.SetCloseHandler(cw.handleCloseConnection)
-
-	cw.conn.SetReadLimit(readMessageLimit)
-
 	broadcast.BroadcastMessage("user joined your game group")
 
 	// Input
 	chInputBytes, chStop := cw.read()
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
-	chCommands := cw.listenSnakeCommands(chStop, cw.Input(chStop, chanInputMessagesBuffer))
-	cw.listenPlayerBroadcasts(chStop, cw.Input(chStop, chanInputMessagesBuffer), broadcast)
+	chCommands := cw.listenSnakeCommands(chStop, cw.input(chStop, chanInputMessagesBuffer))
+	cw.listenPlayerBroadcasts(chStop, cw.input(chStop, chanInputMessagesBuffer), broadcast)
 
 	p := player.NewPlayer(cw.logger, game.World())
 
@@ -86,8 +76,6 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chBroadcast := broadcast.ListenMessages(chStop, chanBroadcastBuffer)
 	chOutputBytes := cw.encode(chStop, cw.listenBroadcast(chStop, chBroadcast), cw.listenPlayer(chStop, chPlayer), cw.listenGame(chStop, chGame))
 	cw.write(chOutputBytes, chStop)
-
-	cw.chStop = chStop
 
 	select {
 	case <-chStop:
@@ -100,12 +88,6 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	cw.stopInputs()
 
-	return nil
-}
-
-func (cw *ConnectionWorker) handleCloseConnection(code int, text string) error {
-	message := websocket.FormatCloseMessage(code, "")
-	cw.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(sendCloseConnectionTimeout))
 	return nil
 }
 
@@ -194,7 +176,7 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 	}()
 }
 
-func (cw *ConnectionWorker) Input(stop <-chan struct{}, buffer uint) <-chan InputMessage {
+func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan InputMessage {
 	chProxy := make(chan InputMessage, chanProxyInputMessageBuffer)
 
 	cw.chsInputMux.Lock()
@@ -221,8 +203,6 @@ func (cw *ConnectionWorker) Input(stop <-chan struct{}, buffer uint) <-chan Inpu
 			select {
 			case <-stop:
 				return
-			case <-cw.chStop:
-				return
 			case inputMessage := <-chProxy:
 				cw.sendInputMessage(chout, inputMessage, stop, sendInputMessageTimeout)
 			}
@@ -238,7 +218,6 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 	if cap(ch) == 0 {
 		select {
 		case ch <- inputMessage:
-		case <-cw.chStop:
 		case <-stop:
 		case <-timer.C:
 		}
@@ -246,8 +225,6 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 		for {
 			select {
 			case ch <- inputMessage:
-				return
-			case <-cw.chStop:
 				return
 			case <-stop:
 				return
