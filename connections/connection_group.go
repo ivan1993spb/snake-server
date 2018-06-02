@@ -128,3 +128,11 @@ func (cg *ConnectionGroup) Start() {
 func (cg *ConnectionGroup) Stop() {
 	close(cg.stop)
 }
+
+func (cg *ConnectionGroup) GetWorldWidth() uint8 {
+	return cg.game.World().Width()
+}
+
+func (cg *ConnectionGroup) GetWorldHeight() uint8 {
+	return cg.game.World().Height()
+}
