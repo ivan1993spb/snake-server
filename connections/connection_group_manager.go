@@ -132,3 +132,25 @@ func (m *ConnectionGroupManager) Groups() map[int]*ConnectionGroup {
 	}
 	return groups
 }
+
+func (m *ConnectionGroupManager) GroupLimit() int {
+	return m.groupLimit
+}
+
+func (m *ConnectionGroupManager) GroupCount() int {
+	m.groupsMutex.RLock()
+	defer m.groupsMutex.RUnlock()
+	return len(m.groups)
+}
+
+func (m *ConnectionGroupManager) Capacity() float32 {
+	m.groupsMutex.RLock()
+	defer m.groupsMutex.RUnlock()
+
+	var count = 0
+	for _, group := range m.groups {
+		count += group.GetCount()
+	}
+
+	return float32(count) / float32(m.connsLimit)
+}
