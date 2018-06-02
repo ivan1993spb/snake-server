@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Scene_Locate(t *testing.T) {
+func Test_Scene_Locate_SquareScene(t *testing.T) {
 	scene := &Scene{
 		area: Area{
 			width:  100,
@@ -23,15 +23,81 @@ func Test_Scene_Locate(t *testing.T) {
 	require.Equal(t, []Location{location}, scene.locations)
 }
 
+func Test_Scene_Locate_RectScene(t *testing.T) {
+	scene := &Scene{
+		area: Area{
+			width:  100,
+			height: 200,
+		},
+		locations:      []Location{},
+		locationsMutex: &sync.RWMutex{},
+	}
+
+	location := Location{Dot{1, 1}, Dot{1, 2}}
+	err := scene.Locate(location)
+	require.Nil(t, err)
+	require.Equal(t, []Location{location}, scene.locations)
+}
+
 func Benchmark_Scene_Locate(b *testing.B) {
-	// TODO: Implement benchmark.
+	scene := func() *Scene {
+		return &Scene{
+			area: Area{
+				width:  100,
+				height: 100,
+			},
+			locations: []Location{
+				{
+					{0, 1},
+					{0, 2},
+					{0, 3},
+					{0, 4},
+					{0, 5},
+					{0, 6},
+				},
+				{
+					{4, 1},
+					{4, 2},
+					{4, 3},
+					{4, 4},
+					{4, 5},
+					{4, 6},
+				},
+				{
+					{5, 2},
+					{6, 2},
+					{7, 2},
+					{8, 2},
+					{9, 2},
+					{10, 2},
+				},
+			},
+			locationsMutex: &sync.RWMutex{},
+		}
+	}
+
+	for n := 0; n < b.N; n++ {
+		scene().Locate(Location{
+			{10, 11},
+			{10, 12},
+			{10, 13},
+			{10, 14},
+			{10, 15},
+			{10, 16},
+			{10, 17},
+			{10, 18},
+			{10, 19},
+			{10, 20},
+			{10, 21},
+		})
+	}
 }
 
 func Benchmark_Scene_Relocate(b *testing.B) {
 	// TODO: Implement benchmark.
 }
 
-func Test_Scene_LocateRandomRect(t *testing.T) {
+func Test_Scene_LocateRandomRect_SquareScene(t *testing.T) {
 	scene := &Scene{
 		area: Area{
 			width:  100,
@@ -46,7 +112,22 @@ func Test_Scene_LocateRandomRect(t *testing.T) {
 	require.Equal(t, []Location{location}, scene.locations)
 }
 
-func Test_Scene_LocateAvailableDots_EmptyScene(t *testing.T) {
+func Test_Scene_LocateRandomRect_RectScene(t *testing.T) {
+	scene := &Scene{
+		area: Area{
+			width:  150,
+			height: 99,
+		},
+		locations:      []Location{},
+		locationsMutex: &sync.RWMutex{},
+	}
+
+	location, err := scene.LocateRandomRect(1, 5)
+	require.Nil(t, err)
+	require.Equal(t, []Location{location}, scene.locations)
+}
+
+func Test_Scene_LocateAvailableDots_EmptySquareScene(t *testing.T) {
 	scene := &Scene{
 		area: Area{
 			width:  100,
