@@ -2,6 +2,7 @@ package watermelon
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -25,11 +26,13 @@ const (
 type Watermelon struct {
 	world    *world.World
 	location engine.Location
+	mux      *sync.RWMutex
 }
 
 func CreateWatermelon(world *world.World) (*Watermelon, error) {
-
-	watermelon := &Watermelon{}
+	watermelon := &Watermelon{
+		mux: &sync.RWMutex{},
+	}
 
 	location, err := world.CreateObjectRandomRect(watermelon, watermelonWidth, watermelonHeight)
 	if err != nil {
@@ -37,8 +40,10 @@ func CreateWatermelon(world *world.World) (*Watermelon, error) {
 		return nil, err
 	}
 
+	watermelon.mux.Lock()
 	watermelon.world = world
 	watermelon.location = location
+	watermelon.mux.Unlock()
 
 	return watermelon, nil
 }
