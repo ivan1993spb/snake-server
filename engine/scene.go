@@ -370,6 +370,21 @@ func (s *Scene) LocateRandomRect(rw, rh uint8) (Location, error) {
 	return s.unsafeLocateRandomRect(rw, rh)
 }
 
+func (s *Scene) unsafeLocateRandomRectMargin(rw, rh, margin uint8) (Location, error) {
+	// TODO: Implement method.
+	return Location{}, nil
+}
+
+func (s *Scene) LocateRandomRectMargin(rw, rh, margin uint8) (Location, error) {
+	if margin == 0 {
+		// TODO: Handle this case.
+	}
+
+	// TODO: Implement method.
+
+	return Location{}, nil
+}
+
 func (s *Scene) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	return s.area.Navigate(dot, dir, dis)
 }
