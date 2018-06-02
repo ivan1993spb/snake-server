@@ -18,18 +18,22 @@ func (l Location) Contains(dot Dot) bool {
 
 // Delete deletes dot from object
 func (l Location) Delete(dot Dot) Location {
+	newLocation := l.Copy()
+
 	if len(l) > 0 {
 		for i := range l {
 			if l[i].Equals(dot) {
-				return append(l[:i], l[i+1:]...)
+				return append(newLocation[:i], newLocation[i+1:]...)
 			}
 		}
 	}
-	return Location{}
+
+	return newLocation
 }
 
 func (l Location) Add(dot Dot) Location {
-	return append(l, dot)
+	newLocation := l.Copy()
+	return append(newLocation, dot)
 }
 
 // TODO: Remove this method (?)
@@ -60,8 +64,9 @@ func (l Location) Empty() bool {
 }
 
 func (l Location) Copy() Location {
-	newLocation := make(Location, len(l), len(l))
+	newLocation := make(Location, len(l))
 	copy(newLocation, l)
+
 	return newLocation
 }
 
@@ -76,6 +81,24 @@ func (l1 Location) Equals(l2 Location) bool {
 
 	if len(l1.Difference(l2)) > 0 {
 		return false
+	}
+
+	return true
+}
+
+func (l1 Location) EqualsStrict(l2 Location) bool {
+	if len(l1) == 0 && len(l2) == 0 {
+		return true
+	}
+
+	if len(l1) != len(l2) {
+		return false
+	}
+
+	for i := 0; i < len(l1); i++ {
+		if !l1[i].Equals(l2[i]) {
+			return false
+		}
 	}
 
 	return true

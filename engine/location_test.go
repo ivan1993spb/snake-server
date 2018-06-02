@@ -71,3 +71,41 @@ func Test_Location_Equals(t *testing.T) {
 		}
 	}
 }
+
+func Test_Location_Delete_DeletesDot(t *testing.T) {
+	tests := []struct {
+		location Location
+		dot      Dot
+		expected Location
+	}{
+		{
+			location: Location{Dot{0, 0}, Dot{0, 1}, Dot{0, 2}},
+			dot:      Dot{0, 0},
+			expected: Location{Dot{0, 1}, Dot{0, 2}},
+		},
+		{
+			location: Location{Dot{2, 2}, Dot{0, 1}, Dot{0, 2}},
+			dot:      Dot{0, 1},
+			expected: Location{Dot{2, 2}, Dot{0, 2}},
+		},
+		{
+			location: Location{Dot{0, 0}, Dot{1, 0}, Dot{0, 2}},
+			dot:      Dot{0, 2},
+			expected: Location{Dot{0, 0}, Dot{1, 0}},
+		},
+		{
+			location: Location{Dot{10, 0}, Dot{9, 0}, Dot{8, 0}, Dot{7, 0}},
+			dot:      Dot{10, 0},
+			expected: Location{Dot{9, 0}, Dot{8, 0}, Dot{7, 0}},
+		},
+		{
+			location: Location{Dot{10, 0}, Dot{9, 0}, Dot{8, 0}, Dot{7, 0}},
+			dot:      Dot{10, 10},
+			expected: Location{Dot{10, 0}, Dot{9, 0}, Dot{8, 0}, Dot{7, 0}},
+		},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.location.Delete(test.dot), fmt.Sprintf("number: %d", i))
+	}
+}
