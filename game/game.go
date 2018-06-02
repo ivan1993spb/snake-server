@@ -37,8 +37,8 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
-	// TODO: Run observers.
 	observers.AppleObserver{}.Observe(stop, g.world)
+	observers.SnakeObserver{}.Observe(stop, g.world)
 
 	go func() {
 		// TODO: Create buffer const.
