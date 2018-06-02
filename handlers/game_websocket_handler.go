@@ -15,6 +15,8 @@ const URLRouteGameWebSocketByID = "/games/{id}/ws"
 
 const MethodGame = http.MethodGet
 
+const wsReadMessageLimit = 128
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
@@ -83,6 +85,8 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+
+	conn.SetReadLimit(wsReadMessageLimit)
 
 	h.logger.Info("start connection worker")
 
