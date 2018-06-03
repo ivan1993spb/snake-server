@@ -31,10 +31,16 @@ var (
 )
 
 var (
-	address     string
+	address string
+
+	flagEnableTLS bool
+	certFile      string
+	keyFile       string
+
 	groupsLimit int
 	connsLimit  int
 	seed        int64
+
 	flagJSONLog bool
 	logLevel    string
 )
@@ -48,6 +54,9 @@ func usage() {
 
 func init() {
 	flag.StringVar(&address, "address", defaultAddress, "address to serve")
+	flag.BoolVar(&flagEnableTLS, "tls-enable", false, "enable TLS")
+	flag.StringVar(&certFile, "tls-cert", "", "path to certificate file")
+	flag.StringVar(&keyFile, "tls-key", "", "path to key file")
 	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
 	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
@@ -71,6 +80,13 @@ func logger() *logrus.Logger {
 		logger.SetLevel(level)
 	}
 	return logger
+}
+
+func serve(h http.Handler) error {
+	if flagEnableTLS {
+		return http.ListenAndServeTLS(address, certFile, keyFile, h)
+	}
+	return http.ListenAndServe(address, h)
 }
 
 func main() {
@@ -120,9 +136,12 @@ func main() {
 	n.Use(middlewares.NewServerInfo(ServerName, Version, Build))
 	n.UseHandler(rootRouter)
 
-	logger.WithField("address", address).Info("starting server")
+	logger.WithFields(logrus.Fields{
+		"address": address,
+		"tls":     flagEnableTLS,
+	}).Info("starting server")
 
-	if err := http.ListenAndServe(address, n); err != nil {
+	if err := serve(n); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
