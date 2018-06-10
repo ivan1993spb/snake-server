@@ -642,14 +642,32 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	return location.Copy(), nil
 }
 
+type ErrCreateRandomRectMarginObject string
+
+func (e ErrCreateRandomRectMarginObject) Error() string {
+	return "cannot create random rect object with margin: " + string(e)
+}
+
 func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
-	if margin == 0 {
-		// TODO: Handle this case.
+	if rw*rh == 0 {
+		return nil, ErrCreateRandomRectMarginObject("invalid rectangle size")
 	}
 
-	// TODO: Implement method.
+	pg.entitiesMutex.Lock()
+	defer pg.entitiesMutex.Unlock()
 
-	return engine.Location{}, nil
+	if pg.unsafeObjectExists(object) {
+		return nil, ErrCreateRandomRectMarginObject("object to create already created")
+	}
+
+	location, err := pg.scene.LocateRandomRectMargin(rw, rh, margin)
+	if err != nil {
+		return nil, ErrCreateRandomRectMarginObject(err.Error())
+	}
+
+	pg.unsafeCreateEntity(object, location.Copy())
+
+	return location.Copy(), nil
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
