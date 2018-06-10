@@ -38,7 +38,7 @@ func Test_Snake_setMovementDirection(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{10, 0},
 			{9, 0},
 			{8, 0},
@@ -76,7 +76,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{10, 0},
 			{9, 0},
 			{8, 0},
@@ -103,7 +103,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{2, 5},
 			{3, 5},
 			{4, 5},
@@ -130,7 +130,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{10, 10},
 			{10, 11},
 			{10, 12},
@@ -157,7 +157,7 @@ func Test_Snake_getNextHeadDot(t *testing.T) {
 	snake = &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{20, 24},
 			{20, 21},
 			{20, 20},
@@ -188,7 +188,7 @@ func Test_Snake_move_validLocation(t *testing.T) {
 	snake := &Snake{
 		world:  world,
 		length: 4,
-		dots: []engine.Dot{
+		location: engine.Location{
 			{10, 0},
 			{9, 0},
 			{8, 0},
@@ -207,34 +207,34 @@ func Test_Snake_move_validLocation(t *testing.T) {
 	require.Nil(t, err, "cannot create object")
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []engine.Dot{
+	require.Equal(t, engine.Location{
 		{11, 0},
 		{10, 0},
 		{9, 0},
 		{8, 0},
-	}, snake.dots)
+	}, snake.location)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []engine.Dot{
+	require.Equal(t, engine.Location{
 		{12, 0},
 		{11, 0},
 		{10, 0},
 		{9, 0},
-	}, snake.dots)
+	}, snake.location)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []engine.Dot{
+	require.Equal(t, engine.Location{
 		{13, 0},
 		{12, 0},
 		{11, 0},
 		{10, 0},
-	}, snake.dots)
+	}, snake.location)
 
 	require.Nil(t, snake.move())
-	require.Equal(t, []engine.Dot{
+	require.Equal(t, engine.Location{
 		{14, 0},
 		{13, 0},
 		{12, 0},
 		{11, 0},
-	}, snake.dots)
+	}, snake.location)
 }
