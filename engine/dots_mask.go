@@ -146,3 +146,14 @@ func (dm *DotsMask) Location(x, y uint8) Location {
 	}
 	return location
 }
+
+func (dm *DotsMask) Empty() bool {
+	for i := range dm.mask {
+		for j := range dm.mask[i] {
+			if dm.mask[i][j] > 0 {
+				return false
+			}
+		}
+	}
+	return true
+}

@@ -313,3 +313,41 @@ func Test_DotsMask_Location(t *testing.T) {
 		},
 	}, dm1.Location(4, 3))
 }
+
+func Test_DotsMask_Empty(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{
+			{1, 1, 0},
+			{0, 1, 1},
+			{1, 1, 0},
+		},
+	}
+	require.False(t, dm1.Empty())
+
+	dm2 := &DotsMask{
+		mask: [][]uint8{},
+	}
+	require.True(t, dm2.Empty())
+
+	dm3 := &DotsMask{
+		mask: [][]uint8{
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+		},
+	}
+	require.True(t, dm3.Empty())
+
+	dm4 := &DotsMask{
+		mask: [][]uint8{
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 1, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+		},
+	}
+	require.False(t, dm4.Empty())
+}
