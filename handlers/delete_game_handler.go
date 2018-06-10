@@ -19,6 +19,12 @@ type responseDeleteGameHandler struct {
 	ID int `json:"id"`
 }
 
+type responseDeleteGameHandlerError struct {
+	Code int    `json:"code"`
+	Text string `json:"text"`
+	ID   int    `json:"id"`
+}
+
 type deleteGameHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
@@ -43,7 +49,11 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseDeleteGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid game id",
+			ID:   id,
+		})
 		return
 	}
 
@@ -55,9 +65,17 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrNotFoundGroup:
-			http.NotFound(w, r)
+			h.writeResponseJSON(w, http.StatusNotFound, &responseDeleteGameHandlerError{
+				Code: http.StatusNotFound,
+				Text: "game not found",
+				ID:   id,
+			})
 		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.writeResponseJSON(w, http.StatusInternalServerError, &responseDeleteGameHandlerError{
+				Code: http.StatusInternalServerError,
+				Text: "unknown error",
+				ID:   id,
+			})
 		}
 		return
 	}
@@ -65,7 +83,11 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !group.IsEmpty() {
 		h.logger.Warn(ErrDeleteGameHandler("try to delete not empty group"))
 		h.logger.Warnf("there is %d opened connections in group %d", group.GetCount(), id)
-		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		h.writeResponseJSON(w, http.StatusServiceUnavailable, &responseDeleteGameHandlerError{
+			Code: http.StatusServiceUnavailable,
+			Text: "cannot delete not empty game",
+			ID:   id,
+		})
 		return
 	}
 
@@ -74,11 +96,23 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrDeleteNotFoundGroup:
-			http.NotFound(w, r)
+			h.writeResponseJSON(w, http.StatusNotFound, &responseDeleteGameHandlerError{
+				Code: http.StatusNotFound,
+				Text: "game not found",
+				ID:   id,
+			})
 		case connections.ErrDeleteNotEmptyGroup:
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+			h.writeResponseJSON(w, http.StatusServiceUnavailable, &responseDeleteGameHandlerError{
+				Code: http.StatusServiceUnavailable,
+				Text: "cannot delete not empty game",
+				ID:   id,
+			})
 		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.writeResponseJSON(w, http.StatusInternalServerError, &responseDeleteGameHandlerError{
+				Code: http.StatusInternalServerError,
+				Text: "unknown error",
+				ID:   id,
+			})
 		}
 		return
 	}
@@ -88,14 +122,17 @@ func (h *deleteGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Infoln("group deleted:", id)
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	err = json.NewEncoder(w).Encode(responseDeleteGameHandler{
+	h.writeResponseJSON(w, http.StatusOK, responseDeleteGameHandler{
 		ID: id,
 	})
-	if err != nil {
+}
+
+func (h *deleteGameHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrDeleteGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }
