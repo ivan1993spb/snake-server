@@ -26,6 +26,7 @@ type Corpse struct {
 	location engine.Location
 	mux      *sync.RWMutex
 	stop     chan struct{}
+	isStoped bool
 }
 
 type ErrCreateCorpse string
@@ -82,7 +83,10 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 			c.location = newLoc
 		} else {
 			c.world.DeleteObject(c, c.location)
-			close(c.stop)
+			if !c.isStoped {
+				close(c.stop)
+				c.isStoped = true
+			}
 		}
 
 		return corpseNutritionalValue
@@ -101,7 +105,10 @@ func (c *Corpse) Run(stop <-chan struct{}) {
 		case <-timer.C:
 			c.mux.Lock()
 			c.world.DeleteObject(c, c.location)
-			close(c.stop)
+			if !c.isStoped {
+				close(c.stop)
+				c.isStoped = true
+			}
 			c.mux.Unlock()
 		case <-c.stop:
 			// Corpse was eaten.
