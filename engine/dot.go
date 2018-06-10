@@ -1,9 +1,6 @@
 package engine
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "fmt"
 
 type Dot struct {
 	X uint8
@@ -17,7 +14,7 @@ func (d1 Dot) Equals(d2 Dot) bool {
 
 // Implementing json.Marshaler interface
 func (d Dot) MarshalJSON() ([]byte, error) {
-	return json.Marshal([]uint8{d.X, d.Y})
+	return []byte(fmt.Sprintf("[%d,%d]", d.X, d.Y)), nil
 }
 
 func (d Dot) String() string {
