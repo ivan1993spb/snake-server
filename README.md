@@ -67,7 +67,12 @@ Creates game and returns JSON details.
 
 ```
 curl -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games
-{"id":0,"limit":3,"width":100,"height":100}
+{
+    "id": 0,
+    "limit": 3,
+    "width": 100,
+    "height": 100
+}
 ```
 
 ### Request `GET /games`
@@ -76,7 +81,26 @@ Returns info about all games on server.
 
 ```
 curl -X GET http://localhost:8080/games
-{"games":[{"id":0,"limit":3,"count":0}]}
+{
+    "games": [
+        {
+            "id": 1,
+            "limit": 10,
+            "count": 0,
+            "width": 100,
+            "height": 100
+        },
+        {
+            "id": 0,
+            "limit": 10,
+            "count": 0,
+            "width": 100,
+            "height": 100
+        }
+    ],
+    "limit": 100,
+    "count": 2
+}
 ```
 
 ### Request `GET /games/{id}`
@@ -85,7 +109,13 @@ Returns game information.
 
 ```
 curl -X GET http://localhost:8080/games/0
-{"id":0,"limit":3,"count":0}
+{
+    "id": 0,
+    "limit": 10,
+    "count": 0,
+    "width": 100,
+    "height": 100
+}
 ```
 
 ### Request `DELETE /games/{id}`
@@ -94,16 +124,20 @@ Deletes game if there is not players.
 
 ```
 curl -X DELETE http://localhost:8080/games/0
-{"id":0}
+{
+    "id": 0
+}
 ```
 
 ### Request `GET /capacity`
 
-Returns server capacity.
+Returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
 
 ```
 curl -X GET http://localhost:8080/capacity
-{"capacity":0.02}
+{
+    "capacity": 0.02
+}
 ```
 
 ### Request `GET /games/{id}/ws`
@@ -114,7 +148,7 @@ Connects to game Web-Socket.
 * Initialize game session
 * Returns all objects on playground
 * Creates snake
-* Returns snake id
+* Returns snake uuid
 * Pushes game events and objects
 
 ## Game Web-Socket messages description
@@ -128,7 +162,10 @@ Output messages - when server sends to client a data.
 Output message structure:
 
 ```
-{"type": output_message_type, "payload": output_message_payload}
+{
+    "type": output_message_type,
+    "payload": output_message_payload
+}
 ```
 
 Output message can be type of:
@@ -140,9 +177,18 @@ Output message can be type of:
 Examples:
 
 ```
-{"type":"player","payload": ... }
-{"type":"game","payload": ... }
-{"type":"broadcast","payload": ... }
+{
+    "type": "player",
+    "payload": ...
+}
+{
+    "type": "game",
+    "payload": ...
+}
+{
+    "type": "broadcast",
+    "payload": ...
+}
 ```
 
 #### Game events
@@ -270,7 +316,7 @@ Examples:
 
 Output message type: *broadcast*
 
-Payload of output message of type *broadcast* contains **string** - a group notice that sends to all players in game group. 
+Payload of output message of type *broadcast* contains **string** - a group notice that sends to all players in game group.
 
 Example:
 
@@ -301,7 +347,7 @@ Objects TODO:
 
 * Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "n"}`
+* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
 
 ### Input messages
 
@@ -310,7 +356,10 @@ Input messages - when client sends to server a game commands.
 Input message structure:
 
 ```
-{"type": input_message_type, "payload": input_message_payload}
+{
+    "type": input_message_type,
+    "payload": input_message_payload
+}
 ```
 
 Input message types:
@@ -328,14 +377,38 @@ Accepted game commands:
 Examples:
 
 ```
-{"type":"snake","payload":"north"}
-{"type":"snake","payload":"east"}
-{"type":"snake","payload":"south"}
-{"type":"snake","payload":"west"}
-{"type":"broadcast","payload":"xD"}
-{"type":"broadcast","payload":"ok!"}
-{"type":"broadcast","payload":"hello!"}
-{"type":"broadcast","payload":";)"}
+{
+    "type": "snake",
+    "payload": "north"
+}
+{
+    "type": "snake",
+    "payload": "east"
+}
+{
+    "type": "snake",
+    "payload": "south"
+}
+{
+    "type": "snake",
+    "payload": "west"
+}
+{
+    "type": "broadcast",
+    "payload": "xD"
+}
+{
+    "type": "broadcast",
+    "payload": "ok!"
+}
+{
+    "type": "broadcast",
+    "payload": "hello!"
+}
+{
+    "type": "broadcast",
+    "payload": ";)"
+}
 ```
 
 **Input message size is limited: maximum 128 bytes**
