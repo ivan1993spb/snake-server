@@ -466,9 +466,8 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 			}
 		default:
 			// Unknown relocation error
-			// TODO: Create ErrUnknown{}
 			return &ErrUpdateObject{
-				Err: errRelocateReason,
+				Err: fmt.Errorf("unknown error: %s", errRelocateReason),
 			}
 		}
 	}
@@ -559,9 +558,8 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 			}
 		default:
 			// Unknown relocate available dots error
-			// TODO: Create ErrUnknown{}
 			return nil, &ErrUpdateObjectAvailableDots{
-				Err: errRelocateAvailableDotsReason,
+				Err: fmt.Errorf("unknown error: %s", errRelocateAvailableDotsReason),
 			}
 		}
 	}
