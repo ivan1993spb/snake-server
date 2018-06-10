@@ -668,6 +668,34 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 	return location.Copy(), nil
 }
 
+type ErrCreateObjectRandomByDotsMask string
+
+func (e ErrCreateObjectRandomByDotsMask) Error() string {
+	return "cannot create object random by dots mask: " + string(e)
+}
+
+func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+	if dm.Empty() {
+		return nil, ErrCreateObjectRandomByDotsMask("passed dots mask is empty")
+	}
+
+	pg.entitiesMutex.Lock()
+	defer pg.entitiesMutex.Unlock()
+
+	if pg.unsafeObjectExists(object) {
+		return nil, ErrCreateObjectRandomByDotsMask("object to create already created")
+	}
+
+	location, err := pg.scene.LocateRandomByDotsMask(dm)
+	if err != nil {
+		return nil, ErrCreateObjectRandomByDotsMask(err.Error())
+	}
+
+	pg.unsafeCreateEntity(object, location.Copy())
+
+	return location.Copy(), nil
+}
+
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return pg.scene.Navigate(dot, dir, dis)
 }
