@@ -37,9 +37,9 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
+	observers.LoggerObserver{}.Observe(stop, g.world, g.logger)
 	observers.AppleObserver{}.Observe(stop, g.world, g.logger)
 	observers.SnakeObserver{}.Observe(stop, g.world, g.logger)
-	observers.LoggerObserver{}.Observe(stop, g.world, g.logger)
 }
 
 func (g *Game) World() *world.World {
