@@ -64,11 +64,11 @@ func (h *getGamesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrGetGamesHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }
