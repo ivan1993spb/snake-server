@@ -39,14 +39,6 @@ func (g *Game) Start(stop <-chan struct{}) {
 
 	observers.AppleObserver{}.Observe(stop, g.world)
 	observers.SnakeObserver{}.Observe(stop, g.world)
-
-	go func() {
-		// TODO: Create buffer const.
-		for event := range g.world.Events(stop, 32) {
-			g.logger.Debugln("game event", event)
-		}
-	}()
-
 }
 
 func (g *Game) World() *world.World {
