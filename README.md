@@ -66,7 +66,7 @@ API methods provide JSON format.
 Creates game and returns JSON details.
 
 ```
-curl -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games
+curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games | jq
 {
     "id": 0,
     "limit": 3,
@@ -80,7 +80,7 @@ curl -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games
 Returns info about all games on server.
 
 ```
-curl -X GET http://localhost:8080/games
+curl -s -X GET http://localhost:8080/games | jq
 {
     "games": [
         {
@@ -108,7 +108,7 @@ curl -X GET http://localhost:8080/games
 Returns game information.
 
 ```
-curl -X GET http://localhost:8080/games/0
+curl -s -X GET http://localhost:8080/games/0 | jq
 {
     "id": 0,
     "limit": 10,
@@ -123,7 +123,7 @@ curl -X GET http://localhost:8080/games/0
 Deletes game if there is not players.
 
 ```
-curl -X DELETE http://localhost:8080/games/0
+curl -s -X DELETE http://localhost:8080/games/0 | jq
 {
     "id": 0
 }
@@ -134,7 +134,7 @@ curl -X DELETE http://localhost:8080/games/0
 Returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
 
 ```
-curl -X GET http://localhost:8080/capacity
+curl -s -X GET http://localhost:8080/capacity | jq
 {
     "capacity": 0.02
 }
