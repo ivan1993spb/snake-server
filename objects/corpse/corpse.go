@@ -86,19 +86,21 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 }
 
 func (c *Corpse) Run(stop <-chan struct{}) {
-	var timer = time.NewTimer(corpseMaxExperience)
-	defer timer.Stop()
-	select {
-	case <-stop:
-		// global stop
-	case <-timer.C:
-		c.mux.RLock()
-		c.world.DeleteObject(c, c.location)
-		c.mux.RUnlock()
-		close(c.stop)
-	case <-c.stop:
-		// Corpse was eaten.
-	}
+	go func() {
+		var timer = time.NewTimer(corpseMaxExperience)
+		defer timer.Stop()
+		select {
+		case <-stop:
+			// global stop
+		case <-timer.C:
+			c.mux.RLock()
+			c.world.DeleteObject(c, c.location)
+			c.mux.RUnlock()
+			close(c.stop)
+		case <-c.stop:
+			// Corpse was eaten.
+		}
+	}()
 }
 
 func (c *Corpse) MarshalJSON() ([]byte, error) {
