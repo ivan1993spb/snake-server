@@ -5,7 +5,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-// TODO: Write game rules.
+The player controls the snake. The task of the game is to grow the biggest snake. In order to do this gamers can eat apples and the remains of dead snakes of other games. If the snake hits the wall, the snake will die, and the player will start again with small snake.
 
 ## Client
 
