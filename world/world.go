@@ -13,7 +13,7 @@ const (
 	worldEventsChanMainBufferSize  = 512
 	worldEventsChanProxyBufferSize = 128
 
-	worldEventsSendTimeout = time.Millisecond * 100
+	worldEventsSendTimeout = time.Millisecond * 50
 )
 
 type World struct {
@@ -131,8 +131,14 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 }
 
 func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
+	const tickSize = 5
+
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
+
+	var ticker = time.NewTicker(timeout / tickSize)
+	defer ticker.Stop()
+
 	if cap(ch) == 0 {
 		select {
 		case ch <- event:
@@ -151,7 +157,7 @@ func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 				return
 			case <-timer.C:
 				return
-			default:
+			case <-ticker.C:
 				if len(ch) == cap(ch) {
 					<-ch
 				}
