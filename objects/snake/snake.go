@@ -20,6 +20,7 @@ const (
 	snakeStartSpeed     = time.Second
 	snakeSpeedFactor    = 1.02
 	snakeStrengthFactor = 1
+	snakeStartMargin    = 1
 )
 
 type Command string
@@ -85,9 +86,9 @@ func (s *Snake) locate() (engine.Location, error) {
 	defer s.mux.RUnlock()
 	switch s.direction {
 	case engine.DirectionNorth, engine.DirectionSouth:
-		return s.world.CreateObjectRandomRect(s, 1, uint8(snakeStartLength))
+		return s.world.CreateObjectRandomRectMargin(s, 1, uint8(snakeStartLength), snakeStartMargin)
 	case engine.DirectionEast, engine.DirectionWest:
-		return s.world.CreateObjectRandomRect(s, uint8(snakeStartLength), 1)
+		return s.world.CreateObjectRandomRectMargin(s, uint8(snakeStartLength), 1, snakeStartMargin)
 	}
 	return nil, errors.New("invalid direction")
 }
