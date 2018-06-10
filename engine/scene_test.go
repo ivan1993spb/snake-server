@@ -181,3 +181,20 @@ func Test_Scene_LocateAvailableDots_LocationsIntersects(t *testing.T) {
 		{Dot{1, 0}},
 	}, scene.locations)
 }
+
+func Test_Scene_LocateRandomRectMargin_LocatesValidRectWithMargin(t *testing.T) {
+	scene := &Scene{
+		area: Area{
+			width:  100,
+			height: 100,
+		},
+		locations:      []Location{},
+		locationsMutex: &sync.RWMutex{},
+	}
+
+	location, err := scene.LocateRandomRectMargin(2, 3, 2)
+	require.Nil(t, err)
+	require.Len(t, location, 6)
+	require.Len(t, scene.locations, 1)
+	require.Len(t, scene.locations[0], 6)
+}

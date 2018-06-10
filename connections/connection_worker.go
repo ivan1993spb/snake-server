@@ -213,8 +213,14 @@ func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan Inpu
 }
 
 func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage InputMessage, stop <-chan struct{}, timeout time.Duration) {
+	const tickSize = 5
+
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
+
+	var ticker = time.NewTicker(timeout / tickSize)
+	defer ticker.Stop()
+
 	if cap(ch) == 0 {
 		select {
 		case ch <- inputMessage:
@@ -230,7 +236,7 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 				return
 			case <-timer.C:
 				return
-			default:
+			case <-ticker.C:
 				if len(ch) == cap(ch) {
 					<-ch
 				}

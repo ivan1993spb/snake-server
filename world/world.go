@@ -13,7 +13,7 @@ const (
 	worldEventsChanMainBufferSize  = 512
 	worldEventsChanProxyBufferSize = 128
 
-	worldEventsSendTimeout = time.Millisecond * 100
+	worldEventsSendTimeout = time.Millisecond * 50
 )
 
 type World struct {
@@ -131,8 +131,14 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 }
 
 func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
+	const tickSize = 5
+
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
+
+	var ticker = time.NewTicker(timeout / tickSize)
+	defer ticker.Stop()
+
 	if cap(ch) == 0 {
 		select {
 		case ch <- event:
@@ -151,7 +157,7 @@ func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 				return
 			case <-timer.C:
 				return
-			default:
+			case <-ticker.C:
 				if len(ch) == cap(ch) {
 					<-ch
 				}
@@ -329,6 +335,38 @@ func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, erro
 
 func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomRect(object, rw, rh)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return nil, err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectCreate,
+		Payload: object,
+	})
+	return location, err
+}
+
+func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
+	location, err := w.pg.CreateObjectRandomRectMargin(object, rw, rh, margin)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return nil, err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectCreate,
+		Payload: object,
+	})
+	return location, err
+}
+
+func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+	location, err := w.pg.CreateObjectRandomByDotsMask(object, dm)
 	if err != nil {
 		w.event(Event{
 			Type:    EventTypeError,

@@ -127,8 +127,14 @@ func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-ch
 }
 
 func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessage, stop <-chan struct{}, timeout time.Duration) {
+	const tickSize = 5
+
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
+
+	var ticker = time.NewTicker(timeout / tickSize)
+	defer ticker.Stop()
+
 	if cap(ch) == 0 {
 		select {
 		case ch <- message:
@@ -147,7 +153,7 @@ func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessag
 				return
 			case <-timer.C:
 				return
-			default:
+			case <-ticker.C:
 				if len(ch) == cap(ch) {
 					<-ch
 				}

@@ -27,6 +27,11 @@ type responseCreateGameHandler struct {
 	Height uint8 `json:"height"`
 }
 
+type responseCreateGameHandlerError struct {
+	Code int    `json:"code"`
+	Text string `json:"text"`
+}
+
 type createGameHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
@@ -49,36 +54,54 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	connectionLimit, err := strconv.Atoi(r.PostFormValue(postFieldConnectionLimit))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid limit",
+		})
 		return
 	}
 	if connectionLimit <= 0 {
 		h.logger.Warnln(ErrCreateGameHandler("invalid connection limit"), connectionLimit)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid limit",
+		})
 		return
 	}
 
 	mapWidth, err := strconv.ParseUint(r.PostFormValue(postFieldMapWidth), 10, 8)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid width",
+		})
 		return
 	}
 	if mapWidth == 0 {
 		h.logger.Warnln(ErrCreateGameHandler("invalid map width"), mapWidth)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid width",
+		})
 		return
 	}
 
 	mapHeight, err := strconv.ParseUint(r.PostFormValue(postFieldMapHeight), 10, 8)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid height",
+		})
 		return
 	}
 	if mapHeight == 0 {
 		h.logger.Warnln(ErrCreateGameHandler("invalid map height"), mapHeight)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid height",
+		})
 		return
 	}
 
@@ -91,7 +114,10 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		h.writeResponseJSON(w, http.StatusInternalServerError, &responseCreateGameHandlerError{
+			Code: http.StatusInternalServerError,
+			Text: "cannot create game",
+		})
 		return
 	}
 
@@ -101,11 +127,20 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrGroupLimitReached:
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+			h.writeResponseJSON(w, http.StatusServiceUnavailable, &responseCreateGameHandlerError{
+				Code: http.StatusServiceUnavailable,
+				Text: "groups limit reached",
+			})
 		case connections.ErrConnsLimitReached:
-			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+			h.writeResponseJSON(w, http.StatusServiceUnavailable, &responseCreateGameHandlerError{
+				Code: http.StatusServiceUnavailable,
+				Text: "connections limit reached",
+			})
 		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.writeResponseJSON(w, http.StatusInternalServerError, &responseCreateGameHandlerError{
+				Code: http.StatusInternalServerError,
+				Text: "unknown error",
+			})
 		}
 		return
 	}
@@ -115,18 +150,19 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.WithField("group_id", id).Infoln("created group")
 
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	err = json.NewEncoder(w).Encode(responseCreateGameHandler{
+	h.writeResponseJSON(w, http.StatusCreated, &responseCreateGameHandler{
 		ID:     id,
 		Limit:  group.GetLimit(),
 		Width:  uint8(mapWidth),
 		Height: uint8(mapHeight),
 	})
-	if err != nil {
+}
+
+func (h *createGameHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }

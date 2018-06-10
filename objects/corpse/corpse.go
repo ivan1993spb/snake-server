@@ -1,12 +1,12 @@
 package corpse
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/pquerna/ffjson/ffjson"
+	"github.com/satori/go.uuid"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -17,34 +17,42 @@ const corpseMaxExperience = time.Second * 15
 
 const corpseNutritionalValue uint16 = 2
 
+const corpseTypeLabel = "corpse"
+
 // Snakes can eat corpses
 type Corpse struct {
-	world       *world.World
-	location    engine.Location
-	nippedPiece engine.Dot // last nipped piece
-	mux         *sync.RWMutex
-	stop        chan struct{}
+	uuid      string
+	world     *world.World
+	location  engine.Location
+	mux       *sync.RWMutex
+	stop      chan struct{}
+	isStopped bool
+}
+
+type ErrCreateCorpse string
+
+func (e ErrCreateCorpse) Error() string {
+	return "error on corpse creation: " + e.Error()
 }
 
 // Corpse are created when a snake dies
 func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	if location.Empty() {
-		return nil, errors.New("location is empty")
+		return nil, ErrCreateCorpse("location is empty")
 	}
 
 	corpse := &Corpse{
-		mux: &sync.RWMutex{},
+		uuid: uuid.Must(uuid.NewV4()).String(),
+		mux:  &sync.RWMutex{},
 	}
 
 	location, err := world.CreateObjectAvailableDots(corpse, location)
 	if err != nil {
-		// TODO:
-		fmt.Println("create", err)
-		return nil, err
+		return nil, ErrCreateCorpse(err.Error())
 	}
 
-	if len(location) == 0 {
-		return nil, errors.New("no location available")
+	if location.Empty() {
+		return nil, ErrCreateCorpse("no location available")
 	}
 
 	corpse.mux.Lock()
@@ -70,13 +78,15 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 		newDots := c.location.Delete(dot)
 
 		if len(newDots) > 0 {
-			// TODO: Handle errors.
+			// TODO: Handle errors?
 			newLoc, _ := c.world.UpdateObjectAvailableDots(c, c.location, newDots)
 			c.location = newLoc
-			c.nippedPiece = dot
 		} else {
 			c.world.DeleteObject(c, c.location)
-			close(c.stop)
+			if !c.isStopped {
+				close(c.stop)
+				c.isStopped = true
+			}
 		}
 
 		return corpseNutritionalValue
@@ -86,23 +96,38 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 }
 
 func (c *Corpse) Run(stop <-chan struct{}) {
-	var timer = time.NewTimer(corpseMaxExperience)
-	defer timer.Stop()
-	select {
-	case <-stop:
-		// global stop
-	case <-timer.C:
-		c.mux.RLock()
-		c.world.DeleteObject(c, c.location)
-		c.mux.RUnlock()
-		close(c.stop)
-	case <-c.stop:
-		// Corpse was eaten.
-	}
+	go func() {
+		var timer = time.NewTimer(corpseMaxExperience)
+		defer timer.Stop()
+		select {
+		case <-stop:
+			// global stop
+		case <-timer.C:
+			c.mux.Lock()
+			c.world.DeleteObject(c, c.location)
+			if !c.isStopped {
+				close(c.stop)
+				c.isStopped = true
+			}
+			c.mux.Unlock()
+		case <-c.stop:
+			// Corpse was eaten.
+		}
+	}()
 }
 
 func (c *Corpse) MarshalJSON() ([]byte, error) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
-	return ffjson.Marshal(c.location)
+	return ffjson.Marshal(&corpse{
+		UUID: c.uuid,
+		Dots: c.location,
+		Type: corpseTypeLabel,
+	})
+}
+
+type corpse struct {
+	UUID string          `json:"uuid"`
+	Dots engine.Location `json:"dots"`
+	Type string          `json:"type"`
 }

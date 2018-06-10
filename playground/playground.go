@@ -466,9 +466,8 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 			}
 		default:
 			// Unknown relocation error
-			// TODO: Create ErrUnknown{}
 			return &ErrUpdateObject{
-				Err: errRelocateReason,
+				Err: fmt.Errorf("unknown error: %s", errRelocateReason),
 			}
 		}
 	}
@@ -559,9 +558,8 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 			}
 		default:
 			// Unknown relocate available dots error
-			// TODO: Create ErrUnknown{}
 			return nil, &ErrUpdateObjectAvailableDots{
-				Err: errRelocateAvailableDotsReason,
+				Err: fmt.Errorf("unknown error: %s", errRelocateAvailableDotsReason),
 			}
 		}
 	}
@@ -642,14 +640,60 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 	return location.Copy(), nil
 }
 
+type ErrCreateRandomRectMarginObject string
+
+func (e ErrCreateRandomRectMarginObject) Error() string {
+	return "cannot create random rect object with margin: " + string(e)
+}
+
 func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
-	if margin == 0 {
-		// TODO: Handle this case.
+	if rw*rh == 0 {
+		return nil, ErrCreateRandomRectMarginObject("invalid rectangle size")
 	}
 
-	// TODO: Implement method.
+	pg.entitiesMutex.Lock()
+	defer pg.entitiesMutex.Unlock()
 
-	return engine.Location{}, nil
+	if pg.unsafeObjectExists(object) {
+		return nil, ErrCreateRandomRectMarginObject("object to create already created")
+	}
+
+	location, err := pg.scene.LocateRandomRectMargin(rw, rh, margin)
+	if err != nil {
+		return nil, ErrCreateRandomRectMarginObject(err.Error())
+	}
+
+	pg.unsafeCreateEntity(object, location.Copy())
+
+	return location.Copy(), nil
+}
+
+type ErrCreateObjectRandomByDotsMask string
+
+func (e ErrCreateObjectRandomByDotsMask) Error() string {
+	return "cannot create object random by dots mask: " + string(e)
+}
+
+func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+	if dm.Empty() {
+		return nil, ErrCreateObjectRandomByDotsMask("passed dots mask is empty")
+	}
+
+	pg.entitiesMutex.Lock()
+	defer pg.entitiesMutex.Unlock()
+
+	if pg.unsafeObjectExists(object) {
+		return nil, ErrCreateObjectRandomByDotsMask("object to create already created")
+	}
+
+	location, err := pg.scene.LocateRandomByDotsMask(dm)
+	if err != nil {
+		return nil, ErrCreateObjectRandomByDotsMask(err.Error())
+	}
+
+	pg.unsafeCreateEntity(object, location.Copy())
+
+	return location.Copy(), nil
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {

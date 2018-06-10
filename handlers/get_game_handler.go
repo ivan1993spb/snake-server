@@ -23,6 +23,12 @@ type responseGetGameHandler struct {
 	Height int `json:"height"`
 }
 
+type responseGetGameHandlerError struct {
+	Code int    `json:"code"`
+	Text string `json:"text"`
+	ID   int    `json:"id"`
+}
+
 type getGameHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
@@ -47,7 +53,11 @@ func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		h.logger.Error(ErrGetGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseGetGameHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid game id",
+			ID:   id,
+		})
 		return
 	}
 
@@ -59,25 +69,35 @@ func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case connections.ErrNotFoundGroup:
-			http.NotFound(w, r)
+			h.writeResponseJSON(w, http.StatusNotFound, &responseGetGameHandlerError{
+				Code: http.StatusNotFound,
+				Text: "game not found",
+				ID:   id,
+			})
 		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.writeResponseJSON(w, http.StatusInternalServerError, &responseGetGameHandlerError{
+				Code: http.StatusInternalServerError,
+				Text: "unknown error",
+				ID:   id,
+			})
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	err = json.NewEncoder(w).Encode(responseGetGameHandler{
+	h.writeResponseJSON(w, http.StatusOK, &responseGetGameHandler{
 		ID:     id,
 		Limit:  group.GetLimit(),
 		Count:  group.GetCount(),
 		Width:  int(group.GetWorldWidth()),
 		Height: int(group.GetWorldHeight()),
 	})
-	if err != nil {
+}
+
+func (h *getGameHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrGetGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }

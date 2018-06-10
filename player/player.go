@@ -13,6 +13,8 @@ const countdown = 5
 
 const chanMessageBuffer = 16
 
+const chanErrorBuffer = 32
+
 type Player struct {
 	world  *world.World
 	logger logrus.FieldLogger
@@ -53,6 +55,8 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 				return
 			}
 
+			chout <- NewMessageNotice("start")
+
 			s, err := snake.NewSnake(p.world)
 			if err != nil {
 				chout <- NewMessageError("cannot create snake")
@@ -61,14 +65,13 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 			}
 			snakeStop := s.Run(localStopper)
 
-			chout <- NewMessageSnake(s.GetID())
+			chout <- NewMessageSnake(s.GetUUID())
 
 			p.processSnakeCommands(snakeStop, chin, s)
 
 			select {
 			case <-snakeStop:
 			case <-localStopper:
-				s.Die()
 				return
 			}
 		}
@@ -77,15 +80,24 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 	return chout
 }
 
-func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, s *snake.Snake) {
+func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, s *snake.Snake) <-chan error {
+	errch := make(chan error, chanErrorBuffer)
+
 	go func() {
+		defer close(errch)
 		for {
 			select {
 			case <-stop:
 				return
 			case command := <-chin:
-				s.Command(snake.Command(command))
+				p.logger.WithField("command", command).Debug("received snake command")
+				if err := s.Command(snake.Command(command)); err != nil {
+					// TODO: Handle error and send it to channel with timeout!
+					//errch <- err
+				}
 			}
 		}
 	}()
+
+	return errch
 }

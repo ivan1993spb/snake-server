@@ -43,9 +43,8 @@ func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
 			engine.Dot{8, 0},
 			engine.Dot{7, 0},
 		},
-		nippedPiece: engine.Dot{},
-		mux:         &sync.RWMutex{},
-		stop:        make(chan struct{}),
+		mux:  &sync.RWMutex{},
+		stop: make(chan struct{}),
 	}
 
 	err = w.CreateObject(corpse, engine.Location{
@@ -78,9 +77,8 @@ func Test_Corpse_NutritionalValue_ReturnsZeroForInvalidDot(t *testing.T) {
 			engine.Dot{8, 0},
 			engine.Dot{7, 0},
 		},
-		nippedPiece: engine.Dot{1, 2},
-		mux:         &sync.RWMutex{},
-		stop:        make(chan struct{}),
+		mux:  &sync.RWMutex{},
+		stop: make(chan struct{}),
 	}
 
 	err = w.CreateObject(corpse, engine.Location{

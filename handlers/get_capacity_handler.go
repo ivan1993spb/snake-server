@@ -36,6 +36,7 @@ func NewGetCapacityHandler(logger logrus.FieldLogger, groupManager *connections.
 }
 
 func (h *getCapacityHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	err := json.NewEncoder(w).Encode(responseGetCapacityHandler{
@@ -43,7 +44,5 @@ func (h *getCapacityHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logger.Error(ErrGetGameHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }
