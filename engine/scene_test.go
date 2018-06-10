@@ -195,4 +195,6 @@ func Test_Scene_LocateRandomRectMargin_LocatesValidRectWithMargin(t *testing.T) 
 	location, err := scene.LocateRandomRectMargin(2, 3, 2)
 	require.Nil(t, err)
 	require.Len(t, location, 6)
+	require.Len(t, scene.locations, 1)
+	require.Len(t, scene.locations[0], 6)
 }

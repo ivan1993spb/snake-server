@@ -393,6 +393,10 @@ func (s *Scene) unsafeLocateRandomRectMarginTryOnce(rw, rh, margin uint8) (Locat
 			h: rect.h - margin*2,
 		}
 
+		if err := s.unsafeLocate(resultRect.Location()); err != nil {
+			return nil, err
+		}
+
 		return resultRect.Location(), nil
 	} else {
 		return nil, err
