@@ -428,6 +428,49 @@ func (s *Scene) LocateRandomRectMargin(rw, rh, margin uint8) (Location, error) {
 	return s.unsafeLocateRandomRectMargin(rw, rh, margin)
 }
 
+func (s *Scene) unsafeLocateRandomByDotsMaskTryOnce(dm *DotsMask) (Location, error) {
+	if rect, err := s.area.NewRandomRect(dm.Width(), dm.Height(), 0, 0); err == nil {
+		location := dm.Location(rect.x, rect.y)
+		for i := uint16(0); i < location.DotCount(); i++ {
+			dot := location.Dot(i)
+
+			if !s.area.Contains(dot) {
+				return nil, errors.New("area not contains generated dot")
+			}
+
+			for i := range s.locations {
+				if s.locations[i].Contains(dot) {
+					return nil, errors.New("generated dot is occupied")
+				}
+			}
+		}
+
+		if err := s.unsafeLocate(location); err != nil {
+			return nil, err
+		}
+
+		return location, nil
+	} else {
+		return nil, err
+	}
+}
+
+func (s *Scene) unsafeLocateRandomByDotsMask(dm *DotsMask) (Location, error) {
+	for count := 0; count < FindRetriesNumber; count++ {
+		if location, err := s.unsafeLocateRandomByDotsMaskTryOnce(dm); err == nil {
+			return location, nil
+		}
+	}
+
+	return nil, ErrRetriesLimit
+}
+
+func (s *Scene) LocateRandomByDotsMask(dm *DotsMask) (Location, error) {
+	s.locationsMutex.Lock()
+	defer s.locationsMutex.Unlock()
+	return s.unsafeLocateRandomByDotsMask(dm)
+}
+
 func (s *Scene) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	return s.area.Navigate(dot, dir, dis)
 }
