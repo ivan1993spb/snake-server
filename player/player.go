@@ -65,13 +65,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 
 			chout <- NewMessageSnake(s.GetUUID())
 
-			errch := p.processSnakeCommands(snakeStop, chin, s)
-
-			go func() {
-				for err := range errch {
-					chout <- NewMessageError(err.Error())
-				}
-			}()
+			p.processSnakeCommands(snakeStop, chin, s)
 
 			select {
 			case <-snakeStop:
