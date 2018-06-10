@@ -49,6 +49,18 @@ var DotsMaskDiagonal = NewDotsMask([][]uint8{
 	{1, 0, 0, 0, 0, 0, 0},
 })
 
+var DotsMaskCrossSmall = NewDotsMask([][]uint8{
+	{0, 1, 0},
+	{1, 1, 1},
+	{0, 1, 0},
+})
+
+var DotsMaskDiagonalSmall = NewDotsMask([][]uint8{
+	{1, 0, 1},
+	{0, 1, 0},
+	{1, 0, 1},
+})
+
 func NewDotsMask(mask [][]uint8) *DotsMask {
 	copyMask := make([][]uint8, len(mask))
 
