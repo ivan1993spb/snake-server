@@ -55,6 +55,8 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 				return
 			}
 
+			chout <- NewMessageNotice("start")
+
 			s, err := snake.NewSnake(p.world)
 			if err != nil {
 				chout <- NewMessageError("cannot create snake")
@@ -89,6 +91,7 @@ func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, 
 			case <-stop:
 				return
 			case command := <-chin:
+				p.logger.WithField("command", command).Debug("received snake command")
 				if err := s.Command(snake.Command(command)); err != nil {
 					errch <- err
 				}
