@@ -6,9 +6,9 @@ import (
 	"math"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/pquerna/ffjson/ffjson"
+	"github.com/satori/go.uuid"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/objects"
@@ -40,7 +40,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	id string
+	uuid uuid.UUID
 
 	world *world.World
 
@@ -55,14 +55,12 @@ type Snake struct {
 // NewSnake creates new snake
 func NewSnake(world *world.World) (*Snake, error) {
 	var (
-		dir      = engine.RandomDirection()
 		err      error
 		location engine.Location
 	)
 
-	snake := newDefaultSnake()
-	snake.setWorld(world)
-	snake.setID(fmt.Sprintf("%x", *(*uint64)(unsafe.Pointer(&snake))))
+	snake := newDefaultSnake(world)
+	dir := engine.RandomDirection()
 
 	switch dir {
 	case engine.DirectionNorth, engine.DirectionSouth:
@@ -87,8 +85,10 @@ func NewSnake(world *world.World) (*Snake, error) {
 	return snake, nil
 }
 
-func newDefaultSnake() *Snake {
+func newDefaultSnake(world *world.World) *Snake {
 	return &Snake{
+		uuid:      uuid.Must(uuid.NewV4()),
+		world:     world,
 		dots:      make([]engine.Dot, snakeStartLength),
 		length:    snakeStartLength,
 		direction: engine.DirectionEast,
@@ -102,22 +102,10 @@ func (s *Snake) relocate(dots []engine.Dot) {
 	s.dots = dots
 }
 
-func (s *Snake) setID(id string) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.id = id
-}
-
-func (s *Snake) GetID() string {
+func (s *Snake) GetUUID() uuid.UUID {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return s.id
-}
-
-func (s *Snake) setWorld(world *world.World) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.world = world
+	return s.uuid
 }
 
 func (s *Snake) setDirection(dir engine.Direction) {
@@ -280,14 +268,14 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return ffjson.Marshal(&snake{
-		ID:   s.id,
+		UUID: s.uuid.String(),
 		Dots: s.dots,
 		Type: "snake",
 	})
 }
 
 type snake struct {
-	ID   string       `json:"id"`
+	UUID string       `json:"uuid"`
 	Dots []engine.Dot `json:"dots"`
 	Type string       `json:"type"`
 }

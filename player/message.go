@@ -1,5 +1,7 @@
 package player
 
+import "github.com/satori/go.uuid"
+
 type MessageType uint8
 
 const (
@@ -65,10 +67,10 @@ func NewMessageSize(w, h uint8) Message {
 
 type MessageSnake string
 
-func NewMessageSnake(id string) Message {
+func NewMessageSnake(uuid uuid.UUID) Message {
 	return Message{
 		Type:    MessageTypeSnake,
-		Payload: MessageSnake(id),
+		Payload: MessageSnake(uuid.String()),
 	}
 }
 

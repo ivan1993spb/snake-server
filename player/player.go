@@ -61,7 +61,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 			}
 			snakeStop := s.Run(localStopper)
 
-			chout <- NewMessageSnake(s.GetID())
+			chout <- NewMessageSnake(s.GetUUID())
 
 			p.processSnakeCommands(snakeStop, chin, s)
 
