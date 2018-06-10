@@ -93,10 +93,10 @@ func (c *Corpse) Run(stop <-chan struct{}) {
 		case <-stop:
 			// global stop
 		case <-timer.C:
-			c.mux.RLock()
+			c.mux.Lock()
 			c.world.DeleteObject(c, c.location)
-			c.mux.RUnlock()
 			close(c.stop)
+			c.mux.Unlock()
 		case <-c.stop:
 			// Corpse was eaten.
 		}
