@@ -41,7 +41,7 @@ var snakeCommands = map[Command]engine.Direction{
 
 // Snake object
 type Snake struct {
-	uuid uuid.UUID
+	uuid string
 
 	world *world.World
 
@@ -72,7 +72,7 @@ func NewSnake(world *world.World) (*Snake, error) {
 
 func newDefaultSnake(world *world.World) *Snake {
 	return &Snake{
-		uuid:      uuid.Must(uuid.NewV4()),
+		uuid:      uuid.Must(uuid.NewV4()).String(),
 		world:     world,
 		location:  make(engine.Location, snakeStartLength),
 		length:    snakeStartLength,
@@ -99,7 +99,7 @@ func (s *Snake) setLocation(location engine.Location) {
 	s.location = location
 }
 
-func (s *Snake) GetUUID() uuid.UUID {
+func (s *Snake) GetUUID() string {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return s.uuid
@@ -258,7 +258,7 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return ffjson.Marshal(&snake{
-		UUID: s.uuid.String(),
+		UUID: s.uuid,
 		Dots: s.location,
 		Type: "snake",
 	})
