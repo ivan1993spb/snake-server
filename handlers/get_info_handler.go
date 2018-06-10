@@ -30,8 +30,6 @@ func NewGetInfoHandler(logger logrus.FieldLogger, version, build string) http.Ha
 }
 
 func (h *getInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: Create server name, links, description ?
-
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
 	if _, err := fmt.Fprint(w, h.info); err != nil {
