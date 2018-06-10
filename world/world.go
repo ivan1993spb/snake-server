@@ -343,6 +343,22 @@ func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine
 	return location, err
 }
 
+func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
+	location, err := w.pg.CreateObjectRandomRectMargin(object, rw, rh, margin)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return nil, err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectCreate,
+		Payload: object,
+	})
+	return location, err
+}
+
 func (w *World) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return w.pg.Navigate(dot, dir, dis)
 }
