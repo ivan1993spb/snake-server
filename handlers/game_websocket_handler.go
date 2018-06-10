@@ -121,7 +121,6 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 func (h *gameWebSocketHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
