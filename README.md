@@ -342,10 +342,10 @@ Game objects:
 * Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
 * Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 
 Objects TODO:
 
-* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
 
