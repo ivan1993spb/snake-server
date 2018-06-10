@@ -1,6 +1,9 @@
 package engine
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 type DotsMask struct {
 	mask [][]uint8
@@ -130,6 +133,29 @@ func (dm *DotsMask) TurnLeft() *DotsMask {
 		}
 	}
 	return newMask
+}
+
+func (dm *DotsMask) TurnRandom() *DotsMask {
+	const (
+		caseReturnCopy = iota
+		caseReturnTurnRight
+		caseReturnTurnLeft
+		caseReturnTurnOver
+		turnReturnCasesCount
+	)
+
+	switch rand.Intn(turnReturnCasesCount) {
+	case caseReturnCopy:
+		return dm.Copy()
+	case caseReturnTurnRight:
+		return dm.TurnRight()
+	case caseReturnTurnLeft:
+		return dm.TurnLeft()
+	case caseReturnTurnOver:
+		return dm.TurnOver()
+	}
+
+	return nil
 }
 
 func (dm *DotsMask) Location(x, y uint8) Location {
