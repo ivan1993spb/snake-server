@@ -48,11 +48,14 @@ Use `snake-server -help` for help info.
 Arguments:
 
 * `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
-* `--groups-limit` - **int** - groups limit for server (default: *100*)
 * `--conns-limit` - **int** - open web-socket connections limit (default: *1000*)
-* `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
+* `--groups-limit` - **int** - groups limit for server (default: *100*)
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
+* `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
+* `--tls-cert` - **string** - path to certificate file
+* `--tls-enable` - **bool** - flag: enable TLS
+* `--tls-key` - **string** - path to key file
 
 ## API description
 
