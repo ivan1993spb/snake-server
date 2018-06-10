@@ -160,8 +160,50 @@ Game events types:
 Examples:
 
 ```
-{"type":"game","payload":{"type":"update","payload":{"id":"c4203c7b00","dots":[[233,236],[233,235],[233,234]]}}}
-{"type":"game","payload":{"type":"update","payload":{"id":"c420425240","dots":[[120,130],[120,129],[120,128]]}}}
+{
+    "type": "game",
+    "payload": {
+        "type": "create",
+        "payload": {
+            "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+            "dots": [[9, 9], [9, 8], [9, 7]],
+            "type": "snake"
+        }
+    }
+}
+{
+    "type": "game",
+    "payload": {
+        "type": "update",
+        "payload": {
+            "uuid": "a4a82fbe-a3d6-4cfa-9e2e-7d7ac1f949b1",
+            "dots": [[19, 6], [19, 7], [19, 8]],
+            "type": "snake"
+        }
+    }
+}
+{
+    "type": "game",
+    "payload": {
+        "type": "checked",
+        "payload": {
+            "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+            "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
+            "type": "corpse"
+        }
+    }
+}
+{
+    "type": "game",
+    "payload": {
+        "type": "update",
+        "payload": {
+            "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+            "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
+            "type": "corpse"
+        }
+    }
+}
 ```
 
 #### Player messages
@@ -180,10 +222,48 @@ Player messages types:
 Examples:
 
 ```
-{"type":"player","payload":{"type":"notice","payload":"welcome to snake server!"}}
-{"type":"player","payload":{"type":"size","payload":{"width":255,"height":255}}}
-{"type":"player","payload":{"type":"objects","payload":[{"id":"c4203c7b00","dots":[[233,235],[233,234],[233,233]]},{"id":"c420425240","dots":[[120,129],[120,128],[120,127]]},{"id":"c420311800","dots":[[60,166],[61,166],[62,166]]},{"id":"c4203c7c00","dots":[[40,46],[41,46],[42,46]]}]}}
-{"type":"player","payload":{"type":"countdown","payload":5}}
+{
+    "type": "player",
+    "payload": {
+        "type": "notice",
+        "payload": "welcome to snake server!"
+    }
+}
+{
+    "type": "player",
+    "payload": {
+        "type": "size",
+        "payload": {
+            "width":255,
+            "height":255
+        }
+    }
+}
+{
+    "type": "player",
+    "payload": {
+        "type": "objects",
+        "payload": [
+            {
+                "uuid": "e0d5c710-cdc7-43d5-9c4f-5e1e171c5207",
+                "dot": [17, 18],
+                "type": "apple"
+            },
+            {
+                "uuid": "db7b856c-6f8e-4229-aee6-b90cdc575e0e",
+                "dots": [[24, 24], [25, 24], [26, 24]],
+                "type": "corpse"
+            }
+        ]
+    }
+}
+{
+    "type": "player",
+    "payload": {
+        "type": "countdown",
+        "payload": 5
+    }
+}
 ```
 
 #### Broadcast messages
@@ -192,10 +272,13 @@ Output message type: *broadcast*
 
 Payload of output message of type *broadcast* contains **string** - a group notice that sends to all players in game group. 
 
-Examples:
+Example:
 
 ```
-{"type":"broadcast","payload":"hello world!"}
+{
+    "type": "broadcast",
+    "payload": "hello world!"
+}
 ```
 
 ### Game primitives
@@ -210,14 +293,15 @@ Primitives that used to explain game objects:
 
 Game objects:
 
-* Apple: `{"type": "apple", "id": 1, "dot": [x, y]}`
-* Corpse: `{"type": "corpse", "id": 2, "dots": [[x, y], [x, y], [x, y]]}`
-* Mouse: `{"type": "mouse", "id": 3, dot: [x, y], "dir": "n"}`
-* Snake: `{"type": "snake", "id": 4, "dots": [[x, y], [x, y], [x, y]]}`
-* Wall: `{"type": "wall", "id": 5, "dots": [[x, y], [x, y], [x, y]]}`
-* Watermelon: `{"type": "watermelon", "id": 6, "dots": [[x, y], [x, y], [x, y]]}`
+* Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
+* Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 
-// TODO: Fix this topic
+Objects TODO:
+
+* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "n"}`
 
 ### Input messages
 
