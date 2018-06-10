@@ -78,6 +78,61 @@ func NewDotsMask(mask [][]uint8) *DotsMask {
 	}
 }
 
+func LocationToDotsMask(location Location) *DotsMask {
+	if location.Empty() {
+		return &DotsMask{
+			mask: [][]uint8{},
+		}
+	}
+
+	if location.DotCount() == 1 {
+		return &DotsMask{
+			mask: [][]uint8{
+				{1},
+			},
+		}
+	}
+
+	firstDot := location.Dot(1)
+	leftX := firstDot.X
+	rightX := firstDot.X
+	topY := firstDot.Y
+	bottomY := firstDot.Y
+
+	for i := uint16(0); i < location.DotCount(); i++ {
+		dot := location.Dot(i)
+		if leftX > dot.X {
+			leftX = dot.X
+		}
+		if rightX < dot.X {
+			rightX = dot.X
+		}
+		if topY > dot.Y {
+			topY = dot.Y
+		}
+		if bottomY < dot.Y {
+			bottomY = dot.Y
+		}
+	}
+
+	if leftX == rightX && topY == bottomY {
+		return &DotsMask{
+			mask: [][]uint8{
+				{1},
+			},
+		}
+	}
+
+	dm := NewZeroDotsMask(rightX-leftX+1, bottomY-topY+1)
+
+	for i := uint16(0); i < location.DotCount(); i++ {
+		dot := location.Dot(i)
+		dm.mask[dot.Y-topY][dot.X-leftX] = 1
+	}
+
+	return dm
+}
+
 func NewZeroDotsMask(width, height uint8) *DotsMask {
 	mask := make([][]uint8, height)
 	for i := range mask {
