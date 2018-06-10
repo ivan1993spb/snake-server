@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -26,6 +27,11 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+type responseGameWebSocketHandlerError struct {
+	Code int    `json:"code"`
+	Text string `json:"text"`
+}
+
 type gameWebSocketHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
@@ -34,7 +40,7 @@ type gameWebSocketHandler struct {
 type ErrGameWebSocketHandler string
 
 func (e ErrGameWebSocketHandler) Error() string {
-	return "game websocket handler error: " + string(e)
+	return "game web-socket handler error: " + string(e)
 }
 
 func NewGameWebSocketHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
@@ -53,7 +59,10 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		h.writeResponseJSON(w, http.StatusBadRequest, &responseGameWebSocketHandlerError{
+			Code: http.StatusBadRequest,
+			Text: "invalid game id",
+		})
 		return
 	}
 
@@ -65,16 +74,25 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 		switch err {
 		case connections.ErrNotFoundGroup:
-			http.NotFound(w, r)
+			h.writeResponseJSON(w, http.StatusNotFound, &responseGameWebSocketHandlerError{
+				Code: http.StatusNotFound,
+				Text: "game not found",
+			})
 		default:
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.writeResponseJSON(w, http.StatusInternalServerError, &responseGameWebSocketHandlerError{
+				Code: http.StatusInternalServerError,
+				Text: "unknown error",
+			})
 		}
 		return
 	}
 
 	if group.IsFull() {
 		h.logger.Warn(ErrGameWebSocketHandler("group is full"))
-		http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		h.writeResponseJSON(w, http.StatusServiceUnavailable, &responseGameWebSocketHandlerError{
+			Code: http.StatusServiceUnavailable,
+			Text: "group is full",
+		})
 		return
 	}
 
@@ -83,7 +101,11 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		h.writeResponseJSON(w, http.StatusInternalServerError, &responseGameWebSocketHandlerError{
+			Code: http.StatusInternalServerError,
+			Text: "web-socket upgrade connection error",
+		})
+		return
 	}
 
 	conn.SetReadLimit(wsReadMessageLimit)
@@ -93,5 +115,15 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	if err := group.Handle(connections.NewConnectionWorker(conn, h.logger)); err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 		return
+	}
+}
+
+func (h *gameWebSocketHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 	}
 }
