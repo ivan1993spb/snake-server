@@ -111,3 +111,18 @@ func (dm *DotsMask) TurnLeft() *DotsMask {
 	}
 	return newMask
 }
+
+func (dm *DotsMask) Location(x, y uint8) Location {
+	location := make(Location, 0)
+	for i := 0; i < len(dm.mask); i++ {
+		for j := 0; j < len(dm.mask[i]); j++ {
+			if dm.mask[i][j] > 0 {
+				location = append(location, Dot{
+					X: x + uint8(j),
+					Y: y + uint8(i),
+				})
+			}
+		}
+	}
+	return location
+}
