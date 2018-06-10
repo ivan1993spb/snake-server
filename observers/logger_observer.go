@@ -17,7 +17,10 @@ func (LoggerObserver) Observe(stop <-chan struct{}, w *world.World, logger logru
 					logger.WithError(err).Error("world error")
 				}
 			case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
-				logger.WithField("payload", event.Payload).Debug("world event")
+				logger.WithFields(logrus.Fields{
+					"payload": event.Payload,
+					"type":    event.Type,
+				}).Debug("world event")
 			}
 		}
 	}()
