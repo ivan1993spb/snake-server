@@ -1,27 +1,43 @@
 package observers
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/ivan1993spb/snake-server/objects/apple"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
+const chanAppleObserverEventsBuffer = 32
+
+const defaultAppleCount = 1
+
+const oneAppleArea = 50
+
 type AppleObserver struct{}
 
-func (AppleObserver) Observe(stop <-chan struct{}, w *world.World) {
+func (AppleObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+	appleCount := defaultAppleCount
+	size := w.Size()
+
+	if size > oneAppleArea {
+		appleCount = int(size / oneAppleArea)
+	}
+
+	logger.Debugf("apple count for size %d = %d", size, appleCount)
+
+	for i := 0; i < appleCount; i++ {
+		if _, err := apple.NewApple(w); err != nil {
+			logger.WithError(err).Error("cannot create apple")
+		}
+	}
+
 	go func() {
-		// TODO: Create apple counter.
-		apple.NewApple(w)
-		apple.NewApple(w)
-		apple.NewApple(w)
-		apple.NewApple(w)
-		apple.NewApple(w)
-		apple.NewApple(w)
-		// TODO: Handler errors.
-		// TODO: Create buffer const.
-		for event := range w.Events(stop, 32) {
+		for event := range w.Events(stop, chanAppleObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {
 				if _, ok := event.Payload.(*apple.Apple); ok {
-					apple.NewApple(w)
+					if _, err := apple.NewApple(w); err != nil {
+						logger.WithError(err).Error("cannot create apple")
+					}
 				}
 			}
 		}
