@@ -93,7 +93,8 @@ func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, 
 			case command := <-chin:
 				p.logger.WithField("command", command).Debug("received snake command")
 				if err := s.Command(snake.Command(command)); err != nil {
-					errch <- err
+					// TODO: Handle error and send it to channel with timeout!
+					//errch <- err
 				}
 			}
 		}
