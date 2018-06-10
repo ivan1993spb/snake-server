@@ -21,12 +21,12 @@ const corpseTypeLabel = "corpse"
 
 // Snakes can eat corpses
 type Corpse struct {
-	uuid     string
-	world    *world.World
-	location engine.Location
-	mux      *sync.RWMutex
-	stop     chan struct{}
-	isStoped bool
+	uuid      string
+	world     *world.World
+	location  engine.Location
+	mux       *sync.RWMutex
+	stop      chan struct{}
+	isStopped bool
 }
 
 type ErrCreateCorpse string
@@ -83,9 +83,9 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 			c.location = newLoc
 		} else {
 			c.world.DeleteObject(c, c.location)
-			if !c.isStoped {
+			if !c.isStopped {
 				close(c.stop)
-				c.isStoped = true
+				c.isStopped = true
 			}
 		}
 
@@ -105,9 +105,9 @@ func (c *Corpse) Run(stop <-chan struct{}) {
 		case <-timer.C:
 			c.mux.Lock()
 			c.world.DeleteObject(c, c.location)
-			if !c.isStoped {
+			if !c.isStopped {
 				close(c.stop)
-				c.isStoped = true
+				c.isStopped = true
 			}
 			c.mux.Unlock()
 		case <-c.stop:
