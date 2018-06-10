@@ -17,6 +17,8 @@ const corpseMaxExperience = time.Second * 15
 
 const corpseNutritionalValue uint16 = 2
 
+const corpseTypeLabel = "corpse"
+
 // Snakes can eat corpses
 type Corpse struct {
 	uuid     string
@@ -113,7 +115,7 @@ func (c *Corpse) MarshalJSON() ([]byte, error) {
 	return ffjson.Marshal(&corpse{
 		UUID: c.uuid,
 		Dots: c.location,
-		Type: "corpse",
+		Type: corpseTypeLabel,
 	})
 }
 

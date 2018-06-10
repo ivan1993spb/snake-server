@@ -11,6 +11,8 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
+const appleTypeLabel = "apple"
+
 type Apple struct {
 	uuid  string
 	world *world.World
@@ -72,7 +74,7 @@ func (a *Apple) MarshalJSON() ([]byte, error) {
 	return ffjson.Marshal(&apple{
 		UUID: a.uuid,
 		Dot:  a.dot,
-		Type: "apple",
+		Type: appleTypeLabel,
 	})
 }
 

@@ -21,6 +21,7 @@ const (
 	snakeSpeedFactor    = 1.02
 	snakeStrengthFactor = 1
 	snakeStartMargin    = 1
+	snakeTypeLabel      = "snake"
 )
 
 type Command string
@@ -260,7 +261,7 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	return ffjson.Marshal(&snake{
 		UUID: s.uuid,
 		Dots: s.location,
-		Type: "snake",
+		Type: snakeTypeLabel,
 	})
 }
 
