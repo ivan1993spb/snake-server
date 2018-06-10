@@ -61,6 +61,19 @@ var DotsMaskDiagonalSmall = NewDotsMask([][]uint8{
 	{1, 0, 1},
 })
 
+var DotsMaskLabyrinth = NewDotsMask([][]uint8{
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+	{1, 0, 1, 0, 0, 0, 1, 1, 0, 1},
+	{1, 0, 1, 1, 1, 0, 1, 0, 0, 1},
+	{0, 0, 1, 0, 1, 0, 1, 1, 1, 1},
+	{0, 0, 1, 0, 0, 0, 0, 0, 1, 0},
+	{1, 0, 1, 0, 1, 0, 1, 0, 0, 0},
+	{1, 0, 1, 0, 1, 0, 1, 1, 0, 1},
+	{1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+})
+
 func NewDotsMask(mask [][]uint8) *DotsMask {
 	copyMask := make([][]uint8, len(mask))
 
