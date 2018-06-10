@@ -72,7 +72,6 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 			select {
 			case <-snakeStop:
 			case <-localStopper:
-				s.Die()
 				return
 			}
 		}

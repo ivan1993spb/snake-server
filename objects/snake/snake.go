@@ -118,7 +118,7 @@ func (s *Snake) String() string {
 	return fmt.Sprintf("snake %s", s.location)
 }
 
-func (s *Snake) Die() {
+func (s *Snake) die() {
 	s.mux.RLock()
 	s.world.DeleteObject(s, engine.Location(s.location))
 	s.mux.RUnlock()
@@ -145,6 +145,7 @@ func (s *Snake) Run(stop <-chan struct{}) <-chan struct{} {
 		var ticker = time.NewTicker(s.calculateDelay())
 		defer ticker.Stop()
 		defer close(snakeStop)
+		defer s.die()
 
 		for {
 			select {
@@ -173,7 +174,7 @@ func (s *Snake) move() error {
 		if food, ok := object.(objects.Food); ok {
 			s.feed(food.NutritionalValue(dot))
 		} else {
-			s.Die()
+			//s.die()
 
 			return errors.New("snake dies")
 		}
