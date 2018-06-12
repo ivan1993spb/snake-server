@@ -67,6 +67,10 @@ func (a Area) Contains(dot Dot) bool {
 	return a.width > dot.X && a.height > dot.Y
 }
 
+func (a Area) ContainsRect(rect Rect) bool {
+	return a.width > rect.w+rect.x && a.height > rect.h+rect.y
+}
+
 // NewRandomDot generates random dot on area with starting coordinates X and Y
 func (a Area) NewRandomDot(x, y uint8) Dot {
 	return Dot{

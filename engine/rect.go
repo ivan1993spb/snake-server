@@ -27,6 +27,14 @@ func (r Rect) Height() uint8 {
 	return r.h
 }
 
+func (r Rect) X() uint8 {
+	return r.x
+}
+
+func (r Rect) Y() uint8 {
+	return r.y
+}
+
 func (r Rect) ContainsDot(d Dot) bool {
 	return r.x <= d.X && r.y <= d.Y && r.x+r.w > d.X && r.y+r.h > d.Y
 }
