@@ -13,16 +13,19 @@ const ruinsFactor = 0.20
 
 var dotsMaskOne = engine.NewDotsMask([][]uint8{{1}})
 
-var ruins = [...]*engine.DotsMask{
+var ruins = []*engine.DotsMask{
 	dotsMaskOne,
 	engine.DotsMaskSquare2x2,
 	engine.DotsMaskTank,
-	engine.DotsMaskHome,
+	engine.DotsMaskHome1,
+	engine.DotsMaskHome2,
 	engine.DotsMaskCross,
 	engine.DotsMaskDiagonal,
 	engine.DotsMaskCrossSmall,
 	engine.DotsMaskDiagonalSmall,
 	engine.DotsMaskLabyrinth,
+	engine.DotsMaskTunnel1,
+	engine.DotsMaskTunnel2,
 }
 
 func calcRuinsCount(size uint16) int {
