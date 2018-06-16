@@ -165,3 +165,11 @@ func (l Location) Hash() []uint16 {
 	}
 	return hash
 }
+
+func HashToLocation(hashes []uint16) Location {
+	location := make(Location, 0, len(hashes))
+	for _, hash := range hashes {
+		location = append(location, HashToDot(hash))
+	}
+	return location
+}
