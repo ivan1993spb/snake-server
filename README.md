@@ -19,7 +19,7 @@ You can download server binary, build server from source and pull server docker 
 
 You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
 
-* Setup variables `VERSION`, `PLATFORM` (darwin, linux or windows) and `ARCHITECTURE` (386 or amd64)
+* Setup variables *VERSION*, *PLATFORM* (darwin, linux or windows) and *ARCHITECTURE* (386 or amd64)
 * Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} -o snake-server`
 * Make binary executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
