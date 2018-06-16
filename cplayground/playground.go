@@ -102,23 +102,19 @@ func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engin
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
-	// TODO: Implement method.
-	return engine.Dot{}, nil
+	return pg.area.Navigate(dot, dir, dis)
 }
 
 func (pg *Playground) Size() uint16 {
-	// TODO: Implement method.
-	return 0
+	return pg.area.Size()
 }
 
 func (pg *Playground) Width() uint8 {
-	// TODO: Implement method.
-	return 0
+	return pg.area.Width()
 }
 
 func (pg *Playground) Height() uint8 {
-	// TODO: Implement method.
-	return 0
+	return pg.area.Height()
 }
 
 func (pg *Playground) GetObjects() []interface{} {
