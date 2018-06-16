@@ -1,11 +1,20 @@
 package cmap
 
 import (
-	"encoding/json"
-	"hash/fnv"
 	"sort"
 	"strconv"
+	"sync"
 	"testing"
+)
+
+const (
+	keyElephant = iota
+	keyMonkey
+	keyMoney
+	keyMarine
+	keyPredator
+	keyNone
+	keyHorse
 )
 
 type Animal struct {
@@ -28,8 +37,8 @@ func TestInsert(t *testing.T) {
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
-	m.Set("elephant", elephant)
-	m.Set("monkey", monkey)
+	m.Set(keyElephant, elephant)
+	m.Set(keyMonkey, monkey)
 
 	if m.Count() != 2 {
 		t.Error("map should contain exactly two elements.")
@@ -41,8 +50,8 @@ func TestInsertAbsent(t *testing.T) {
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
-	m.SetIfAbsent("elephant", elephant)
-	if ok := m.SetIfAbsent("elephant", monkey); ok {
+	m.SetIfAbsent(keyElephant, elephant)
+	if ok := m.SetIfAbsent(keyElephant, monkey); ok {
 		t.Error("map set a new value even the entry is already present")
 	}
 }
@@ -51,7 +60,7 @@ func TestGet(t *testing.T) {
 	m := New()
 
 	// Get a missing element.
-	val, ok := m.Get("Money")
+	val, ok := m.Get(keyMoney)
 
 	if ok == true {
 		t.Error("ok should be false when item is missing from map.")
@@ -62,11 +71,11 @@ func TestGet(t *testing.T) {
 	}
 
 	elephant := Animal{"elephant"}
-	m.Set("elephant", elephant)
+	m.Set(keyElephant, elephant)
 
 	// Retrieve inserted element.
 
-	tmp, ok := m.Get("elephant")
+	tmp, ok := m.Get(keyElephant)
 	elephant = tmp.(Animal) // Type assertion.
 
 	if ok == false {
@@ -86,14 +95,14 @@ func TestHas(t *testing.T) {
 	m := New()
 
 	// Get a missing element.
-	if m.Has("Money") == true {
+	if m.Has(keyMoney) == true {
 		t.Error("element shouldn't exists")
 	}
 
 	elephant := Animal{"elephant"}
-	m.Set("elephant", elephant)
+	m.Set(keyElephant, elephant)
 
-	if m.Has("elephant") == false {
+	if m.Has(keyElephant) == false {
 		t.Error("element exists, expecting Has to return True.")
 	}
 }
@@ -102,15 +111,15 @@ func TestRemove(t *testing.T) {
 	m := New()
 
 	monkey := Animal{"monkey"}
-	m.Set("monkey", monkey)
+	m.Set(keyMonkey, monkey)
 
-	m.Remove("monkey")
+	m.Remove(keyMonkey)
 
 	if m.Count() != 0 {
 		t.Error("Expecting count to be zero once item was removed.")
 	}
 
-	temp, ok := m.Get("monkey")
+	temp, ok := m.Get(keyMonkey)
 
 	if ok != false {
 		t.Error("Expecting ok to be false for missing items.")
@@ -121,23 +130,23 @@ func TestRemove(t *testing.T) {
 	}
 
 	// Remove a none existing element.
-	m.Remove("noone")
+	m.Remove(keyNone)
 }
 
 func TestRemoveCb(t *testing.T) {
 	m := New()
 
 	monkey := Animal{"monkey"}
-	m.Set("monkey", monkey)
+	m.Set(keyMonkey, monkey)
 	elephant := Animal{"elephant"}
-	m.Set("elephant", elephant)
+	m.Set(keyElephant, elephant)
 
 	var (
-		mapKey   string
+		mapKey   uint16
 		mapVal   interface{}
 		wasFound bool
 	)
-	cb := func(key string, val interface{}, exists bool) bool {
+	cb := func(key uint16, val interface{}, exists bool) bool {
 		mapKey = key
 		mapVal = val
 		wasFound = exists
@@ -149,12 +158,12 @@ func TestRemoveCb(t *testing.T) {
 	}
 
 	// Monkey should be removed
-	result := m.RemoveCb("monkey", cb)
+	result := m.RemoveCb(keyMonkey, cb)
 	if !result {
 		t.Errorf("Result was not true")
 	}
 
-	if mapKey != "monkey" {
+	if mapKey != keyMonkey {
 		t.Error("Wrong key was provided to the callback")
 	}
 
@@ -166,17 +175,17 @@ func TestRemoveCb(t *testing.T) {
 		t.Errorf("Key was not found")
 	}
 
-	if m.Has("monkey") {
+	if m.Has(keyMonkey) {
 		t.Errorf("Key was not removed")
 	}
 
 	// Elephant should not be removed
-	result = m.RemoveCb("elephant", cb)
+	result = m.RemoveCb(keyElephant, cb)
 	if result {
 		t.Errorf("Result was true")
 	}
 
-	if mapKey != "elephant" {
+	if mapKey != keyElephant {
 		t.Error("Wrong key was provided to the callback")
 	}
 
@@ -188,17 +197,17 @@ func TestRemoveCb(t *testing.T) {
 		t.Errorf("Key was not found")
 	}
 
-	if !m.Has("elephant") {
+	if !m.Has(keyElephant) {
 		t.Errorf("Key was removed")
 	}
 
 	// Unset key should remain unset
-	result = m.RemoveCb("horse", cb)
+	result = m.RemoveCb(keyHorse, cb)
 	if result {
 		t.Errorf("Result was true")
 	}
 
-	if mapKey != "horse" {
+	if mapKey != keyHorse {
 		t.Error("Wrong key was provided to the callback")
 	}
 
@@ -210,7 +219,7 @@ func TestRemoveCb(t *testing.T) {
 		t.Errorf("Key was found")
 	}
 
-	if m.Has("horse") {
+	if m.Has(keyHorse) {
 		t.Errorf("Key was created")
 	}
 }
@@ -219,9 +228,9 @@ func TestPop(t *testing.T) {
 	m := New()
 
 	monkey := Animal{"monkey"}
-	m.Set("monkey", monkey)
+	m.Set(keyMonkey, monkey)
 
-	v, exists := m.Pop("monkey")
+	v, exists := m.Pop(keyMonkey)
 
 	if !exists {
 		t.Error("Pop didn't find a monkey.")
@@ -233,7 +242,7 @@ func TestPop(t *testing.T) {
 		t.Error("Pop found something else, but monkey.")
 	}
 
-	v2, exists2 := m.Pop("monkey")
+	v2, exists2 := m.Pop(keyMonkey)
 	m1, ok = v2.(Animal)
 
 	if exists2 || ok || m1 == monkey {
@@ -244,7 +253,7 @@ func TestPop(t *testing.T) {
 		t.Error("Expecting count to be zero once item was Pop'ed.")
 	}
 
-	temp, ok := m.Get("monkey")
+	temp, ok := m.Get(keyMonkey)
 
 	if ok != false {
 		t.Error("Expecting ok to be false for missing items.")
@@ -258,7 +267,7 @@ func TestPop(t *testing.T) {
 func TestCount(t *testing.T) {
 	m := New()
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	if m.Count() != 100 {
@@ -273,7 +282,7 @@ func TestIsEmpty(t *testing.T) {
 		t.Error("new map should be empty")
 	}
 
-	m.Set("elephant", Animal{"elephant"})
+	m.Set(keyElephant, Animal{"elephant"})
 
 	if m.IsEmpty() != false {
 		t.Error("map shouldn't be empty.")
@@ -285,7 +294,7 @@ func TestIterator(t *testing.T) {
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	counter := 0
@@ -309,7 +318,7 @@ func TestBufferedIterator(t *testing.T) {
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	counter := 0
@@ -333,12 +342,12 @@ func TestIterCb(t *testing.T) {
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	counter := 0
 	// Iterate over elements.
-	m.IterCb(func(key string, v interface{}) {
+	m.IterCb(func(key uint16, v interface{}) {
 		_, ok := v.(Animal)
 		if !ok {
 			t.Error("Expecting an animal object")
@@ -356,7 +365,7 @@ func TestItems(t *testing.T) {
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	items := m.Items()
@@ -376,10 +385,10 @@ func TestConcurrent(t *testing.T) {
 	go func() {
 		for i := 0; i < iterations/2; i++ {
 			// Add item to map.
-			m.Set(strconv.Itoa(i), i)
+			m.Set(uint16(i), i)
 
 			// Retrieve item from map.
-			val, _ := m.Get(strconv.Itoa(i))
+			val, _ := m.Get(uint16(i))
 
 			// Write to channel inserted value.
 			ch <- val.(int)
@@ -389,10 +398,10 @@ func TestConcurrent(t *testing.T) {
 	go func() {
 		for i := iterations / 2; i < iterations; i++ {
 			// Add item to map.
-			m.Set(strconv.Itoa(i), i)
+			m.Set(uint16(i), i)
 
 			// Retrieve item from map.
-			val, _ := m.Get(strconv.Itoa(i))
+			val, _ := m.Get(uint16(i))
 
 			// Write to channel inserted value.
 			ch <- val.(int)
@@ -425,32 +434,12 @@ func TestConcurrent(t *testing.T) {
 	}
 }
 
-func TestJsonMarshal(t *testing.T) {
-	SHARD_COUNT = 2
-	defer func() {
-		SHARD_COUNT = 32
-	}()
-	expected := "{\"a\":1,\"b\":2}"
-	m := New()
-	m.Set("a", 1)
-	m.Set("b", 2)
-	j, err := json.Marshal(m)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if string(j) != expected {
-		t.Error("json", string(j), "differ from expected", expected)
-		return
-	}
-}
-
 func TestKeys(t *testing.T) {
 	m := New()
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 
 	keys := m.Keys()
@@ -460,25 +449,15 @@ func TestKeys(t *testing.T) {
 }
 
 func TestMInsert(t *testing.T) {
-	animals := map[string]interface{}{
-		"elephant": Animal{"elephant"},
-		"monkey":   Animal{"monkey"},
+	animals := map[uint16]interface{}{
+		keyElephant: Animal{"elephant"},
+		keyMonkey:   Animal{"monkey"},
 	}
 	m := New()
 	m.MSet(animals)
 
 	if m.Count() != 2 {
 		t.Error("map should contain exactly two elements.")
-	}
-}
-
-func TestFnv32(t *testing.T) {
-	key := []byte("ABC")
-
-	hasher := fnv.New32()
-	hasher.Write(key)
-	if fnv32(string(key)) != hasher.Sum32() {
-		t.Errorf("Bundled fnv32 produced %d, expected result from hash/fnv32 is %d", fnv32(string(key)), hasher.Sum32())
 	}
 }
 
@@ -498,10 +477,10 @@ func TestUpsert(t *testing.T) {
 	}
 
 	m := New()
-	m.Set("marine", []Animal{dolphin})
-	m.Upsert("marine", whale, cb)
-	m.Upsert("predator", tiger, cb)
-	m.Upsert("predator", lion, cb)
+	m.Set(keyMarine, []Animal{dolphin})
+	m.Upsert(keyMarine, whale, cb)
+	m.Upsert(keyPredator, tiger, cb)
+	m.Upsert(keyPredator, lion, cb)
 
 	if m.Count() != 2 {
 		t.Error("map should contain exactly two elements.")
@@ -524,12 +503,12 @@ func TestUpsert(t *testing.T) {
 		return true
 	}
 
-	marineAnimals, ok := m.Get("marine")
+	marineAnimals, ok := m.Get(keyMarine)
 	if !ok || !compare(marineAnimals.([]Animal), []Animal{dolphin, whale}) {
 		t.Error("Set, then Upsert failed")
 	}
 
-	predators, ok := m.Get("predator")
+	predators, ok := m.Get(keyPredator)
 	if !ok || !compare(predators.([]Animal), []Animal{tiger, lion}) {
 		t.Error("Upsert, then Upsert failed")
 	}
@@ -541,21 +520,28 @@ func TestKeysWhenRemoving(t *testing.T) {
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
+
+	wg := sync.WaitGroup{}
 
 	// Remove 10 elements concurrently.
 	Num := 10
+	wg.Add(Num)
+
 	for i := 0; i < Num; i++ {
-		go func(c *ConcurrentMap, n int) {
-			c.Remove(strconv.Itoa(n))
-		}(&m, i)
+		go func(c *ConcurrentMap, n uint16) {
+			c.Remove(n)
+			wg.Done()
+		}(&m, uint16(i))
 	}
+
+	wg.Wait()
+
 	keys := m.Keys()
-	for _, k := range keys {
-		if k == "" {
-			t.Error("Empty keys returned")
-		}
+
+	if len(keys) != Total-Num {
+		t.Error("Invalid keys count")
 	}
 }
 
@@ -565,7 +551,7 @@ func TestUnDrainedIter(t *testing.T) {
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	counter := 0
 	// Iterate over elements.
@@ -582,7 +568,7 @@ func TestUnDrainedIter(t *testing.T) {
 		}
 	}
 	for i := Total; i < 2*Total; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	for item := range ch {
 		val := item.Val
@@ -617,7 +603,7 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	counter := 0
 	// Iterate over elements.
@@ -634,7 +620,7 @@ func TestUnDrainedIterBuffered(t *testing.T) {
 		}
 	}
 	for i := Total; i < 2*Total; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	for item := range ch {
 		val := item.Val

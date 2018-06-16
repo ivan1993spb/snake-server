@@ -3,12 +3,16 @@ package cmap
 import "testing"
 import "strconv"
 
+const (
+	keyA = iota
+)
+
 func BenchmarkItems(b *testing.B) {
 	m := New()
 
 	// Insert 100 elements.
 	for i := 0; i < 10000; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	for i := 0; i < b.N; i++ {
 		m.Items()
@@ -20,7 +24,7 @@ func BenchmarkMarshalJson(b *testing.B) {
 
 	// Insert 100 elements.
 	for i := 0; i < 10000; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	for i := 0; i < b.N; i++ {
 		m.MarshalJSON()
@@ -37,16 +41,16 @@ func BenchmarkSingleInsertAbsent(b *testing.B) {
 	m := New()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Set(strconv.Itoa(i), "value")
+		m.Set(uint16(i), "value")
 	}
 }
 
 func BenchmarkSingleInsertPresent(b *testing.B) {
 	m := New()
-	m.Set("key", "value")
+	m.Set(keyA, "value")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Set("key", "value")
+		m.Set(keyA, "value")
 	}
 }
 
@@ -56,7 +60,7 @@ func benchmarkMultiInsertDifferent(b *testing.B) {
 	_, set := GetSet(m, finished)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		set(strconv.Itoa(i), "value")
+		set(uint16(i), "value")
 	}
 	for i := 0; i < b.N; i++ {
 		<-finished
@@ -80,10 +84,10 @@ func BenchmarkMultiInsertSame(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, b.N)
 	_, set := GetSet(m, finished)
-	m.Set("key", "value")
+	m.Set(keyA, "value")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		set("key", "value")
+		set(keyA, "value")
 	}
 	for i := 0; i < b.N; i++ {
 		<-finished
@@ -94,10 +98,10 @@ func BenchmarkMultiGetSame(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, b.N)
 	get, _ := GetSet(m, finished)
-	m.Set("key", "value")
+	m.Set(keyA, "value")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		get("key", "value")
+		get(keyA, "value")
 	}
 	for i := 0; i < b.N; i++ {
 		<-finished
@@ -108,11 +112,11 @@ func benchmarkMultiGetSetDifferent(b *testing.B) {
 	m := New()
 	finished := make(chan struct{}, 2*b.N)
 	get, set := GetSet(m, finished)
-	m.Set("-1", "value")
+	m.Set(0, "value")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		set(strconv.Itoa(i-1), "value")
-		get(strconv.Itoa(i), "value")
+		set(uint16(i), "value")
+		get(uint16(i+1), "value")
 	}
 	for i := 0; i < 2*b.N; i++ {
 		<-finished
@@ -137,12 +141,12 @@ func benchmarkMultiGetSetBlock(b *testing.B) {
 	finished := make(chan struct{}, 2*b.N)
 	get, set := GetSet(m, finished)
 	for i := 0; i < b.N; i++ {
-		m.Set(strconv.Itoa(i%100), "value")
+		m.Set(uint16(i%100), "value")
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		set(strconv.Itoa(i%100), "value")
-		get(strconv.Itoa(i%100), "value")
+		set(uint16(i%100), "value")
+		get(uint16(i%100), "value")
 	}
 	for i := 0; i < 2*b.N; i++ {
 		<-finished
@@ -162,13 +166,13 @@ func BenchmarkMultiGetSetBlock_256_Shard(b *testing.B) {
 	runWithShards(benchmarkMultiGetSetBlock, b, 256)
 }
 
-func GetSet(m ConcurrentMap, finished chan struct{}) (set func(key, value string), get func(key, value string)) {
-	return func(key, value string) {
+func GetSet(m ConcurrentMap, finished chan struct{}) (set func(key uint16, value string), get func(key uint16, value string)) {
+	return func(key uint16, value string) {
 			for i := 0; i < 10; i++ {
 				m.Get(key)
 			}
 			finished <- struct{}{}
-		}, func(key, value string) {
+		}, func(key uint16, value string) {
 			for i := 0; i < 10; i++ {
 				m.Set(key, value)
 			}
@@ -177,10 +181,10 @@ func GetSet(m ConcurrentMap, finished chan struct{}) (set func(key, value string
 }
 
 func runWithShards(bench func(b *testing.B), b *testing.B, shardsCount int) {
-	oldShardsCount := SHARD_COUNT
-	SHARD_COUNT = shardsCount
+	oldShardsCount := shardCount
+	shardCount = shardsCount
 	bench(b)
-	SHARD_COUNT = oldShardsCount
+	shardCount = oldShardsCount
 }
 
 func BenchmarkKeys(b *testing.B) {
@@ -188,7 +192,7 @@ func BenchmarkKeys(b *testing.B) {
 
 	// Insert 100 elements.
 	for i := 0; i < 10000; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
+		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
 	for i := 0; i < b.N; i++ {
 		m.Keys()
