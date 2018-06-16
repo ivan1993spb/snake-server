@@ -13,9 +13,17 @@ The player controls the snake. The task of the game is to grow the biggest snake
 
 ## Installation
 
-Download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
+You can download server binary, build server from source and pull server docker image.
 
-Also you can build server from source or pull docker image.
+### Download binary
+
+You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
+
+* Setup variables `VERSION`, `PLATFORM` (darwin, linux or windows) and `ARCHITECTURE` (386 or amd64)
+* Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} -o snake-server`
+* Make binary executable with `chmod +x snake-server`
+* Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
+* Use `snake-server -h` to see usage information
 
 ### Install from source
 
