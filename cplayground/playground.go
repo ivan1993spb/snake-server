@@ -109,18 +109,67 @@ func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} 
 }
 
 func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
-	// TODO: Implement method.
+	if v, ok := pg.cMap.Get(dot.Hash()); ok {
+		if e, ok := v.(*entity); ok {
+			return e.GetObject()
+		}
+	}
 	return nil
 }
 
 func (pg *Playground) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
-	// TODO: Implement method.
+	if v, ok := pg.cMap.Get(dot.Hash()); ok {
+		if e, ok := v.(*entity); ok {
+			return e.GetObject(), e.GetLocation()
+		}
+	}
 	return nil, nil
 }
 
 func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
-	// TODO: Implement method.
-	return nil
+	if len(dots) == 0 {
+		return nil
+	}
+
+	objects := make([]interface{}, 0)
+	checked := make([]engine.Dot, 0, len(dots))
+
+	for _, dot := range dots {
+		flagDotChecked := false
+
+		for i := range checked {
+			if checked[i].Equals(dot) {
+				flagDotChecked = true
+				break
+			}
+		}
+
+		if flagDotChecked {
+			continue
+		}
+
+		if v, ok := pg.cMap.Get(dot.Hash()); ok {
+			if e, ok := v.(*entity); ok {
+				object := e.GetObject()
+				flagObjectCreated := false
+
+				for i := range objects {
+					if objects[i] == object {
+						flagObjectCreated = true
+						break
+					}
+				}
+
+				if !flagObjectCreated {
+					objects = append(objects, object)
+				}
+			}
+		}
+
+		checked = append(checked, dot)
+	}
+
+	return objects
 }
 
 func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
