@@ -1,6 +1,7 @@
 package cplayground
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/ivan1993spb/snake-server/concurrent-map"
@@ -13,6 +14,10 @@ func calcShardCount(size uint16) int {
 	// TODO: Implement function.
 	return defaultShardCount
 }
+
+var FindRetriesNumber = 32
+
+var ErrRetriesLimit = errors.New("retries limit was reached")
 
 type Playground struct {
 	cMap *cmap.ConcurrentMap
@@ -60,8 +65,8 @@ func (pg *Playground) unsafeObjectExists(object interface{}) bool {
 }
 
 func (pg *Playground) ObjectExists(object interface{}) bool {
-	pg.entitiesMux.Lock()
-	defer pg.entitiesMux.Unlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeObjectExists(object)
 }
 
@@ -75,8 +80,8 @@ func (pg *Playground) unsafeLocationExists(location engine.Location) bool {
 }
 
 func (pg *Playground) LocationExists(location engine.Location) bool {
-	pg.entitiesMux.Lock()
-	defer pg.entitiesMux.Unlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeLocationExists(location)
 }
 
@@ -90,8 +95,8 @@ func (pg *Playground) unsafeEntityExists(object interface{}, location engine.Loc
 }
 
 func (pg *Playground) EntityExists(object interface{}, location engine.Location) bool {
-	pg.entitiesMux.Lock()
-	defer pg.entitiesMux.Unlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeEntityExists(object, location)
 }
 
@@ -105,8 +110,8 @@ func (pg *Playground) unsafeGetObjectByLocation(location engine.Location) interf
 }
 
 func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} {
-	pg.entitiesMux.Lock()
-	defer pg.entitiesMux.Unlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeGetObjectByLocation(location)
 }
 
@@ -200,8 +205,25 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 }
 
 func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
-	// TODO: Implement method.
-	return nil, nil
+	// TODO: Create specific error
+	if pg.ObjectExists(object) {
+		return nil, errors.New("object already exists")
+	}
+
+	for i := 0; i < FindRetriesNumber; i++ {
+		dot := pg.area.NewRandomDot(0, 0)
+		e := newEntity(object, engine.Location{dot})
+
+		if pg.cMap.SetIfAbsent(dot.Hash(), e) {
+
+			pg.entitiesMux.Lock()
+			pg.entities = append(pg.entities, e)
+			pg.entitiesMux.Unlock()
+
+			return engine.Location{dot}, nil
+		}
+	}
+	return nil, ErrRetriesLimit
 }
 
 func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
