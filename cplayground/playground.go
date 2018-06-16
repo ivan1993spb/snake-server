@@ -7,6 +7,12 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
+const shardCountFactor = 0.20
+
+func calcShardCount(size uint16) int {
+	return int(float32(size) * shardCountFactor)
+}
+
 type Playground struct {
 	cMap *cmap.ConcurrentMap
 
@@ -16,9 +22,31 @@ type Playground struct {
 	area engine.Area
 }
 
+type ErrCreatePlayground struct {
+	Err error
+}
+
+func (e ErrCreatePlayground) Error() string {
+	return "cannot create playground: " + e.Error()
+}
+
 func NewPlayground(width, height uint8) (*Playground, error) {
-	// TODO: Implement method.
-	return nil, nil
+	area, err := engine.NewArea(height, width)
+	if err != nil {
+		return nil, ErrCreatePlayground{err}
+	}
+
+	cMap, err := cmap.New(calcShardCount(area.Size()))
+	if err != nil {
+		return nil, ErrCreatePlayground{err}
+	}
+
+	return &Playground{
+		cMap:        cMap,
+		entities:    make([]*entity, 0),
+		entitiesMux: &sync.RWMutex{},
+		area:        area,
+	}, nil
 }
 
 func (pg *Playground) ObjectExists(object interface{}) bool {
