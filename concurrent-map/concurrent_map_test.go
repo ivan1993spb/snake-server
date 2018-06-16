@@ -17,8 +17,6 @@ const (
 	keyHorse
 )
 
-const defaultShardCount = 32
-
 type Animal struct {
 	name string
 }

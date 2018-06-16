@@ -6,6 +6,10 @@ import (
 	"sync"
 )
 
+const defaultShardCount = 32
+
+const bufferSize = 64
+
 // A "thread" safe map of type uint16:Anything.
 // To avoid lock bottlenecks this map is dived to several (shardCount) map shards.
 type ConcurrentMap struct {
@@ -34,18 +38,92 @@ func New(shardCount int) (*ConcurrentMap, error) {
 	}, nil
 }
 
+func NewDefault() *ConcurrentMap {
+	m, err := New(defaultShardCount)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
 // Returns shard under given key
 func (m *ConcurrentMap) GetShard(key uint16) *ConcurrentMapShared {
-	return m.shards[key%uint16(m.count)]
+	return m.shards[m.getShardIndex(key)]
+}
+
+func (m *ConcurrentMap) getShardIndex(key uint16) uint16 {
+	return key % uint16(m.count)
 }
 
 func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
+	shardsTuples := map[uint16][]Tuple{}
+
 	for key, value := range data {
-		shard := m.GetShard(key)
+		shardIndex := m.getShardIndex(key)
+
+		if shardTuples, ok := shardsTuples[shardIndex]; ok {
+			shardsTuples[shardIndex] = append(shardTuples, Tuple{
+				Key: key,
+				Val: value,
+			})
+		} else {
+			shardsTuples[shardIndex] = make([]Tuple, 0, bufferSize)
+			shardsTuples[shardIndex] = append(shardsTuples[shardIndex], Tuple{
+				Key: key,
+				Val: value,
+			})
+		}
+	}
+
+	for shardIndex, tuples := range shardsTuples {
+		shard := m.shards[shardIndex]
 		shard.Lock()
-		shard.items[key] = value
+		for _, tuple := range tuples {
+			shard.items[tuple.Key] = tuple.Val
+		}
 		shard.Unlock()
 	}
+}
+
+func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
+	shardsTuples := map[uint16][]Tuple{}
+
+	for key, value := range data {
+		shardIndex := m.getShardIndex(key)
+
+		if shardTuples, ok := shardsTuples[shardIndex]; ok {
+			shardsTuples[shardIndex] = append(shardTuples, Tuple{
+				Key: key,
+				Val: value,
+			})
+		} else {
+			shardsTuples[shardIndex] = make([]Tuple, 0, bufferSize)
+			shardsTuples[shardIndex] = append(shardsTuples[shardIndex], Tuple{
+				Key: key,
+				Val: value,
+			})
+		}
+	}
+
+	rollbackKeys := make([]uint16, 0, bufferSize)
+
+	for shardIndex, tuples := range shardsTuples {
+		shard := m.shards[shardIndex]
+		shard.Lock()
+		for _, tuple := range tuples {
+			if _, ok := shard.items[tuple.Key]; !ok {
+				shard.items[tuple.Key] = tuple.Val
+				rollbackKeys = append(rollbackKeys, tuple.Key)
+			} else {
+				shard.Unlock()
+				m.MRemove(rollbackKeys)
+				return false
+			}
+		}
+		shard.Unlock()
+	}
+
+	return true
 }
 
 // Sets the given value under the specified key.
@@ -128,6 +206,30 @@ func (m *ConcurrentMap) Remove(key uint16) {
 	shard.Lock()
 	delete(shard.items, key)
 	shard.Unlock()
+}
+
+func (m *ConcurrentMap) MRemove(keys []uint16) {
+	shardsKeys := map[uint16][]uint16{}
+
+	for _, key := range keys {
+		shardIndex := m.getShardIndex(key)
+
+		if shardTuples, ok := shardsKeys[shardIndex]; ok {
+			shardsKeys[shardIndex] = append(shardTuples, key)
+		} else {
+			shardsKeys[shardIndex] = make([]uint16, 0, bufferSize)
+			shardsKeys[shardIndex] = append(shardsKeys[shardIndex], key)
+		}
+	}
+
+	for shardIndex, keys := range shardsKeys {
+		shard := m.shards[shardIndex]
+		shard.Lock()
+		for _, key := range keys {
+			delete(shard.items, key)
+		}
+		shard.Unlock()
+	}
 }
 
 // RemoveCb is a callback executed in a map.RemoveCb() call, while Lock is held
