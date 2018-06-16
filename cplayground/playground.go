@@ -7,9 +7,11 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
+const defaultShardCount = 32
+
 func calcShardCount(size uint16) int {
 	// TODO: Implement function.
-	return 32
+	return defaultShardCount
 }
 
 type Playground struct {
