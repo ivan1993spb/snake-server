@@ -16,7 +16,7 @@ func HashToDot(v uint16) Dot {
 
 // Equals compares two dots
 func (d1 Dot) Equals(d2 Dot) bool {
-	return d1 == d2 || (d1.X == d2.X && d1.Y == d2.Y)
+	return d1 == d2
 }
 
 // Implementing json.Marshaler interface
