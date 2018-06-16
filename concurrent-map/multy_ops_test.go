@@ -21,13 +21,13 @@ func Test_ConcurrentMap_MSet(t *testing.T) {
 	m.MSet(data)
 
 	for key, value := range data {
-		shard := m.GetShard(key)
+		shard := m.getShard(key)
 
-		shard.RLock()
+		shard.mux.RLock()
 		actual, ok := shard.items[key]
 		require.True(t, ok, fmt.Sprintf("key: %d, shard index: %d, value: %d", key, m.getShardIndex(key), value))
 		require.Equal(t, value, actual)
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 }
 
@@ -44,13 +44,13 @@ func Test_ConcurrentMap_MSetIfAbsent_EmptyMap(t *testing.T) {
 	m.MSetIfAbsent(data)
 
 	for key, value := range data {
-		shard := m.GetShard(key)
+		shard := m.getShard(key)
 
-		shard.RLock()
+		shard.mux.RLock()
 		actual, ok := shard.items[key]
 		require.True(t, ok, fmt.Sprintf("key: %d, shard index: %d, value: %d", key, m.getShardIndex(key), value))
 		require.Equal(t, value, actual)
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 }
 
@@ -74,12 +74,12 @@ func Test_ConcurrentMap_MSetIfAbsent_NotEmptyMap(t *testing.T) {
 	delete(m.shards[m.getShardIndex(key)].items, key)
 
 	for key, value := range data {
-		shard := m.GetShard(key)
+		shard := m.getShard(key)
 
-		shard.RLock()
+		shard.mux.RLock()
 		_, ok := shard.items[key]
 		require.False(t, ok, fmt.Sprintf("key: %d, shard index: %d, value: %d", key, m.getShardIndex(key), value))
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 }
 
@@ -98,11 +98,11 @@ func Test_ConcurrentMap_MRemove(t *testing.T) {
 	m.MRemove(keys)
 
 	for _, key := range keys {
-		shard := m.GetShard(key)
+		shard := m.getShard(key)
 
-		shard.RLock()
+		shard.mux.RLock()
 		_, ok := shard.items[key]
 		require.False(t, ok, fmt.Sprintf("key: %d, shard index: %d", key, m.getShardIndex(key)))
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 }

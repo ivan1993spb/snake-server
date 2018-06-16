@@ -19,8 +19,8 @@ type ConcurrentMap struct {
 
 // A "thread" safe uint16 to anything map.
 type ConcurrentMapShared struct {
-	items        map[uint16]interface{}
-	sync.RWMutex // Read Write mutex, guards access to internal map.
+	items map[uint16]interface{}
+	mux   *sync.RWMutex
 }
 
 // Creates a new concurrent map.
@@ -28,10 +28,16 @@ func New(shardCount int) (*ConcurrentMap, error) {
 	if shardCount < 1 {
 		return nil, errors.New("invalid shard count: less than 1")
 	}
+
 	shards := make([]*ConcurrentMapShared, shardCount)
+
 	for i := 0; i < shardCount; i++ {
-		shards[i] = &ConcurrentMapShared{items: make(map[uint16]interface{})}
+		shards[i] = &ConcurrentMapShared{
+			items: make(map[uint16]interface{}),
+			mux:   &sync.RWMutex{},
+		}
 	}
+
 	return &ConcurrentMap{
 		shards: shards,
 		count:  shardCount,
@@ -47,7 +53,7 @@ func NewDefault() *ConcurrentMap {
 }
 
 // Returns shard under given key
-func (m *ConcurrentMap) GetShard(key uint16) *ConcurrentMapShared {
+func (m *ConcurrentMap) getShard(key uint16) *ConcurrentMapShared {
 	return m.shards[m.getShardIndex(key)]
 }
 
@@ -100,11 +106,11 @@ func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
 
 	for shardIndex, tuples := range shardsTuples {
 		shard := m.shards[shardIndex]
-		shard.Lock()
+		shard.mux.Lock()
 		for _, tuple := range tuples {
 			shard.items[tuple.Key] = tuple.Val
 		}
-		shard.Unlock()
+		shard.mux.Unlock()
 	}
 }
 
@@ -114,13 +120,13 @@ func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
 
 	for shardIndex, tuples := range shardsTuples {
 		shard := m.shards[shardIndex]
-		shard.Lock()
+		shard.mux.Lock()
 		for _, tuple := range tuples {
 			if _, ok := shard.items[tuple.Key]; !ok {
 				shard.items[tuple.Key] = tuple.Val
 				rollbackKeys = append(rollbackKeys, tuple.Key)
 			} else {
-				shard.Unlock()
+				shard.mux.Unlock()
 
 				// Rollback
 				m.MRemove(rollbackKeys)
@@ -128,7 +134,7 @@ func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
 				return false
 			}
 		}
-		shard.Unlock()
+		shard.mux.Unlock()
 	}
 
 	return true
@@ -137,10 +143,10 @@ func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
 // Sets the given value under the specified key.
 func (m *ConcurrentMap) Set(key uint16, value interface{}) {
 	// Get map shard.
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	shard.items[key] = value
-	shard.Unlock()
+	shard.mux.Unlock()
 }
 
 // Callback to return new element to be inserted into the map
@@ -151,36 +157,36 @@ type UpsertCb func(exist bool, valueInMap interface{}, newValue interface{}) int
 
 // Insert or Update - updates existing element or inserts a new one using UpsertCb
 func (m *ConcurrentMap) Upsert(key uint16, value interface{}, cb UpsertCb) (res interface{}) {
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	v, ok := shard.items[key]
 	res = cb(ok, v, value)
 	shard.items[key] = res
-	shard.Unlock()
+	shard.mux.Unlock()
 	return res
 }
 
 // Sets the given value under the specified key if no value was associated with it.
 func (m *ConcurrentMap) SetIfAbsent(key uint16, value interface{}) bool {
 	// Get map shard.
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	_, ok := shard.items[key]
 	if !ok {
 		shard.items[key] = value
 	}
-	shard.Unlock()
+	shard.mux.Unlock()
 	return !ok
 }
 
 // Retrieves an element from map under given key.
 func (m *ConcurrentMap) Get(key uint16) (interface{}, bool) {
 	// Get shard
-	shard := m.GetShard(key)
-	shard.RLock()
+	shard := m.getShard(key)
+	shard.mux.RLock()
 	// Get item from shard.
 	val, ok := shard.items[key]
-	shard.RUnlock()
+	shard.mux.RUnlock()
 	return val, ok
 }
 
@@ -189,9 +195,9 @@ func (m *ConcurrentMap) Count() int {
 	count := 0
 	for i := 0; i < m.count; i++ {
 		shard := m.shards[i]
-		shard.RLock()
+		shard.mux.RLock()
 		count += len(shard.items)
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 	return count
 }
@@ -199,21 +205,21 @@ func (m *ConcurrentMap) Count() int {
 // Looks up an item under specified key
 func (m *ConcurrentMap) Has(key uint16) bool {
 	// Get shard
-	shard := m.GetShard(key)
-	shard.RLock()
+	shard := m.getShard(key)
+	shard.mux.RLock()
 	// See if element is within shard.
 	_, ok := shard.items[key]
-	shard.RUnlock()
+	shard.mux.RUnlock()
 	return ok
 }
 
 // Removes an element from the map.
 func (m *ConcurrentMap) Remove(key uint16) {
 	// Try to get shard.
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	delete(shard.items, key)
-	shard.Unlock()
+	shard.mux.Unlock()
 }
 
 func (m *ConcurrentMap) MRemove(keys []uint16) {
@@ -221,11 +227,11 @@ func (m *ConcurrentMap) MRemove(keys []uint16) {
 
 	for shardIndex, keys := range shardsKeys {
 		shard := m.shards[shardIndex]
-		shard.Lock()
+		shard.mux.Lock()
 		for _, key := range keys {
 			delete(shard.items, key)
 		}
-		shard.Unlock()
+		shard.mux.Unlock()
 	}
 }
 
@@ -238,25 +244,25 @@ type RemoveCb func(key uint16, v interface{}, exists bool) bool
 // Returns the value returned by the callback (even if element was not present in the map)
 func (m *ConcurrentMap) RemoveCb(key uint16, cb RemoveCb) bool {
 	// Try to get shard.
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	v, ok := shard.items[key]
 	remove := cb(key, v, ok)
 	if remove && ok {
 		delete(shard.items, key)
 	}
-	shard.Unlock()
+	shard.mux.Unlock()
 	return remove
 }
 
 // Removes an element from the map and returns it
 func (m *ConcurrentMap) Pop(key uint16) (v interface{}, exists bool) {
 	// Try to get shard.
-	shard := m.GetShard(key)
-	shard.Lock()
+	shard := m.getShard(key)
+	shard.mux.Lock()
 	v, exists = shard.items[key]
 	delete(shard.items, key)
-	shard.Unlock()
+	shard.mux.Unlock()
 	return v, exists
 }
 
@@ -305,13 +311,13 @@ func snapshot(m *ConcurrentMap) (chans []chan Tuple) {
 	for index, shard := range m.shards {
 		go func(index int, shard *ConcurrentMapShared) {
 			// Foreach key, value pair.
-			shard.RLock()
+			shard.mux.RLock()
 			chans[index] = make(chan Tuple, len(shard.items))
 			wg.Done()
 			for key, val := range shard.items {
 				chans[index] <- Tuple{key, val}
 			}
-			shard.RUnlock()
+			shard.mux.RUnlock()
 			close(chans[index])
 		}(index, shard)
 	}
@@ -358,11 +364,11 @@ type IterCb func(key uint16, v interface{})
 func (m *ConcurrentMap) IterCb(fn IterCb) {
 	for idx := range m.shards {
 		shard := m.shards[idx]
-		shard.RLock()
+		shard.mux.RLock()
 		for key, value := range shard.items {
 			fn(key, value)
 		}
-		shard.RUnlock()
+		shard.mux.RUnlock()
 	}
 }
 
@@ -377,11 +383,11 @@ func (m *ConcurrentMap) Keys() []uint16 {
 		for _, shard := range m.shards {
 			go func(shard *ConcurrentMapShared) {
 				// Foreach key, value pair.
-				shard.RLock()
+				shard.mux.RLock()
 				for key := range shard.items {
 					ch <- key
 				}
-				shard.RUnlock()
+				shard.mux.RUnlock()
 				wg.Done()
 			}(shard)
 		}
