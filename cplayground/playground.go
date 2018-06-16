@@ -7,10 +7,9 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-const shardCountFactor = 0.20
-
 func calcShardCount(size uint16) int {
-	return int(float32(size) * shardCountFactor)
+	// TODO: Implement function.
+	return 32
 }
 
 type Playground struct {
@@ -49,24 +48,64 @@ func NewPlayground(width, height uint8) (*Playground, error) {
 	}, nil
 }
 
+func (pg *Playground) unsafeObjectExists(object interface{}) bool {
+	for i := range pg.entities {
+		if pg.entities[i].GetObject() == object {
+			return true
+		}
+	}
+	return false
+}
+
 func (pg *Playground) ObjectExists(object interface{}) bool {
-	// TODO: Implement method.
+	pg.entitiesMux.Lock()
+	defer pg.entitiesMux.Unlock()
+	return pg.unsafeObjectExists(object)
+}
+
+func (pg *Playground) unsafeLocationExists(location engine.Location) bool {
+	for i := range pg.entities {
+		if pg.entities[i].GetLocation().Equals(location) {
+			return true
+		}
+	}
 	return false
 }
 
 func (pg *Playground) LocationExists(location engine.Location) bool {
-	// TODO: Implement method.
+	pg.entitiesMux.Lock()
+	defer pg.entitiesMux.Unlock()
+	return pg.unsafeLocationExists(location)
+}
+
+func (pg *Playground) unsafeEntityExists(object interface{}, location engine.Location) bool {
+	for i := range pg.entities {
+		if pg.entities[i].GetObject() == object && pg.entities[i].GetLocation().Equals(location) {
+			return true
+		}
+	}
 	return false
 }
 
 func (pg *Playground) EntityExists(object interface{}, location engine.Location) bool {
-	// TODO: Implement method.
-	return false
+	pg.entitiesMux.Lock()
+	defer pg.entitiesMux.Unlock()
+	return pg.unsafeEntityExists(object, location)
+}
+
+func (pg *Playground) unsafeGetObjectByLocation(location engine.Location) interface{} {
+	for i := range pg.entities {
+		if pg.entities[i].GetLocation().Equals(location) {
+			return pg.entities[i].GetObject()
+		}
+	}
+	return nil
 }
 
 func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} {
-	// TODO: Implement method.
-	return nil
+	pg.entitiesMux.Lock()
+	defer pg.entitiesMux.Unlock()
+	return pg.unsafeGetObjectByLocation(location)
 }
 
 func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
@@ -145,7 +184,16 @@ func (pg *Playground) Height() uint8 {
 	return pg.area.Height()
 }
 
+func (pg *Playground) unsafeGetObjects() []interface{} {
+	objects := make([]interface{}, len(pg.entities))
+	for i, entity := range pg.entities {
+		objects[i] = entity.GetObject()
+	}
+	return objects
+}
+
 func (pg *Playground) GetObjects() []interface{} {
-	// TODO: Implement method.
-	return nil
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
+	return pg.unsafeGetObjects()
 }
