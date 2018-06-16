@@ -37,3 +37,15 @@ func (e *entity) SetLocation(location engine.Location) {
 	defer e.mux.Unlock()
 	e.location = location.Copy()
 }
+
+func (e *entity) GetPreparedMap() map[uint16]interface{} {
+	e.mux.RLock()
+	defer e.mux.RUnlock()
+
+	m := make(map[uint16]interface{})
+	for _, dot := range e.location {
+		m[dot.Hash()] = e
+	}
+
+	return m
+}
