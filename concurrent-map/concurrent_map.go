@@ -135,6 +135,26 @@ func (m *ConcurrentMap) MSetIfAllAbsent(data map[uint16]interface{}) bool {
 	return true
 }
 
+// MSetIfAbsent sets the given value only if key has no value associated with it.
+func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) []uint16 {
+	shardsTuples := m.sortShardsTuples(data)
+	keys := make([]uint16, 0, len(data))
+
+	for shardIndex, tuples := range shardsTuples {
+		shard := m.shards[shardIndex]
+		shard.mux.Lock()
+		for _, tuple := range tuples {
+			if _, ok := shard.items[tuple.Key]; !ok {
+				shard.items[tuple.Key] = tuple.Val
+				keys = append(keys, tuple.Key)
+			}
+		}
+		shard.mux.Unlock()
+	}
+
+	return keys
+}
+
 // Sets the given value under the specified key.
 func (m *ConcurrentMap) Set(key uint16, value interface{}) {
 	// Get map shard.
