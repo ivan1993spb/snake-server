@@ -2,6 +2,7 @@ package cmap
 
 import (
 	"encoding/json"
+	"errors"
 	"sync"
 )
 
@@ -19,7 +20,10 @@ type ConcurrentMapShared struct {
 }
 
 // Creates a new concurrent map.
-func New(shardCount int) *ConcurrentMap {
+func New(shardCount int) (*ConcurrentMap, error) {
+	if shardCount < 1 {
+		return nil, errors.New("invalid shard count: less than 1")
+	}
 	shards := make([]*ConcurrentMapShared, shardCount)
 	for i := 0; i < shardCount; i++ {
 		shards[i] = &ConcurrentMapShared{items: make(map[uint16]interface{})}
@@ -27,7 +31,7 @@ func New(shardCount int) *ConcurrentMap {
 	return &ConcurrentMap{
 		shards: shards,
 		count:  shardCount,
-	}
+	}, nil
 }
 
 // Returns shard under given key
