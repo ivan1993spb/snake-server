@@ -10,7 +10,7 @@ import (
 type Playground struct {
 	cMap *cmap.ConcurrentMap
 
-	entities    []entity
+	entities    []*entity
 	entitiesMux *sync.RWMutex
 
 	area engine.Area
