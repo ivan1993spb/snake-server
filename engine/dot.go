@@ -7,6 +7,13 @@ type Dot struct {
 	Y uint8
 }
 
+func HashToDot(v uint16) Dot {
+	return Dot{
+		X: uint8(v & 0xff00 >> 8),
+		Y: uint8(v & 0x00ff),
+	}
+}
+
 // Equals compares two dots
 func (d1 Dot) Equals(d2 Dot) bool {
 	return d1 == d2 || (d1.X == d2.X && d1.Y == d2.Y)
