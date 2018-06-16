@@ -17,8 +17,8 @@ func (d Dot) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf("[%d,%d]", d.X, d.Y)), nil
 }
 
-func (d Dot) Hash() string {
-	return string([]byte{d.X, d.Y})
+func (d Dot) Hash() uint16 {
+	return uint16(d.X)<<8 | uint16(d.Y)
 }
 
 func (d Dot) String() string {
