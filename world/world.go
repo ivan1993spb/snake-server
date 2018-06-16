@@ -254,7 +254,7 @@ func (w *World) CreateObject(object interface{}, location engine.Location) error
 	return nil
 }
 
-func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *playground.ErrCreateObjectAvailableDots) {
+func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
 	location, err := w.pg.CreateObjectAvailableDots(object, location)
 	if err != nil {
 		w.event(Event{
@@ -270,7 +270,7 @@ func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Lo
 	return location, err
 }
 
-func (w *World) DeleteObject(object interface{}, location engine.Location) *playground.ErrDeleteObject {
+func (w *World) DeleteObject(object interface{}, location engine.Location) error {
 	err := w.pg.DeleteObject(object, location)
 	if err != nil {
 		w.event(Event{
@@ -286,7 +286,7 @@ func (w *World) DeleteObject(object interface{}, location engine.Location) *play
 	return err
 }
 
-func (w *World) UpdateObject(object interface{}, old, new engine.Location) *playground.ErrUpdateObject {
+func (w *World) UpdateObject(object interface{}, old, new engine.Location) error {
 	if err := w.pg.UpdateObject(object, old, new); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -301,7 +301,7 @@ func (w *World) UpdateObject(object interface{}, old, new engine.Location) *play
 	return nil
 }
 
-func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *playground.ErrUpdateObjectAvailableDots) {
+func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
 	location, err := w.pg.UpdateObjectAvailableDots(object, old, new)
 	if err != nil {
 		w.event(Event{
