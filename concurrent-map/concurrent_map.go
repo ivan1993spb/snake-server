@@ -55,7 +55,7 @@ func (m *ConcurrentMap) getShardIndex(key uint16) uint16 {
 	return key % uint16(m.count)
 }
 
-func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
+func (m *ConcurrentMap) sortShardsTuples(data map[uint16]interface{}) map[uint16][]Tuple {
 	shardsTuples := map[uint16][]Tuple{}
 
 	for key, value := range data {
@@ -74,6 +74,12 @@ func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
 			})
 		}
 	}
+
+	return shardsTuples
+}
+
+func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
+	shardsTuples := m.sortShardsTuples(data)
 
 	for shardIndex, tuples := range shardsTuples {
 		shard := m.shards[shardIndex]
@@ -86,25 +92,7 @@ func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
 }
 
 func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
-	shardsTuples := map[uint16][]Tuple{}
-
-	for key, value := range data {
-		shardIndex := m.getShardIndex(key)
-
-		if shardTuples, ok := shardsTuples[shardIndex]; ok {
-			shardsTuples[shardIndex] = append(shardTuples, Tuple{
-				Key: key,
-				Val: value,
-			})
-		} else {
-			shardsTuples[shardIndex] = make([]Tuple, 0, bufferSize)
-			shardsTuples[shardIndex] = append(shardsTuples[shardIndex], Tuple{
-				Key: key,
-				Val: value,
-			})
-		}
-	}
-
+	shardsTuples := m.sortShardsTuples(data)
 	rollbackKeys := make([]uint16, 0, bufferSize)
 
 	for shardIndex, tuples := range shardsTuples {
