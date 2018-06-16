@@ -375,7 +375,12 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 		if err != nil {
 			continue
 		}
-		e.location = rect.Location()
+
+		if pg.cMap.HasAny(rect.Location().Hash()) {
+			continue
+		}
+
+		e.location = engine.NewRect(rect.X()+margin, rect.Y()+margin, rw, rh).Location()
 
 		if pg.cMap.MSetIfAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
@@ -390,7 +395,7 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 }
 
 func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
-	// TODO: Implement method.
+
 	return nil, nil
 }
 
