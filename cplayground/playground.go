@@ -394,9 +394,50 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 	return nil, errCreateObjectRandomRectMargin(ErrRetriesLimit.Error())
 }
 
-func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+type errCreateObjectRandomByDotsMask string
 
-	return nil, nil
+func (e errCreateObjectRandomByDotsMask) Error() string {
+	return "error create object random by dots mask: " + string(e)
+}
+
+func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+	if !pg.area.ContainsRect(engine.NewRect(0, 0, dm.Width(), dm.Height())) {
+		return nil, errCreateObjectRandomByDotsMask("area cannot contain located by dots mask object")
+	}
+
+	if err := pg.bufferAddObject(object); err != nil {
+		return nil, errCreateObjectRandomByDotsMask(err.Error())
+	}
+	defer pg.bufferDeleteObject(object)
+
+	e := &entity{
+		object: object,
+	}
+
+	for i := 0; i < FindRetriesNumber; i++ {
+		rect, err := pg.area.NewRandomRect(dm.Width(), dm.Height(), 0, 0)
+		if err != nil {
+			continue
+		}
+
+		location := dm.Location(rect.X(), rect.Y())
+
+		if pg.cMap.HasAny(location.Hash()) {
+			continue
+		}
+
+		e.location = location
+
+		if pg.cMap.MSetIfAbsent(e.GetPreparedMap()) {
+			if err := pg.addEntity(e); err != nil {
+				return nil, errCreateObjectRandomByDotsMask(err.Error())
+			}
+
+			return e.GetLocation(), nil
+		}
+	}
+
+	return nil, errCreateObjectRandomByDotsMask(ErrRetriesLimit.Error())
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
