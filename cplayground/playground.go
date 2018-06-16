@@ -64,6 +64,25 @@ func (pg *Playground) unsafeObjectExists(object interface{}) bool {
 	return false
 }
 
+func (pg *Playground) unsafeAddEntity(object interface{}, location engine.Location) (*entity, error) {
+	if pg.unsafeObjectExists(object) {
+		return nil, errors.New("cannot add entity: object already exists")
+	}
+
+	e := newEntity(object, location)
+	pg.entities = append(pg.entities, e)
+	return e, nil
+}
+
+func (pg *Playground) unsafeDeleteEntity(e *entity) {
+	for i := range pg.entities {
+		if pg.entities[i] == e {
+			pg.entities = append(pg.entities[:i], pg.entities[i+1:]...)
+			break
+		}
+	}
+}
+
 func (pg *Playground) ObjectExists(object interface{}) bool {
 	pg.entitiesMux.RLock()
 	defer pg.entitiesMux.RUnlock()
@@ -205,24 +224,28 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 }
 
 func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
-	// TODO: Create specific error
-	if pg.ObjectExists(object) {
-		return nil, errors.New("object already exists")
+	pg.entitiesMux.Lock()
+	e, err := pg.unsafeAddEntity(object, engine.Location{})
+	pg.entitiesMux.Unlock()
+
+	if err != nil {
+		// TODO: Create specific error
+		return nil, err
 	}
 
 	for i := 0; i < FindRetriesNumber; i++ {
 		dot := pg.area.NewRandomDot(0, 0)
-		e := newEntity(object, engine.Location{dot})
 
 		if pg.cMap.SetIfAbsent(dot.Hash(), e) {
-
-			pg.entitiesMux.Lock()
-			pg.entities = append(pg.entities, e)
-			pg.entitiesMux.Unlock()
-
+			e.SetLocation(engine.Location{dot})
 			return engine.Location{dot}, nil
 		}
 	}
+
+	pg.entitiesMux.Lock()
+	pg.unsafeDeleteEntity(e)
+	pg.entitiesMux.Unlock()
+
 	return nil, ErrRetriesLimit
 }
 
