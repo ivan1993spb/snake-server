@@ -67,18 +67,14 @@ func (m *ConcurrentMap) sortShardsTuples(data map[uint16]interface{}) map[uint16
 	for key, value := range data {
 		shardIndex := m.getShardIndex(key)
 
-		if shardTuples, ok := shardsTuples[shardIndex]; ok {
-			shardsTuples[shardIndex] = append(shardTuples, Tuple{
-				Key: key,
-				Val: value,
-			})
-		} else {
+		if _, ok := shardsTuples[shardIndex]; !ok {
 			shardsTuples[shardIndex] = make([]Tuple, 0, bufferSize)
-			shardsTuples[shardIndex] = append(shardsTuples[shardIndex], Tuple{
-				Key: key,
-				Val: value,
-			})
 		}
+
+		shardsTuples[shardIndex] = append(shardsTuples[shardIndex], Tuple{
+			Key: key,
+			Val: value,
+		})
 	}
 
 	return shardsTuples
@@ -90,12 +86,11 @@ func (m *ConcurrentMap) sortShardsKeys(keys []uint16) map[uint16][]uint16 {
 	for _, key := range keys {
 		shardIndex := m.getShardIndex(key)
 
-		if shardTuples, ok := shardsKeys[shardIndex]; ok {
-			shardsKeys[shardIndex] = append(shardTuples, key)
-		} else {
+		if _, ok := shardsKeys[shardIndex]; !ok {
 			shardsKeys[shardIndex] = make([]uint16, 0, bufferSize)
-			shardsKeys[shardIndex] = append(shardsKeys[shardIndex], key)
 		}
+
+		shardsKeys[shardIndex] = append(shardsKeys[shardIndex], key)
 	}
 
 	return shardsKeys
