@@ -12,6 +12,14 @@ type entity struct {
 	mux      *sync.RWMutex
 }
 
+func newEntity(object interface{}, location engine.Location) *entity {
+	return &entity{
+		object:   object,
+		location: location,
+		mux:      &sync.RWMutex{},
+	}
+}
+
 func (e *entity) GetLocation() engine.Location {
 	e.mux.RLock()
 	defer e.mux.RUnlock()
