@@ -116,7 +116,10 @@ func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
 				rollbackKeys = append(rollbackKeys, tuple.Key)
 			} else {
 				shard.Unlock()
+
+				// Rollback
 				m.MRemove(rollbackKeys)
+
 				return false
 			}
 		}
