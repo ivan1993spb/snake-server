@@ -17,12 +17,14 @@ const (
 	keyHorse
 )
 
+const defaultShardCount = 32
+
 type Animal struct {
 	name string
 }
 
 func TestMapCreation(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	if m == nil {
 		t.Error("map is null.")
 	}
@@ -33,7 +35,7 @@ func TestMapCreation(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
@@ -46,7 +48,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertAbsent(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	elephant := Animal{"elephant"}
 	monkey := Animal{"monkey"}
 
@@ -57,7 +59,7 @@ func TestInsertAbsent(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Get a missing element.
 	val, ok := m.Get(keyMoney)
@@ -92,7 +94,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestHas(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Get a missing element.
 	if m.Has(keyMoney) == true {
@@ -108,7 +110,7 @@ func TestHas(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	monkey := Animal{"monkey"}
 	m.Set(keyMonkey, monkey)
@@ -134,7 +136,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveCb(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	monkey := Animal{"monkey"}
 	m.Set(keyMonkey, monkey)
@@ -225,7 +227,7 @@ func TestRemoveCb(t *testing.T) {
 }
 
 func TestPop(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	monkey := Animal{"monkey"}
 	m.Set(keyMonkey, monkey)
@@ -265,7 +267,7 @@ func TestPop(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	for i := 0; i < 100; i++ {
 		m.Set(uint16(i), Animal{strconv.Itoa(i)})
 	}
@@ -276,7 +278,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestIsEmpty(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	if m.IsEmpty() == false {
 		t.Error("new map should be empty")
@@ -290,7 +292,7 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -314,7 +316,7 @@ func TestIterator(t *testing.T) {
 }
 
 func TestBufferedIterator(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -338,7 +340,7 @@ func TestBufferedIterator(t *testing.T) {
 }
 
 func TestIterCb(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -361,7 +363,7 @@ func TestIterCb(t *testing.T) {
 }
 
 func TestItems(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -376,7 +378,7 @@ func TestItems(t *testing.T) {
 }
 
 func TestConcurrent(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	ch := make(chan int)
 	const iterations = 1000
 	var a [iterations]int
@@ -435,7 +437,7 @@ func TestConcurrent(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	for i := 0; i < 100; i++ {
@@ -453,7 +455,7 @@ func TestMInsert(t *testing.T) {
 		keyElephant: Animal{"elephant"},
 		keyMonkey:   Animal{"monkey"},
 	}
-	m := New()
+	m := New(defaultShardCount)
 	m.MSet(animals)
 
 	if m.Count() != 2 {
@@ -476,7 +478,7 @@ func TestUpsert(t *testing.T) {
 		return append(res, nv)
 	}
 
-	m := New()
+	m := New(defaultShardCount)
 	m.Set(keyMarine, []Animal{dolphin})
 	m.Upsert(keyMarine, whale, cb)
 	m.Upsert(keyPredator, tiger, cb)
@@ -515,7 +517,7 @@ func TestUpsert(t *testing.T) {
 }
 
 func TestKeysWhenRemoving(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 
 	// Insert 100 elements.
 	Total := 100
@@ -533,7 +535,7 @@ func TestKeysWhenRemoving(t *testing.T) {
 		go func(c *ConcurrentMap, n uint16) {
 			c.Remove(n)
 			wg.Done()
-		}(&m, uint16(i))
+		}(m, uint16(i))
 	}
 
 	wg.Wait()
@@ -547,7 +549,7 @@ func TestKeysWhenRemoving(t *testing.T) {
 
 //
 func TestUnDrainedIter(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
@@ -599,7 +601,7 @@ func TestUnDrainedIter(t *testing.T) {
 }
 
 func TestUnDrainedIterBuffered(t *testing.T) {
-	m := New()
+	m := New(defaultShardCount)
 	// Insert 100 elements.
 	Total := 100
 	for i := 0; i < Total; i++ {
