@@ -106,3 +106,20 @@ func Test_ConcurrentMap_MRemove(t *testing.T) {
 		shard.mux.RUnlock()
 	}
 }
+
+func Test_ConcurrentMap_HasAny_EmptyMap(t *testing.T) {
+	m := NewDefault()
+
+	require.False(t, m.HasAny([]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+}
+
+func Test_ConcurrentMap_HasAny_NotEmptyMap(t *testing.T) {
+	const index = 0
+
+	m := NewDefault()
+
+	m.shards[m.getShardIndex(index)].items[index] = "ok"
+
+	require.True(t, m.HasAny([]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+	require.False(t, m.HasAny([]uint16{1, 2, 3, 4, 5, 6, 7, 8, 9}))
+}

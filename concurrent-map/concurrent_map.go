@@ -208,6 +208,32 @@ func (m *ConcurrentMap) Has(key uint16) bool {
 	return ok
 }
 
+func (m *ConcurrentMap) HasAny(keys []uint16) bool {
+	flagHasAny := false
+
+	shardsKeys := m.sortShardsKeys(keys)
+
+	for shardIndex, keys := range shardsKeys {
+		shard := m.shards[shardIndex]
+		shard.mux.Lock()
+
+		for _, key := range keys {
+			if _, ok := shard.items[key]; ok {
+				flagHasAny = true
+				break
+			}
+		}
+
+		shard.mux.Unlock()
+
+		if flagHasAny {
+			break
+		}
+	}
+
+	return flagHasAny
+}
+
 // Removes an element from the map.
 func (m *ConcurrentMap) Remove(key uint16) {
 	// Try to get shard.
