@@ -31,7 +31,7 @@ func Test_ConcurrentMap_MSet(t *testing.T) {
 	}
 }
 
-func Test_ConcurrentMap_MSetIfAbsent_EmptyMap(t *testing.T) {
+func Test_ConcurrentMap_MSetIfAllAbsent_EmptyMap(t *testing.T) {
 	const elementsNum = 10000
 	m := NewDefault()
 
@@ -41,7 +41,7 @@ func Test_ConcurrentMap_MSetIfAbsent_EmptyMap(t *testing.T) {
 		data[uint16(i)] = i << 8
 	}
 
-	m.MSetIfAbsent(data)
+	m.MSetIfAllAbsent(data)
 
 	for key, value := range data {
 		shard := m.getShard(key)
@@ -54,7 +54,7 @@ func Test_ConcurrentMap_MSetIfAbsent_EmptyMap(t *testing.T) {
 	}
 }
 
-func Test_ConcurrentMap_MSetIfAbsent_NotEmptyMap(t *testing.T) {
+func Test_ConcurrentMap_MSetIfAllAbsent_NotEmptyMap(t *testing.T) {
 	const elementsNum = 10000
 	m := NewDefault()
 
@@ -69,7 +69,7 @@ func Test_ConcurrentMap_MSetIfAbsent_NotEmptyMap(t *testing.T) {
 
 	m.shards[m.getShardIndex(key)].items[key] = value
 
-	m.MSetIfAbsent(data)
+	m.MSetIfAllAbsent(data)
 
 	delete(m.shards[m.getShardIndex(key)].items, key)
 

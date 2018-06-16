@@ -334,7 +334,7 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 		}
 		e.location = rect.Location()
 
-		if pg.cMap.MSetIfAbsent(e.GetPreparedMap()) {
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
 				return nil, errCreateObjectRandomRect(err.Error())
 			}
@@ -382,7 +382,7 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 
 		e.location = engine.NewRect(rect.X()+margin, rect.Y()+margin, rw, rh).Location()
 
-		if pg.cMap.MSetIfAbsent(e.GetPreparedMap()) {
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
 				return nil, errCreateObjectRandomRectMargin(err.Error())
 			}
@@ -428,7 +428,7 @@ func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engin
 
 		e.location = location
 
-		if pg.cMap.MSetIfAbsent(e.GetPreparedMap()) {
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
 				return nil, errCreateObjectRandomByDotsMask(err.Error())
 			}
