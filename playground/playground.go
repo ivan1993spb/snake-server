@@ -194,7 +194,7 @@ func (pg *Playground) unsafeCreateEntity(object interface{}, location engine.Loc
 	})
 }
 
-func (pg *Playground) CreateObject(object interface{}, location engine.Location) *ErrCreateObject {
+func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
 	if location.Empty() {
 		return &ErrCreateObject{
 			Err: ErrEmptyLocation,
@@ -258,7 +258,7 @@ func (e *ErrCreateObjectAvailableDots) Error() string {
 	return "error on creating objects available dots: " + e.Err.Error()
 }
 
-func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *ErrCreateObjectAvailableDots) {
+func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
 	if location.Empty() {
 		return nil, &ErrCreateObjectAvailableDots{
 			Err: ErrEmptyLocation,
@@ -314,7 +314,7 @@ func (e *ErrDeleteObject) Error() string {
 	return "error on object deletion"
 }
 
-func (pg *Playground) DeleteObject(object interface{}, location engine.Location) *ErrDeleteObject {
+func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
 	pg.entitiesMutex.Lock()
 	defer pg.entitiesMutex.Unlock()
 
@@ -373,7 +373,7 @@ func (e *ErrUpdateObject) Error() string {
 	return "update object error: " + e.Err.Error()
 }
 
-func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
+func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) error {
 	if old.Equals(new) {
 		return nil
 	}
@@ -490,7 +490,7 @@ func (e *ErrUpdateObjectAvailableDots) Error() string {
 	return "error update object available dots: " + e.Err.Error()
 }
 
-func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *ErrUpdateObjectAvailableDots) {
+func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
 	if old.Empty() || new.Empty() {
 		return nil, &ErrUpdateObjectAvailableDots{
 			Err: ErrEmptyLocation,
