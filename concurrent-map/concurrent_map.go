@@ -111,7 +111,7 @@ func (m *ConcurrentMap) MSet(data map[uint16]interface{}) {
 
 func (m *ConcurrentMap) MSetIfAbsent(data map[uint16]interface{}) bool {
 	shardsTuples := m.sortShardsTuples(data)
-	rollbackKeys := make([]uint16, 0, bufferSize)
+	rollbackKeys := make([]uint16, 0, len(data))
 
 	for shardIndex, tuples := range shardsTuples {
 		shard := m.shards[shardIndex]
