@@ -64,11 +64,21 @@ func (a Area) Height() uint8 {
 }
 
 func (a Area) Contains(dot Dot) bool {
+	// TODO: Rename method to ContainsDot.
 	return a.width > dot.X && a.height > dot.Y
 }
 
 func (a Area) ContainsRect(rect Rect) bool {
 	return a.width > rect.w+rect.x && a.height > rect.h+rect.y
+}
+
+func (a Area) ContainsLocation(location Location) bool {
+	for _, dot := range location {
+		if a.width <= dot.X || a.height <= dot.Y {
+			return false
+		}
+	}
+	return true
 }
 
 // NewRandomDot generates random dot on area with starting coordinates X and Y
