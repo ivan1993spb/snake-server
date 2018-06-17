@@ -246,6 +246,9 @@ func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location
 
 		if pg.cMap.SetIfAbsent(dot.Hash(), e) {
 			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
 				return nil, errCreateObjectRandomDot(err.Error())
 			}
 
@@ -284,6 +287,9 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 
 		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
 				return nil, errCreateObjectRandomRect(err.Error())
 			}
 
@@ -327,6 +333,9 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 
 		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
 				return nil, errCreateObjectRandomRectMargin(err.Error())
 			}
 
@@ -368,6 +377,9 @@ func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engin
 
 		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
 			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
 				return nil, errCreateObjectRandomByDotsMask(err.Error())
 			}
 
