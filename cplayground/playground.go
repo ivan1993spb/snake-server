@@ -306,8 +306,41 @@ func (pg *Playground) DeleteObject(object interface{}, location engine.Location)
 	return nil
 }
 
+type errUpdateObject string
+
+func (e errUpdateObject) Error() string {
+	return "error update object: " + string(e)
+}
+
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) error {
-	// TODO: Implement method.
+	e := pg.getEntityByObject(object)
+
+	if e == nil {
+		return errUpdateObject("cannot find entity by object")
+	}
+
+	actualLocation := e.GetLocation()
+	diff := actualLocation.Difference(new)
+
+	keysToRemove := make([]uint16, len(diff))
+	dotsToSet := make(map[uint16]interface{})
+
+	for _, dot := range diff {
+		if new.Contains(dot) {
+			dotsToSet[dot.Hash()] = e
+		} else {
+			keysToRemove = append(keysToRemove, dot.Hash())
+		}
+	}
+
+	e.SetLocation(new)
+
+	if !pg.cMap.MSetIfAllAbsent(dotsToSet) {
+		return errUpdateObject("cannot occupy new location")
+	}
+
+	pg.cMap.MRemove(keysToRemove)
+
 	return nil
 }
 
