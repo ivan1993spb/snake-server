@@ -233,6 +233,7 @@ func (pg *Playground) CreateObject(object interface{}, location engine.Location)
 	e := &entity{
 		object:   object,
 		location: location,
+		mux:      &sync.RWMutex{},
 	}
 
 	if !pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
@@ -263,6 +264,7 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 	e := &entity{
 		object:   object,
 		location: location,
+		mux:      &sync.RWMutex{},
 	}
 
 	hashes := pg.cMap.MSetIfAbsent(e.GetPreparedMap())
@@ -301,7 +303,9 @@ func (pg *Playground) DeleteObject(object interface{}, location engine.Location)
 
 	pg.cMap.MRemove(e.GetLocation().Hash())
 
+	pg.entitiesMux.Lock()
 	pg.unsafeDeleteEntity(e)
+	pg.entitiesMux.Unlock()
 
 	return nil
 }
@@ -403,6 +407,7 @@ func (e errCreateObjectRandomDot) Error() string {
 func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
 	e := &entity{
 		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
 	for i := 0; i < FindRetriesNumber; i++ {
@@ -441,6 +446,7 @@ func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (
 
 	e := &entity{
 		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
 	for i := 0; i < FindRetriesNumber; i++ {
@@ -482,6 +488,7 @@ func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, m
 
 	e := &entity{
 		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
 	for i := 0; i < FindRetriesNumber; i++ {
@@ -524,6 +531,7 @@ func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engin
 
 	e := &entity{
 		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
 	for i := 0; i < FindRetriesNumber; i++ {
