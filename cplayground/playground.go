@@ -204,8 +204,33 @@ func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 	return objects
 }
 
+type errCreateObject string
+
+func (e errCreateObject) Error() string {
+	return "error create object: " + string(e)
+}
+
 func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
-	// TODO: Implement method.
+	if !pg.area.ContainsLocation(location) {
+		return errCreateObject("area not contains location")
+	}
+
+	e := &entity{
+		object:   object,
+		location: location,
+	}
+
+	if !pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
+		return errCreateObject("location is occupied")
+	}
+
+	if err := pg.addEntity(e); err != nil {
+		// Rollback map if cannot add entity.
+		pg.cMap.MRemove(e.GetLocation().Hash())
+
+		return errCreateObject(err.Error())
+	}
+
 	return nil
 }
 
