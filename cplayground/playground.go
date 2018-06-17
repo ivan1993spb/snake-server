@@ -287,8 +287,22 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 	return e.GetLocation(), nil
 }
 
+type errDeleteObject string
+
+func (e errDeleteObject) Error() string {
+	return "error delete object: " + string(e)
+}
+
 func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
-	// TODO: Implement method.
+	e := pg.getEntityByObject(object)
+	if e == nil {
+		return errDeleteObject("cannot find entity by object")
+	}
+
+	pg.cMap.MRemove(e.GetLocation().Hash())
+
+	pg.unsafeDeleteEntity(e)
+
 	return nil
 }
 
