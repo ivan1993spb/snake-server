@@ -124,6 +124,21 @@ func (pg *Playground) EntityExists(object interface{}, location engine.Location)
 	return pg.unsafeEntityExists(object, location)
 }
 
+func (pg *Playground) unsafeGetEntityByObject(object interface{}) *entity {
+	for i := range pg.entities {
+		if pg.entities[i].GetObject() == object {
+			return pg.entities[i]
+		}
+	}
+	return nil
+}
+
+func (pg *Playground) getEntityByObject(object interface{}) *entity {
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
+	return pg.unsafeGetEntityByObject(object)
+}
+
 func (pg *Playground) unsafeGetObjectByLocation(location engine.Location) interface{} {
 	for i := range pg.entities {
 		if pg.entities[i].GetLocation().Equals(location) {
