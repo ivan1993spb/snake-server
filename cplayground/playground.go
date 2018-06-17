@@ -336,6 +336,9 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 	e.SetLocation(new)
 
 	if !pg.cMap.MSetIfAllAbsent(dotsToSet) {
+		// Rollback entity.
+		e.SetLocation(actualLocation)
+
 		return errUpdateObject("cannot occupy new location")
 	}
 
@@ -344,9 +347,51 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 	return nil
 }
 
+type errUpdateObjectAvailableDots string
+
+func (e errUpdateObjectAvailableDots) Error() string {
+	return "error update object available dots: " + string(e)
+}
+
 func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
-	// TODO: Implement method.
-	return nil, nil
+	e := pg.getEntityByObject(object)
+
+	if e == nil {
+		return nil, errUpdateObjectAvailableDots("cannot find entity by object")
+	}
+
+	actualLocation := e.GetLocation()
+	diff := actualLocation.Difference(new)
+
+	keysToRemove := make([]uint16, len(diff))
+	dotsToSet := make(map[uint16]interface{})
+
+	for _, dot := range diff {
+		if new.Contains(dot) {
+			dotsToSet[dot.Hash()] = e
+		} else {
+			keysToRemove = append(keysToRemove, dot.Hash())
+		}
+	}
+
+	hashes := pg.cMap.MSetIfAbsent(dotsToSet)
+	if len(hashes) == 0 {
+		return nil, errUpdateObjectAvailableDots("all dots to set are occupied")
+	}
+
+	pg.cMap.MRemove(keysToRemove)
+
+	for _, key := range keysToRemove {
+		actualLocation = actualLocation.Delete(engine.HashToDot(key))
+	}
+
+	for _, hash := range hashes {
+		actualLocation = actualLocation.Add(engine.HashToDot(hash))
+	}
+
+	e.SetLocation(actualLocation)
+
+	return e.GetLocation(), nil
 }
 
 type errCreateObjectRandomDot string
