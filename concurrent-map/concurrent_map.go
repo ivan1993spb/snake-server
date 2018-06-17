@@ -205,6 +205,8 @@ func (m *ConcurrentMap) Get(key uint16) (interface{}, bool) {
 	return val, ok
 }
 
+// TODO: Create method MGet.
+
 // Returns the number of elements within the map.
 func (m *ConcurrentMap) Count() int {
 	count := 0
