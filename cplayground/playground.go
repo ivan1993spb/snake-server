@@ -234,9 +234,42 @@ func (pg *Playground) CreateObject(object interface{}, location engine.Location)
 	return nil
 }
 
+type errCreateObjectAvailableDots string
+
+func (e errCreateObjectAvailableDots) Error() string {
+	return "error create object available dots: " + string(e)
+}
+
 func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
-	// TODO: Implement method.
-	return nil, nil
+	if !pg.area.ContainsLocation(location) {
+		return nil, errCreateObjectAvailableDots("area not contains location")
+	}
+
+	e := &entity{
+		object:   object,
+		location: location,
+	}
+
+	hashes := pg.cMap.MSetIfAbsent(e.GetPreparedMap())
+
+	if len(hashes) == 0 {
+		return nil, errCreateObjectAvailableDots("dots in location are occupied")
+	}
+
+	actualLocation := engine.HashToLocation(hashes)
+
+	if !actualLocation.Equals(location) {
+		e.SetLocation(actualLocation)
+	}
+
+	if err := pg.addEntity(e); err != nil {
+		// Rollback map if cannot add entity.
+		pg.cMap.MRemove(e.GetLocation().Hash())
+
+		return nil, errCreateObjectAvailableDots(err.Error())
+	}
+
+	return e.GetLocation(), nil
 }
 
 func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
