@@ -23,9 +23,9 @@ const (
 const sendBytesTimeout = time.Millisecond * 50
 
 type ConnectionGroup struct {
-	limit   int
-	counter int
-	mutex   *sync.RWMutex
+	limit      int
+	counter    int
+	counterMux *sync.RWMutex
 
 	logger logrus.FieldLogger
 
@@ -46,14 +46,14 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, h
 
 	if connectionLimit > 0 {
 		return &ConnectionGroup{
-			limit:     connectionLimit,
-			mutex:     &sync.RWMutex{},
-			game:      g,
-			broadcast: broadcast.NewGroupBroadcast(),
-			logger:    logger,
-			chs:       make([]chan []byte, 0),
-			chsMux:    &sync.RWMutex{},
-			stop:      make(chan struct{}),
+			limit:      connectionLimit,
+			counterMux: &sync.RWMutex{},
+			game:       g,
+			broadcast:  broadcast.NewGroupBroadcast(),
+			logger:     logger,
+			chs:        make([]chan []byte, 0),
+			chsMux:     &sync.RWMutex{},
+			stop:       make(chan struct{}),
 		}, nil
 	}
 
@@ -61,20 +61,20 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, h
 }
 
 func (cg *ConnectionGroup) GetLimit() int {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.counterMux.RLock()
+	defer cg.counterMux.RUnlock()
 	return cg.limit
 }
 
 func (cg *ConnectionGroup) SetLimit(limit int) {
-	cg.mutex.Lock()
+	cg.counterMux.Lock()
 	cg.limit = limit
-	cg.mutex.Unlock()
+	cg.counterMux.Unlock()
 }
 
 func (cg *ConnectionGroup) GetCount() int {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.counterMux.RLock()
+	defer cg.counterMux.RUnlock()
 	return cg.counter
 }
 
@@ -84,8 +84,8 @@ func (cg *ConnectionGroup) unsafeIsFull() bool {
 }
 
 func (cg *ConnectionGroup) IsFull() bool {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.counterMux.RLock()
+	defer cg.counterMux.RUnlock()
 	return cg.unsafeIsFull()
 }
 
@@ -95,40 +95,40 @@ func (cg *ConnectionGroup) unsafeIsEmpty() bool {
 }
 
 func (cg *ConnectionGroup) IsEmpty() bool {
-	cg.mutex.RLock()
-	defer cg.mutex.RUnlock()
+	cg.counterMux.RLock()
+	defer cg.counterMux.RUnlock()
 	return cg.unsafeIsEmpty()
 }
 
-type ErrRunConnection struct {
+type ErrHandleConnection struct {
 	Err error
 }
 
-func (e *ErrRunConnection) Error() string {
-	return "run connection error: " + e.Err.Error()
+func (e *ErrHandleConnection) Error() string {
+	return "handle connection error: " + e.Err.Error()
 }
 
 var ErrGroupIsFull = errors.New("group is full")
 
-func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunConnection {
-	cg.mutex.Lock()
+func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) error {
+	cg.counterMux.Lock()
 	if cg.unsafeIsFull() {
-		cg.mutex.Unlock()
-		return &ErrRunConnection{
+		cg.counterMux.Unlock()
+		return &ErrHandleConnection{
 			Err: ErrGroupIsFull,
 		}
 	}
 	cg.counter += 1
-	cg.mutex.Unlock()
+	cg.counterMux.Unlock()
 
 	defer func() {
-		cg.mutex.Lock()
+		cg.counterMux.Lock()
 		cg.counter -= 1
-		cg.mutex.Unlock()
+		cg.counterMux.Unlock()
 	}()
 
 	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(cg.stop, chanBytesOutBuffer)); err != nil {
-		return &ErrRunConnection{
+		return &ErrHandleConnection{
 			Err: err,
 		}
 	}
