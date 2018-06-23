@@ -222,7 +222,10 @@ func (s *Snake) getNextHeadDot() (engine.Dot, error) {
 
 func (s *Snake) Command(cmd Command) error {
 	if direction, ok := snakeCommands[cmd]; ok {
-		return fmt.Errorf("cannot execute command: %s", s.setMovementDirection(direction))
+		if err := s.setMovementDirection(direction); err != nil {
+			return fmt.Errorf("cannot execute command: %s", err)
+		}
+		return nil
 	}
 
 	return errors.New("cannot execute command: unknown command")
