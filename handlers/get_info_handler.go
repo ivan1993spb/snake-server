@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const URLRouteGetInfo = "/"
+const URLRouteGetInfo = "/info"
 
 const MethodGetInfo = http.MethodGet
 
