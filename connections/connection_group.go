@@ -14,9 +14,13 @@ import (
 )
 
 const (
-	chanBroadcastBuffer  = 32
-	chanGameEventsBuffer = 32
+	chanBroadcastBuffer  = 128
+	chanGameEventsBuffer = 128
+	chanBytesProxyBuffer = 64
+	chanBytesOutBuffer   = 64
 )
+
+const sendBytesTimeout = time.Millisecond * 50
 
 type ConnectionGroup struct {
 	limit   int
@@ -123,8 +127,7 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) *ErrRunCon
 		cg.mutex.Unlock()
 	}()
 
-	// TODO: Create proxy chan buffer.
-	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(cg.stop, 64)); err != nil {
+	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(cg.stop, chanBytesOutBuffer)); err != nil {
 		return &ErrRunConnection{
 			Err: err,
 		}
@@ -179,8 +182,7 @@ func (cg *ConnectionGroup) GetWorldHeight() uint8 {
 }
 
 func (cg *ConnectionGroup) createChan() chan []byte {
-	// TODO: Create buffer const.
-	ch := make(chan []byte, 64)
+	ch := make(chan []byte, chanBytesProxyBuffer)
 
 	cg.chsMux.Lock()
 	cg.chs = append(cg.chs, ch)
@@ -219,8 +221,7 @@ func (cg *ConnectionGroup) proxyCh(stop <-chan struct{}, buffer uint) <-chan []b
 				if !ok {
 					return
 				}
-				// TODO: Create timeout const.
-				cg.send(chOut, message, stop, time.Millisecond*50)
+				cg.send(chOut, message, stop, sendBytesTimeout)
 			}
 		}
 	}()
