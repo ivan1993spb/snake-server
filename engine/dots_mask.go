@@ -294,3 +294,14 @@ func (dm *DotsMask) Empty() bool {
 	}
 	return true
 }
+
+func (dm *DotsMask) DotCount() (count uint16) {
+	for i := range dm.mask {
+		for j := range dm.mask[i] {
+			if dm.mask[i][j] > 0 {
+				count++
+			}
+		}
+	}
+	return
+}
