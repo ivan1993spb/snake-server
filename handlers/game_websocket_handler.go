@@ -20,7 +20,7 @@ const wsReadMessageLimit = 128
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
-	WriteBufferSize:   1024,
+	WriteBufferSize:   10240,
 	EnableCompression: false,
 	CheckOrigin: func(r *http.Request) bool {
 		return true
