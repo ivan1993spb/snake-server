@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -72,9 +73,13 @@ func logger() *logrus.Logger {
 	logger := logrus.New()
 	if flagJSONLog {
 		logger.Formatter = &logrus.JSONFormatter{}
-	} else {
-		// TODO: Set up formatter with colors for windows ?
-		// https://github.com/sirupsen/logrus/issues/172
+	} else if runtime.GOOS == "windows" {
+		// Log Output on Windows shows Bash format
+		// See: https://gitlab.com/gitlab-org/gitlab-runner/issues/6
+		// See: https://github.com/sirupsen/logrus/issues/172
+		logger.Formatter = &logrus.TextFormatter{
+			DisableColors: true,
+		}
 	}
 	if level, err := logrus.ParseLevel(logLevel); err != nil {
 		logger.SetLevel(logrus.InfoLevel)
