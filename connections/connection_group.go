@@ -127,7 +127,10 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) error {
 		cg.counterMux.Unlock()
 	}()
 
-	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(cg.stop, chanBytesOutBuffer)); err != nil {
+	chStopHandle := make(chan struct{})
+	defer close(chStopHandle)
+
+	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(chStopHandle, chanBytesOutBuffer)); err != nil {
 		return &ErrHandleConnection{
 			Err: err,
 		}
@@ -159,6 +162,7 @@ func (cg *ConnectionGroup) broadcastBytes(chin <-chan []byte) {
 					select {
 					case ch <- data:
 					case <-cg.stop:
+						return
 					}
 				}
 				cg.chsMux.RUnlock()
