@@ -156,7 +156,11 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 	go func() {
 		for {
 			select {
-			case inputMessage := <-chin:
+			case inputMessage, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				cw.chsInputMux.RLock()
 				for _, ch := range cw.chsInput {
 					select {
@@ -269,7 +273,10 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 	go func() {
 		for {
 			select {
-			case data := <-chin:
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
 				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
 					cw.logger.Errorln("write output message error:", err)
 				}
