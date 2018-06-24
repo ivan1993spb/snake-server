@@ -265,11 +265,7 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 		return nil, errCreateObjectAvailableDots("dots in location are occupied")
 	}
 
-	actualLocation := engine.HashToLocation(hashes)
-
-	if !actualLocation.Equals(location) {
-		e.SetLocation(actualLocation)
-	}
+	e.SetLocation(engine.HashToLocation(hashes))
 
 	if err := pg.addEntity(e); err != nil {
 		// Rollback map if cannot add entity.
@@ -327,16 +323,13 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 		}
 	}
 
-	e.SetLocation(new)
-
 	if !pg.cMap.MSetIfAllAbsent(dotsToSet) {
-		// Rollback entity.
-		e.SetLocation(actualLocation)
-
 		return errUpdateObject("cannot occupy new location")
 	}
 
 	pg.cMap.MRemove(keysToRemove)
+
+	e.SetLocation(new)
 
 	return nil
 }
