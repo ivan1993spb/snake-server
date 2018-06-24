@@ -112,8 +112,13 @@ func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, 
 			select {
 			case <-stop:
 				return
-			case command := <-chin:
+			case command, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				p.logger.WithField("command", command).Debug("received snake command")
+
 				if err := s.Command(snake.Command(command)); err != nil {
 					errch <- err
 				}
