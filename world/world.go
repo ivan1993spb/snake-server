@@ -12,9 +12,9 @@ import (
 const (
 	worldEventsChanMainBufferSize  = 512
 	worldEventsChanProxyBufferSize = 128
-
-	worldEventsSendTimeout = time.Millisecond * 50
 )
+
+const worldEventsSendTimeout = time.Millisecond * 50
 
 type World struct {
 	pg          *playground.Playground
@@ -63,8 +63,10 @@ func (w *World) Start(stop <-chan struct{}) {
 	go func() {
 		for {
 			select {
-			// TODO: fix case if chMain closed
-			case event := <-w.chMain:
+			case event, ok := <-w.chMain:
+				if !ok {
+					return
+				}
 				w.broadcast(event)
 			case <-w.stopGlobal:
 				return
