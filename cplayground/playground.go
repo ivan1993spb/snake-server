@@ -183,43 +183,29 @@ func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 		return nil
 	}
 
+	keys := make([]uint16, len(dots))
+	for i, dot := range dots {
+		keys[i] = dot.Hash()
+	}
+
 	objects := make([]interface{}, 0)
-	checked := make([]engine.Dot, 0, len(dots))
 
-	for _, dot := range dots {
-		flagDotChecked := false
+	for _, value := range pg.cMap.MGet(keys) {
+		if e, ok := value.(*entity); ok {
+			object := e.GetObject()
+			flagObjectCreated := false
 
-		for i := range checked {
-			if checked[i].Equals(dot) {
-				flagDotChecked = true
-				break
-			}
-		}
-
-		if flagDotChecked {
-			continue
-		}
-
-		// TODO: Rewrite method with MGet.
-		if v, ok := pg.cMap.Get(dot.Hash()); ok {
-			if e, ok := v.(*entity); ok {
-				object := e.GetObject()
-				flagObjectCreated := false
-
-				for i := range objects {
-					if objects[i] == object {
-						flagObjectCreated = true
-						break
-					}
-				}
-
-				if !flagObjectCreated {
-					objects = append(objects, object)
+			for i := range objects {
+				if objects[i] == object {
+					flagObjectCreated = true
+					break
 				}
 			}
-		}
 
-		checked = append(checked, dot)
+			if !flagObjectCreated {
+				objects = append(objects, object)
+			}
+		}
 	}
 
 	return objects
