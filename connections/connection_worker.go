@@ -136,7 +136,11 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 
 		for {
 			select {
-			case data := <-chin:
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				var inputMessage InputMessage
 				if err := decoder.Decode(data, &inputMessage); err != nil {
 					cw.logger.Errorln("decode input message error:", err)
@@ -277,6 +281,7 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 				if !ok {
 					return
 				}
+
 				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
 					cw.logger.Errorln("write output message error:", err)
 				}
@@ -304,6 +309,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 					if !ok {
 						return
 					}
+
 					if data, err := ffjson.Marshal(message); err != nil {
 						cw.logger.Errorln("encode output message error:", err)
 					} else {
@@ -330,7 +336,11 @@ func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan playe
 
 		for {
 			select {
-			case event := <-chin:
+			case event, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				outputMessage := OutputMessage{
 					Type:    OutputMessageTypePlayer,
 					Payload: event,
@@ -358,7 +368,11 @@ func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-cha
 
 		for {
 			select {
-			case message := <-chin:
+			case message, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				if message.Type == InputMessageTypeSnakeCommand {
 					select {
 					case chout <- message.Payload:
@@ -379,7 +393,11 @@ func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-
 	go func() {
 		for {
 			select {
-			case message := <-chin:
+			case message, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				if message.Type == InputMessageTypeBroadcast {
 					b.BroadcastMessage(broadcast.BroadcastMessage(message.Payload))
 				}

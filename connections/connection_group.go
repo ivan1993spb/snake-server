@@ -157,20 +157,25 @@ func (cg *ConnectionGroup) broadcastBytes(chin <-chan []byte) {
 					return
 				}
 
-				cg.chsMux.RLock()
-				for _, ch := range cg.chs {
-					select {
-					case ch <- data:
-					case <-cg.stop:
-						return
-					}
-				}
-				cg.chsMux.RUnlock()
+				cg.doBroadcast(data)
 			case <-cg.stop:
 				return
 			}
 		}
 	}()
+}
+
+func (cg *ConnectionGroup) doBroadcast(data []byte) {
+	cg.chsMux.RLock()
+	defer cg.chsMux.RUnlock()
+
+	for _, ch := range cg.chs {
+		select {
+		case ch <- data:
+		case <-cg.stop:
+			return
+		}
+	}
 }
 
 func (cg *ConnectionGroup) Stop() {
@@ -277,7 +282,11 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 
 		for {
 			select {
-			case event := <-chin:
+			case event, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				outputMessage := OutputMessage{
 					Type:    OutputMessageTypeGame,
 					Payload: event,
@@ -305,7 +314,11 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 
 		for {
 			select {
-			case message := <-chin:
+			case message, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				outputMessage := OutputMessage{
 					Type:    OutputMessageTypeBroadcast,
 					Payload: message,
@@ -342,6 +355,7 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 					if !ok {
 						return
 					}
+
 					if data, err := ffjson.Marshal(message); err != nil {
 						cg.logger.Errorln("encode output message error:", err)
 					} else {
