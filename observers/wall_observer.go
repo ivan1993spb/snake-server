@@ -60,6 +60,10 @@ func (WallObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.
 					location = location[:ruinsCount-counter]
 				}
 
+				if w.LocationOccupied(location) {
+					continue
+				}
+
 				if _, err := wall.NewWallLocation(w, location); err != nil {
 					logger.WithError(err).Error("error on wall creation")
 				} else {
