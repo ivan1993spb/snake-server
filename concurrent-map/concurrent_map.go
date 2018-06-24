@@ -205,7 +205,25 @@ func (m *ConcurrentMap) Get(key uint16) (interface{}, bool) {
 	return val, ok
 }
 
-// TODO: Create method MGet.
+func (m *ConcurrentMap) MGet(keys []uint16) map[uint16]interface{} {
+	shardsKeys := m.sortShardsKeys(keys)
+	items := make(map[uint16]interface{})
+
+	for shardIndex, keys := range shardsKeys {
+		shard := m.shards[shardIndex]
+		shard.mux.RLock()
+
+		for _, key := range keys {
+			if value, ok := shard.items[key]; ok {
+				items[key] = value
+			}
+		}
+
+		shard.mux.RUnlock()
+	}
+
+	return items
+}
 
 // Returns the number of elements within the map.
 func (m *ConcurrentMap) Count() int {
@@ -237,7 +255,7 @@ func (m *ConcurrentMap) HasAny(keys []uint16) bool {
 
 	for shardIndex, keys := range shardsKeys {
 		shard := m.shards[shardIndex]
-		shard.mux.Lock()
+		shard.mux.RLock()
 
 		for _, key := range keys {
 			if _, ok := shard.items[key]; ok {
@@ -246,7 +264,7 @@ func (m *ConcurrentMap) HasAny(keys []uint16) bool {
 			}
 		}
 
-		shard.mux.Unlock()
+		shard.mux.RUnlock()
 
 		if flagHasAny {
 			break
