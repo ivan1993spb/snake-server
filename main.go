@@ -127,6 +127,7 @@ func main() {
 
 	// API routes
 	apiRouter := mux.NewRouter().StrictSlash(true)
+	apiRouter.Path(handlers.URLRouteWellcome).Methods(handlers.MethodWellcome).Handler(handlers.NewWellcomeHandler(logger))
 	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
 	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
