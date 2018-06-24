@@ -88,6 +88,12 @@ func (pg *Playground) unsafeDeleteEntity(e *entity) {
 	}
 }
 
+func (pg *Playground) deleteEntity(e *entity) {
+	pg.entitiesMux.Lock()
+	pg.unsafeDeleteEntity(e)
+	pg.entitiesMux.Unlock()
+}
+
 func (pg *Playground) ObjectExists(object interface{}) bool {
 	pg.entitiesMux.RLock()
 	defer pg.entitiesMux.RUnlock()
@@ -303,9 +309,7 @@ func (pg *Playground) DeleteObject(object interface{}, location engine.Location)
 
 	pg.cMap.MRemove(e.GetLocation().Hash())
 
-	pg.entitiesMux.Lock()
-	pg.unsafeDeleteEntity(e)
-	pg.entitiesMux.Unlock()
+	pg.deleteEntity(e)
 
 	return nil
 }
