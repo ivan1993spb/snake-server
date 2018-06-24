@@ -13,15 +13,20 @@ The player controls the snake. The task of the game is to grow the biggest snake
 
 ## Installation
 
-You can download server binary, build server from source and pull server docker image.
+You can download server binary, build server from source or pull server docker image.
 
 ### Download binary
 
 You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
 
+Or using curl:
+
 * Setup variables *VERSION*, *PLATFORM* (darwin, linux or windows) and *ARCHITECTURE* (386 or amd64)
 * Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} -o snake-server`
-* Make binary executable with `chmod +x snake-server`
+
+Then:
+
+* Make binary file executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
 * Use `snake-server -h` to see usage information
 
@@ -33,25 +38,24 @@ With make install:
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `make build`
 * `make install`
-
-Then:
-
 * `snake-server` to start server
 * Use `snake-server -h` to see usage information
 
 ### Install from docker-hub
 
-See docker-hub repo: https://hub.docker.com/r/ivan1993spb/snake-server
+Install docker: [use fast installation script](https://get.docker.com/)
 
-* Install docker: [use fast installation script](https://get.docker.com/)
-* Choose image tag: https://hub.docker.com/r/ivan1993spb/snake-server/tags/
-* Use `docker pull ivan1993spb/snake-server` to pull server image from docker hub
+See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
+
+Choose docker image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
+
+* Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
 * `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
 * `docker run --rm ivan1993spb/snake-server -h` for usage information
 
 ## CLI arguments
 
-Use `snake-server -help` for help info.
+Use `snake-server --help` for help info.
 
 Arguments:
 
@@ -71,7 +75,7 @@ API methods provide JSON format.
 
 ### Request `POST /games`
 
-Creates game and returns JSON details.
+Request creates game and returns JSON details.
 
 ```
 curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games | jq
@@ -85,7 +89,7 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/game
 
 ### Request `GET /games`
 
-Returns info about all games on server.
+Request returns info about all games on server.
 
 ```
 curl -s -X GET http://localhost:8080/games | jq
@@ -113,7 +117,7 @@ curl -s -X GET http://localhost:8080/games | jq
 
 ### Request `GET /games/{id}`
 
-Returns game information.
+Request returns information about game by id.
 
 ```
 curl -s -X GET http://localhost:8080/games/0 | jq
@@ -128,7 +132,7 @@ curl -s -X GET http://localhost:8080/games/0 | jq
 
 ### Request `DELETE /games/{id}`
 
-Deletes game if there is not players.
+Request deletes game by id if there is not players in the game.
 
 ```
 curl -s -X DELETE http://localhost:8080/games/0 | jq
@@ -139,7 +143,7 @@ curl -s -X DELETE http://localhost:8080/games/0 | jq
 
 ### Request `GET /capacity`
 
-Returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
+Request returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
 
 ```
 curl -s -X GET http://localhost:8080/capacity | jq
@@ -148,16 +152,74 @@ curl -s -X GET http://localhost:8080/capacity | jq
 }
 ```
 
+### Request `GET /info`
+
+Request returns common info about server: author, license, version, build.
+
+```
+curl -s -X GET http://localhost:8080/info | jq
+{
+  "author": "Ivan Pushkin",
+  "license": "MIT",
+  "version": "v3.1.1-rc",
+  "build": "85b6b0e"
+}
+```
+
+### Request `GET /games/{id}/broadcast`
+
+Request sends message to all players in selected game. Returns `true` on success.
+
+```
+curl -s -X POST -d message=text http://localhost:8080/games/0/broadcast | jq
+{
+  "success": true
+}
+```
+
+**Request body size is limited: maximum 128 bytes**
+
 ### Request `GET /games/{id}/ws`
 
-Connects to game Web-Socket.
+Connects to game Web-Socket JSON stream.
 
-* Returns playground size
 * Initialize game session
+* Returns playground size
 * Returns all objects on playground
 * Creates snake
 * Returns snake uuid
 * Pushes game events and objects
+
+### API errors
+
+API methods returns status codes (400, 404, 500, etc.) with errors in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
+
+Example:
+
+```
+curl -s -X GET http://localhost:8080/games/0 -v | jq
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+> GET /games/0 HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.47.0
+> Accept: */*
+>
+< HTTP/1.1 404 Not Found
+< Server: Snake-Server/v3.1.1-rc (build 85b6b0e)
+< Vary: Origin
+< Date: Wed, 20 Jun 2018 12:24:44 GMT
+< Content-Length: 44
+< Content-Type: text/plain; charset=utf-8
+<
+{ [44 bytes data]
+* Connection #0 to host localhost left intact
+{
+  "code": 404,
+  "text": "game not found",
+  "id": 0
+}
+```
 
 ## Game Web-Socket messages description
 
@@ -179,7 +241,7 @@ Output message structure:
 Output message can be type of:
 
 * *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of objects on playground
-* *player* - message payload contains a player info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`
+* *player* - message payload contains a player info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
 * *broadcast* - message payload contains a group broadcast messages. Output message of type *broadcast* is **string**
 
 Examples:
@@ -420,10 +482,6 @@ Examples:
 ```
 
 **Input message size is limited: maximum 128 bytes**
-
-## Game on client side
-
-// TODO: Describe topic
 
 ## License
 
