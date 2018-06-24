@@ -361,19 +361,24 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 		}
 	}
 
-	hashes := pg.cMap.MSetIfAbsent(dotsToSet)
-	if len(hashes) == 0 {
+	if len(dotsToSet) > 0 {
+		hashes := pg.cMap.MSetIfAbsent(dotsToSet)
+		if len(hashes) > 0 {
+			for _, hash := range hashes {
+				actualLocation = actualLocation.Add(engine.HashToDot(hash))
+			}
+		}
+	}
+
+	if len(keysToRemove) > 0 {
+		pg.cMap.MRemove(keysToRemove)
+		for _, key := range keysToRemove {
+			actualLocation = actualLocation.Delete(engine.HashToDot(key))
+		}
+	}
+
+	if len(actualLocation) == 0 {
 		return nil, errUpdateObjectAvailableDots("all dots to set are occupied")
-	}
-
-	pg.cMap.MRemove(keysToRemove)
-
-	for _, key := range keysToRemove {
-		actualLocation = actualLocation.Delete(engine.HashToDot(key))
-	}
-
-	for _, hash := range hashes {
-		actualLocation = actualLocation.Add(engine.HashToDot(hash))
 	}
 
 	e.SetLocation(actualLocation)
