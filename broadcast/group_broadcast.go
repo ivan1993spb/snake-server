@@ -175,6 +175,7 @@ func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessag
 		}
 	}
 }
+
 func (gb *GroupBroadcast) stop() {
 	close(gb.chStop)
 	close(gb.chMain)
