@@ -383,6 +383,10 @@ func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.Dots
 	return location, err
 }
 
+func (w *World) LocationOccupied(location engine.Location) bool {
+	return w.pg.LocationOccupied(location)
+}
+
 func (w *World) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return w.pg.Navigate(dot, dir, dis)
 }

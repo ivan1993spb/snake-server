@@ -551,6 +551,10 @@ func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engin
 	return nil, errCreateObjectRandomByDotsMask(ErrRetriesLimit.Error())
 }
 
+func (pg *Playground) LocationOccupied(location engine.Location) bool {
+	return pg.cMap.HasAll(location.Hash())
+}
+
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
 	return pg.area.Navigate(dot, dir, dis)
 }
