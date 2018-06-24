@@ -359,3 +359,7 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 
 	return chout
 }
+
+func (cg *ConnectionGroup) BroadcastMessageTimeout(message string, timeout time.Duration) bool {
+	return cg.broadcast.BroadcastMessageTimeout(broadcast.BroadcastMessage(message), timeout)
+}

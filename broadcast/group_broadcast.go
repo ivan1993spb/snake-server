@@ -31,6 +31,20 @@ func NewGroupBroadcast() *GroupBroadcast {
 	}
 }
 
+func (gb *GroupBroadcast) BroadcastMessageTimeout(message BroadcastMessage, timeout time.Duration) bool {
+	var timer = time.NewTimer(timeout)
+	defer timer.Stop()
+
+	select {
+	case gb.chMain <- message:
+		return true
+	case <-gb.chStop:
+	case <-timer.C:
+	}
+
+	return false
+}
+
 func (gb *GroupBroadcast) BroadcastMessage(message BroadcastMessage) {
 	select {
 	case gb.chMain <- message:
