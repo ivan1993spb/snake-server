@@ -47,26 +47,14 @@ func NewWall(world *world.World, dm *engine.DotsMask) (*Wall, error) {
 	return wall, nil
 }
 
-func NewLongWall(world *world.World) (*Wall, error) {
+func NewWallLocation(world *world.World, location engine.Location) (*Wall, error) {
 	wall := &Wall{
 		uuid:  uuid.Must(uuid.NewV4()).String(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
 
-	// TODO: Implement function.
-
-	return wall, nil
-}
-
-func NewRandWall(world *world.World) (*Wall, error) {
-	wall := &Wall{
-		uuid:  uuid.Must(uuid.NewV4()).String(),
-		world: world,
-		mux:   &sync.RWMutex{},
-	}
-
-	location, err := world.CreateObjectRandomByDotsMask(wall, engine.DotsMaskTank.TurnRandom())
+	location, err := world.CreateObjectAvailableDots(wall, location)
 	if err != nil {
 		return nil, ErrCreateWall(err.Error())
 	}
