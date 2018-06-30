@@ -201,6 +201,11 @@ func (cg *ConnectionGroup) createChan() chan []byte {
 }
 
 func (cg *ConnectionGroup) deleteChan(ch chan []byte) {
+	go func() {
+		for range ch {
+		}
+	}()
+
 	cg.chsMux.Lock()
 	for i := range cg.chs {
 		if cg.chs[i] == ch {
@@ -267,7 +272,17 @@ func (cg *ConnectionGroup) send(ch chan []byte, data []byte, stop <-chan struct{
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- data:
+						return
+					case <-stop:
+						return
+					case <-cg.stop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
@@ -359,7 +374,11 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 					if data, err := ffjson.Marshal(message); err != nil {
 						cg.logger.Errorln("encode output message error:", err)
 					} else {
-						chout <- data
+						select {
+						case chout <- data:
+						case <-stop:
+							return
+						}
 					}
 				}
 			}
