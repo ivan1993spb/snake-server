@@ -6,7 +6,7 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const chanLoggerObserverEventsBuffer = 32
+const chanLoggerObserverEventsBuffer = 64
 
 type LoggerObserver struct{}
 
