@@ -8,13 +8,6 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-const defaultShardCount = 32
-
-func calcShardCount(size uint16) int {
-	// TODO: Implement function.
-	return defaultShardCount
-}
-
 var FindRetriesNumber = 32
 
 var ErrRetriesLimit = errors.New("retries limit was reached")
