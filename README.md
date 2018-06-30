@@ -5,7 +5,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls the snake. The task of the game is to grow the biggest snake. In order to do this gamers can eat apples and the remains of dead snakes of other games. If the snake hits the wall, the snake will die, and the player will start again with small snake.
+The player controls snake. The task of the game is to grow the biggest snake. In order to do this gamers can eat apples, watermelons and the remains of dead snakes of other gamers. If the snake hits a wall, the snake will die, and the player will start again with small snake.
 
 ## Client
 
@@ -15,7 +15,7 @@ The player controls the snake. The task of the game is to grow the biggest snake
 
 You can download server binary, build server from source or pull server docker image.
 
-### Download binary
+### Download and install binary
 
 You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
 
@@ -30,9 +30,11 @@ Then:
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
 * Use `snake-server -h` to see usage information
 
-### Install from source
+### Build and install from source
 
-With make install:
+In order to build snake-server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
+
+Steps to get snake-server:
 
 * `go get -u github.com/ivan1993spb/snake-server` to load source code
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
@@ -41,13 +43,13 @@ With make install:
 * `snake-server` to start server
 * Use `snake-server -h` to see usage information
 
-### Install from docker-hub
+### Pull server image from docker-hub
 
-Install docker: [use fast installation script](https://get.docker.com/)
+Firstly you need installed docker: [use fast installation script](https://get.docker.com/)
 
 See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
 
-Choose docker image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
+Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
 
 * Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
 * `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
@@ -71,28 +73,29 @@ Arguments:
 
 ## API description
 
-API methods provide JSON format.
+All API methods provide JSON format. If errors occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
 
-### Request `POST /games`
+### Request `POST /api/games`
 
 Request creates game and returns JSON details.
 
 ```
-curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/games | jq
+curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
 {
     "id": 0,
     "limit": 3,
+    "count": 0,
     "width": 100,
     "height": 100
 }
 ```
 
-### Request `GET /games`
+### Request `GET /api/games`
 
 Request returns info about all games on server.
 
 ```
-curl -s -X GET http://localhost:8080/games | jq
+curl -s -X GET http://localhost:8080/api/games | jq
 {
     "games": [
         {
@@ -115,12 +118,12 @@ curl -s -X GET http://localhost:8080/games | jq
 }
 ```
 
-### Request `GET /games/{id}`
+### Request `GET /api/games/{id}`
 
 Request returns information about game by id.
 
 ```
-curl -s -X GET http://localhost:8080/games/0 | jq
+curl -s -X GET http://localhost:8080/api/games/0 | jq
 {
     "id": 0,
     "limit": 10,
@@ -130,34 +133,34 @@ curl -s -X GET http://localhost:8080/games/0 | jq
 }
 ```
 
-### Request `DELETE /games/{id}`
+### Request `DELETE /api/games/{id}`
 
 Request deletes game by id if there is not players in the game.
 
 ```
-curl -s -X DELETE http://localhost:8080/games/0 | jq
+curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 {
     "id": 0
 }
 ```
 
-### Request `GET /capacity`
+### Request `GET /api/capacity`
 
 Request returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
 
 ```
-curl -s -X GET http://localhost:8080/capacity | jq
+curl -s -X GET http://localhost:8080/api/capacity | jq
 {
     "capacity": 0.02
 }
 ```
 
-### Request `GET /info`
+### Request `GET /api/info`
 
 Request returns common info about server: author, license, version, build.
 
 ```
-curl -s -X GET http://localhost:8080/info | jq
+curl -s -X GET http://localhost:8080/api/info | jq
 {
   "author": "Ivan Pushkin",
   "license": "MIT",
@@ -166,29 +169,18 @@ curl -s -X GET http://localhost:8080/info | jq
 }
 ```
 
-### Request `GET /games/{id}/broadcast`
+### Request `POST /api/games/{id}/broadcast`
 
 Request sends message to all players in selected game. Returns `true` on success.
 
 ```
-curl -s -X POST -d message=text http://localhost:8080/games/0/broadcast | jq
+curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
 {
   "success": true
 }
 ```
 
 **Request body size is limited: maximum 128 bytes**
-
-### Request `GET /games/{id}/ws`
-
-Connects to game Web-Socket JSON stream.
-
-* Initialize game session
-* Returns playground size
-* Returns all objects on playground
-* Creates snake
-* Returns snake uuid
-* Pushes game events and objects
 
 ### API errors
 
@@ -197,10 +189,10 @@ API methods returns status codes (400, 404, 500, etc.) with errors in JSON forma
 Example:
 
 ```
-curl -s -X GET http://localhost:8080/games/0 -v | jq
+curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 *   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 8080 (#0)
-> GET /games/0 HTTP/1.1
+> GET /api/games/0 HTTP/1.1
 > Host: localhost:8080
 > User-Agent: curl/7.47.0
 > Accept: */*
@@ -210,7 +202,7 @@ curl -s -X GET http://localhost:8080/games/0 -v | jq
 < Vary: Origin
 < Date: Wed, 20 Jun 2018 12:24:44 GMT
 < Content-Length: 44
-< Content-Type: text/plain; charset=utf-8
+< Content-Type: application/json; charset=utf-8
 <
 { [44 bytes data]
 * Connection #0 to host localhost left intact
@@ -223,7 +215,18 @@ curl -s -X GET http://localhost:8080/games/0 -v | jq
 
 ## Game Web-Socket messages description
 
-There are input and output messages.
+Request `GET /ws/games/{id}` connects to game Web-Socket JSON stream by game identificator.
+
+On connection establishing handler:
+
+* Initializes game session
+* Returns playground size
+* Returns all objects on playground
+* Creates snake
+* Returns snake uuid
+* Pushes game events and objects in output messages
+
+There are input and output web-socket messages.
 
 ### Output messages
 
@@ -240,8 +243,8 @@ Output message structure:
 
 Output message can be type of:
 
-* *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of objects on playground
-* *player* - message payload contains a player info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
+* *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of game objects on playground
+* *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
 * *broadcast* - message payload contains a group broadcast messages. Output message of type *broadcast* is **string**
 
 Examples:
@@ -333,7 +336,7 @@ Player messages types:
 * *notice* - payload contains **string**: a notification
 * *error* - payload contains **string**: error description
 * *countdown* - payload contains **int**: number of seconds for countdown
-* *objects* - payload contains list of all objects on playground
+* *objects* - payload contains list of all objects on playground. The message contained objects is needed to initialize the map on client side
 
 Examples:
 
@@ -413,15 +416,16 @@ Game objects:
 * Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
 
 Objects TODO:
 
-* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
 * Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
+* ...
 
 ### Input messages
 
-Input messages - when client sends to server a game commands.
+Input messages - when client sends to server an information.
 
 Input message structure:
 
@@ -435,14 +439,20 @@ Input message structure:
 Input message types:
 
 * *snake* - when player sends a game command in message payload to control snake
-* *broadcast* - when player sends a short phrase or emoji to broadcast for game group
+* *broadcast* - when player sends a short phrase or emoji to broadcast it for players in game
 
-Accepted game commands:
+**Input message size is limited: maximum 128 bytes**
 
-* *north*
-* *east*
-* *south*
-* *west*
+#### Snake input message
+
+Snake input message contains game command. Game command sets snake direction if it possible.
+
+Accepted commands:
+
+* *north* - sets snake direction to north
+* *east* - sets snake direction to east
+* *south* - sets snake direction to south
+* *west* - sets snake direction to west
 
 Examples:
 
@@ -463,14 +473,15 @@ Examples:
     "type": "snake",
     "payload": "west"
 }
-{
-    "type": "broadcast",
-    "payload": "xD"
-}
-{
-    "type": "broadcast",
-    "payload": "ok!"
-}
+```
+
+#### Broadcast input message
+
+Broadcast input message contains short message to send to all players in game.
+
+Examples:
+
+```
 {
     "type": "broadcast",
     "payload": "hello!"
@@ -480,8 +491,6 @@ Examples:
     "payload": ";)"
 }
 ```
-
-**Input message size is limited: maximum 128 bytes**
 
 ## License
 
