@@ -14,14 +14,14 @@ import (
 )
 
 const (
-	chanOutputMessageBuffer     = 128
+	chanOutputMessageBuffer     = 256
 	chanReadMessagesBuffer      = 128
 	chanDecodeMessageBuffer     = 128
-	chanEncodeMessageBuffer     = 128
+	chanEncodeMessageBuffer     = 1024
 	chanProxyInputMessageBuffer = 64
-	chanInputMessagesBuffer     = 32
-	chanSnakeCommandsBuffer     = 32
-	chanMergeBytesBuffer        = 64
+	chanInputMessagesBuffer     = 64
+	chanSnakeCommandsBuffer     = 64
+	chanMergeBytesBuffer        = 1024
 
 	sendInputMessageTimeout = time.Millisecond * 50
 )
