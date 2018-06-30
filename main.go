@@ -62,7 +62,7 @@ func init() {
 	flag.BoolVar(&flagEnableTLS, "tls-enable", false, "enable TLS")
 	flag.StringVar(&certFile, "tls-cert", "", "path to certificate file")
 	flag.StringVar(&keyFile, "tls-key", "", "path to key file")
-	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
+	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "game groups limit")
 	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
