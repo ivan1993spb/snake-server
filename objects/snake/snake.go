@@ -17,7 +17,7 @@ import (
 
 const (
 	snakeStartLength    = 3
-	snakeStartSpeed     = time.Second
+	snakeStartSpeed     = time.Millisecond * 500
 	snakeSpeedFactor    = 1.02
 	snakeStrengthFactor = 1
 	snakeStartMargin    = 1
