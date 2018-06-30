@@ -18,9 +18,13 @@ const MethodGame = http.MethodGet
 
 const wsReadMessageLimit = 128
 
+const wsReadBufferSize = 2048
+
+const wsWriteBufferSize = 20480
+
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:    1024,
-	WriteBufferSize:   10240,
+	ReadBufferSize:    wsReadBufferSize,
+	WriteBufferSize:   wsWriteBufferSize,
 	EnableCompression: false,
 	CheckOrigin: func(r *http.Request) bool {
 		return true
