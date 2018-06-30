@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	worldEventsChanMainBufferSize  = 512
-	worldEventsChanProxyBufferSize = 128
-
-	worldEventsSendTimeout = time.Millisecond * 50
+	worldEventsChanMainBufferSize  = 1024
+	worldEventsChanProxyBufferSize = 1024
 )
+
+const worldEventsSendTimeout = time.Millisecond * 50
 
 type World struct {
 	pg          *playground.Playground
@@ -63,8 +63,10 @@ func (w *World) Start(stop <-chan struct{}) {
 	go func() {
 		for {
 			select {
-			// TODO: fix case if chMain closed
-			case event := <-w.chMain:
+			case event, ok := <-w.chMain:
+				if !ok {
+					return
+				}
 				w.broadcast(event)
 			case <-w.stopGlobal:
 				return
@@ -96,6 +98,11 @@ func (w *World) createChanProxy() chan Event {
 }
 
 func (w *World) deleteChanProxy(chProxy chan Event) {
+	go func() {
+		for range chProxy {
+		}
+	}()
+
 	w.chsProxyMux.Lock()
 	for i := range w.chsProxy {
 		if w.chsProxy[i] == chProxy {
@@ -159,7 +166,17 @@ func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- event:
+						return
+					case <-w.stopGlobal:
+						return
+					case <-stop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
@@ -254,7 +271,7 @@ func (w *World) CreateObject(object interface{}, location engine.Location) error
 	return nil
 }
 
-func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *playground.ErrCreateObjectAvailableDots) {
+func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
 	location, err := w.pg.CreateObjectAvailableDots(object, location)
 	if err != nil {
 		w.event(Event{
@@ -270,7 +287,7 @@ func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Lo
 	return location, err
 }
 
-func (w *World) DeleteObject(object interface{}, location engine.Location) *playground.ErrDeleteObject {
+func (w *World) DeleteObject(object interface{}, location engine.Location) error {
 	err := w.pg.DeleteObject(object, location)
 	if err != nil {
 		w.event(Event{
@@ -286,7 +303,7 @@ func (w *World) DeleteObject(object interface{}, location engine.Location) *play
 	return err
 }
 
-func (w *World) UpdateObject(object interface{}, old, new engine.Location) *playground.ErrUpdateObject {
+func (w *World) UpdateObject(object interface{}, old, new engine.Location) error {
 	if err := w.pg.UpdateObject(object, old, new); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -301,7 +318,7 @@ func (w *World) UpdateObject(object interface{}, old, new engine.Location) *play
 	return nil
 }
 
-func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *playground.ErrUpdateObjectAvailableDots) {
+func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
 	location, err := w.pg.UpdateObjectAvailableDots(object, old, new)
 	if err != nil {
 		w.event(Event{
@@ -379,6 +396,10 @@ func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.Dots
 		Payload: object,
 	})
 	return location, err
+}
+
+func (w *World) LocationOccupied(location engine.Location) bool {
+	return w.pg.LocationOccupied(location)
 }
 
 func (w *World) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {

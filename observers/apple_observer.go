@@ -7,7 +7,7 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const chanAppleObserverEventsBuffer = 32
+const chanAppleObserverEventsBuffer = 64
 
 const defaultAppleCount = 1
 

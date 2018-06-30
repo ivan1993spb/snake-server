@@ -32,7 +32,7 @@ type Corpse struct {
 type ErrCreateCorpse string
 
 func (e ErrCreateCorpse) Error() string {
-	return "error on corpse creation: " + e.Error()
+	return "error on corpse creation: " + string(e)
 }
 
 // Corpse are created when a snake dies

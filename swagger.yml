@@ -1,0 +1,301 @@
+swagger: "2.0"
+info:
+  title: Snake-Server API
+  description: "Snake-Server"
+  version: 4.0.0
+  license:
+    name: MIT
+  contact:
+    name: Ivan Pushkin
+    url: https://twitter.com/IvanDeveloper
+
+basePath: /api
+
+schemes:
+  - http
+  - https
+
+host: localhost:8080
+
+produces:
+  - application/json
+
+consumes:
+  - application/x-www-form-urlencoded
+
+paths:
+  /games:
+    get:
+      description: Get all games
+      responses:
+        200:
+          description: Returns games on server and additional information
+          schema:
+            $ref: '#/definitions/Games'
+    post:
+      description: Create new game
+      parameters:
+        - name: limit
+          in: formData
+          type: integer
+          format: int32
+          description: Players limit for game
+          minimum: 1
+          required: true
+        - name: width
+          in: formData
+          type: integer
+          format: int32
+          description: Map width
+          required: true
+        - name: height
+          in: formData
+          type: integer
+          format: int32
+          description: Map height
+          required: true
+      responses:
+        201:
+          description: Returns created game object
+          schema:
+            $ref: '#/definitions/Game'
+        400:
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+        503:
+          description: Service unavailable, cannot create new game
+          schema:
+            $ref: '#/definitions/Error'
+  /games/{id}:
+    get:
+      description: Get game by identificator
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          required: true
+          description: Game identificator
+      responses:
+        200:
+          description: Returns game object
+          schema:
+            $ref: '#/definitions/Game'
+        400:
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: Game not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: Delete game by identificator
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          required: true
+          description: Game identificator
+      responses:
+        200:
+          description: Returns identificator of deleted game
+          schema:
+            $ref: '#/definitions/Deleted'
+        400:
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: Game not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+        503:
+          description: Service unavailable, cannot delete game right away
+          schema:
+            $ref: '#/definitions/Error'
+  /capacity:
+    get:
+      description: Get server load (capacity)
+      responses:
+        200:
+          description: Returns server capacity
+          schema:
+            $ref: '#/definitions/Capacity'
+  /info:
+    get:
+      description: Get server information
+      responses:
+        200:
+          description: Returns information about server
+          schema:
+            $ref: '#/definitions/Info'
+  /games/{id}/broadcast:
+    post:
+      description: Broadcast a message to players in game with passed identificator
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          description: Game identificator
+          required: true
+        - name: message
+          in: formData
+          type: string
+          description: Message to broadcast for players in selected game
+          required: true
+      responses:
+        200:
+          description: Returns object contained broadcast result flag
+          schema:
+            $ref: '#/definitions/Broadcast'
+        400:
+          description: Invalid inputs
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: Game not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+        503:
+          description: Service unavailable, cannot broadcast right away
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+
+  Games:
+    type: object
+    description: Object contains list of games on server
+    required:
+      - games
+      - limit
+      - count
+    properties:
+      games:
+        type: array
+        items:
+          $ref: '#/definitions/Game'
+      limit:
+        description: Games limit
+        type: integer
+        format: int32
+      count:
+        description: Current games count on server
+        type: integer
+        format: int32
+
+  Info:
+    type: object
+    description: Object contains common information about server
+    required:
+      - author
+      - license
+      - version
+      - build
+    properties:
+      author:
+        type: string
+      license:
+        type: string
+      version:
+        type: string
+      build:
+        type: string
+
+  Game:
+    type: object
+    description: Object contains information about game
+    required:
+      - id
+      - limit
+      - count
+      - width
+      - height
+    properties:
+      id:
+        description: Game identificator
+        type: integer
+        format: int32
+      limit:
+        description: Game players limit
+        type: integer
+        format: int32
+      count:
+        description: Current players count in game
+        type: integer
+        format: int32
+      width:
+        description: Map width
+        type: integer
+        format: int32
+      height:
+        description: Map height
+        type: integer
+        format: int32
+
+  Broadcast:
+    type: object
+    description: Object contains broadcast result flag
+    required:
+      - success
+    properties:
+      success:
+        description: Flag is true if broadcast is succeed and flag is false if broadcast is failed
+        type: boolean
+
+  Capacity:
+    type: object
+    description: Object contains current server capacity
+    required:
+      - capacity
+    properties:
+      capacity:
+        description: Capacity is the number of opened connections divided by the number of allowed connections for server instance
+        type: number
+        format: double
+
+  Error:
+    type: object
+    description: Contains code of error and short description text
+    required:
+      - code
+      - text
+    properties:
+      code:
+        description: Error code
+        type: integer
+        format: int32
+      text:
+        description: Short error description
+        type: string
+
+  Deleted:
+    type: object
+    description: Object contains information about deleted game
+    required:
+      - id
+    properties:
+      id:
+        description: Game identificator
+        type: integer
+        format: int32

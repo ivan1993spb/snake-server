@@ -8,7 +8,7 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const chanSnakeObserverEventsBuffer = 32
+const chanSnakeObserverEventsBuffer = 64
 
 type SnakeObserver struct{}
 

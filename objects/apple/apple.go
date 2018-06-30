@@ -37,9 +37,6 @@ func NewApple(world *world.World) (*Apple, error) {
 	if err != nil {
 		return nil, ErrCreateApple(err.Error())
 	}
-	if len(location) == 0 {
-		return nil, ErrCreateApple("created empty location")
-	}
 
 	apple.mux.Lock()
 	apple.dot = location.Dot(0)

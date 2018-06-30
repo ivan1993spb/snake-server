@@ -6,11 +6,13 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
+const chanLoggerObserverEventsBuffer = 64
+
 type LoggerObserver struct{}
 
 func (LoggerObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
 	go func() {
-		for event := range w.Events(stop, chanSnakeObserverEventsBuffer) {
+		for event := range w.Events(stop, chanLoggerObserverEventsBuffer) {
 			switch event.Type {
 			case world.EventTypeError:
 				if err, ok := event.Payload.(error); ok {

@@ -26,6 +26,7 @@ var ruins = []*engine.DotsMask{
 	engine.DotsMaskLabyrinth,
 	engine.DotsMaskTunnel1,
 	engine.DotsMaskTunnel2,
+	engine.DotsMaskBigHome,
 }
 
 func calcRuinsCount(size uint16) int {

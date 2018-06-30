@@ -22,12 +22,12 @@ func Test_NewCorpse_CreatesCorpseAndLocatesObject(t *testing.T) {
 		engine.Dot{7, 0},
 	})
 	require.Nil(t, err)
-	require.Equal(t, engine.Location{
+	require.True(t, corpse.location.Equals(engine.Location{
 		engine.Dot{10, 0},
 		engine.Dot{9, 0},
 		engine.Dot{8, 0},
 		engine.Dot{7, 0},
-	}, corpse.location)
+	}))
 }
 
 func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
@@ -57,11 +57,11 @@ func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
 
 	nutritionalValue := corpse.NutritionalValue(engine.Dot{10, 0})
 	require.Equal(t, corpseNutritionalValue, nutritionalValue)
-	require.Equal(t, engine.Location{
+	require.True(t, corpse.location.Equals(engine.Location{
 		engine.Dot{9, 0},
 		engine.Dot{8, 0},
 		engine.Dot{7, 0},
-	}, corpse.location)
+	}))
 }
 
 func Test_Corpse_NutritionalValue_ReturnsZeroForInvalidDot(t *testing.T) {

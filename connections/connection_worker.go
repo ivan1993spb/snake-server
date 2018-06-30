@@ -14,15 +14,14 @@ import (
 )
 
 const (
-	chanOutputMessageBuffer     = 128
+	chanOutputMessageBuffer     = 256
 	chanReadMessagesBuffer      = 128
 	chanDecodeMessageBuffer     = 128
-	chanEncodeMessageBuffer     = 128
+	chanEncodeMessageBuffer     = 1024
 	chanProxyInputMessageBuffer = 64
-	chanInputMessagesBuffer     = 32
-	chanBroadcastBuffer         = 32
-	chanEventsBuffer            = 32
-	chanSnakeCommandsBuffer     = 32
+	chanInputMessagesBuffer     = 64
+	chanSnakeCommandsBuffer     = 64
+	chanMergeBytesBuffer        = 1024
 
 	sendInputMessageTimeout = time.Millisecond * 50
 )
@@ -52,7 +51,7 @@ func (e ErrStartConnectionWorker) Error() string {
 	return "error start connection worker: " + string(e)
 }
 
-func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast) error {
+func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast, gameBytes <-chan []byte) error {
 	if cw.flagStarted {
 		return ErrStartConnectionWorker("connection worker already started")
 	}
@@ -72,10 +71,8 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 
 	// Output
 	chPlayer := p.Start(chStop, chCommands)
-	chGame := game.ListenEvents(chStop, chanEventsBuffer)
-	chBroadcast := broadcast.ListenMessages(chStop, chanBroadcastBuffer)
-	chOutputBytes := cw.encode(chStop, cw.listenBroadcast(chStop, chBroadcast), cw.listenPlayer(chStop, chPlayer), cw.listenGame(chStop, chGame))
-	cw.write(chOutputBytes, chStop)
+	chOutputBytes := cw.encode(chStop, cw.listenPlayer(chStop, chPlayer))
+	cw.write(cw.mergeBytesCh(chStop, chOutputBytes, gameBytes), chStop)
 
 	select {
 	case <-chStop:
@@ -113,7 +110,9 @@ func (cw *ConnectionWorker) read() (<-chan []byte, <-chan struct{}) {
 		for {
 			messageType, data, err := cw.conn.ReadMessage()
 			if err != nil {
-				cw.logger.Errorln("read input message error:", err)
+				if !websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+					cw.logger.Errorln("read input message error:", err)
+				}
 				return
 			}
 
@@ -139,12 +138,20 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 
 		for {
 			select {
-			case data := <-chin:
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				var inputMessage InputMessage
 				if err := decoder.Decode(data, &inputMessage); err != nil {
 					cw.logger.Errorln("decode input message error:", err)
 				} else {
-					chout <- inputMessage
+					select {
+					case <-stop:
+						return
+					case chout <- inputMessage:
+					}
 				}
 			case <-stop:
 				return
@@ -159,21 +166,30 @@ func (cw *ConnectionWorker) broadcastInputMessage(chin <-chan InputMessage, stop
 	go func() {
 		for {
 			select {
-			case inputMessage := <-chin:
-				cw.chsInputMux.RLock()
-				for _, ch := range cw.chsInput {
-					select {
-					case ch <- inputMessage:
-					case <-stop:
-						return
-					}
+			case inputMessage, ok := <-chin:
+				if !ok {
+					return
 				}
-				cw.chsInputMux.RUnlock()
+
+				cw.doBroadcast(inputMessage, stop)
 			case <-stop:
 				return
 			}
 		}
 	}()
+}
+
+func (cw *ConnectionWorker) doBroadcast(message InputMessage, stop <-chan struct{}) {
+	cw.chsInputMux.RLock()
+	defer cw.chsInputMux.RUnlock()
+
+	for _, ch := range cw.chsInput {
+		select {
+		case ch <- message:
+		case <-stop:
+			return
+		}
+	}
 }
 
 func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan InputMessage {
@@ -188,6 +204,11 @@ func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan Inpu
 	go func() {
 		defer close(chout)
 		defer func() {
+			go func() {
+				for range chProxy {
+				}
+			}()
+
 			cw.chsInputMux.Lock()
 			for i := range cw.chsInput {
 				if cw.chsInput[i] == chProxy {
@@ -203,7 +224,10 @@ func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan Inpu
 			select {
 			case <-stop:
 				return
-			case inputMessage := <-chProxy:
+			case inputMessage, ok := <-chProxy:
+				if !ok {
+					return
+				}
 				cw.sendInputMessage(chout, inputMessage, stop, sendInputMessageTimeout)
 			}
 		}
@@ -238,20 +262,72 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- inputMessage:
+						return
+					case <-stop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
 	}
 }
 
+func (cw *ConnectionWorker) mergeBytesCh(stop <-chan struct{}, chins ...<-chan []byte) <-chan []byte {
+	chout := make(chan []byte, chanMergeBytesBuffer)
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(chins))
+
+	for _, chin := range chins {
+		go func(chin <-chan []byte) {
+			defer wg.Done()
+
+			for {
+				select {
+				case <-stop:
+					return
+				case data, ok := <-chin:
+					if !ok {
+						return
+					}
+
+					select {
+					case chout <- data:
+					case <-stop:
+						return
+					}
+				}
+			}
+		}(chin)
+	}
+
+	go func() {
+		wg.Wait()
+		close(chout)
+	}()
+
+	return chout
+}
+
 func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 	go func() {
 		for {
 			select {
-			case data := <-chin:
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
-					cw.logger.Errorln("write output message error:", err)
+					if !websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+						cw.logger.Errorln("write output message error:", err)
+					}
+					return
 				}
 			case <-stop:
 				return
@@ -277,10 +353,15 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 					if !ok {
 						return
 					}
+
 					if data, err := ffjson.Marshal(message); err != nil {
 						cw.logger.Errorln("encode output message error:", err)
 					} else {
-						chout <- data
+						select {
+						case <-stop:
+							return
+						case chout <- data:
+						}
 					}
 				}
 			}
@@ -295,34 +376,6 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 	return chout
 }
 
-func (cw *ConnectionWorker) listenGame(stop <-chan struct{}, chin <-chan game.Event) <-chan OutputMessage {
-	chout := make(chan OutputMessage, chanOutputMessageBuffer)
-
-	go func() {
-		defer close(chout)
-
-		for {
-			select {
-			case event := <-chin:
-				outputMessage := OutputMessage{
-					Type:    OutputMessageTypeGame,
-					Payload: event,
-				}
-
-				select {
-				case chout <- outputMessage:
-				case <-stop:
-					return
-				}
-			case <-stop:
-				return
-			}
-		}
-	}()
-
-	return chout
-}
-
 func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan player.Message) <-chan OutputMessage {
 	chout := make(chan OutputMessage, chanOutputMessageBuffer)
 
@@ -331,38 +384,14 @@ func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan playe
 
 		for {
 			select {
-			case event := <-chin:
+			case event, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				outputMessage := OutputMessage{
 					Type:    OutputMessageTypePlayer,
 					Payload: event,
-				}
-
-				select {
-				case chout <- outputMessage:
-				case <-stop:
-					return
-				}
-			case <-stop:
-				return
-			}
-		}
-	}()
-
-	return chout
-}
-
-func (cw *ConnectionWorker) listenBroadcast(stop <-chan struct{}, chin <-chan broadcast.BroadcastMessage) <-chan OutputMessage {
-	chout := make(chan OutputMessage, chanOutputMessageBuffer)
-
-	go func() {
-		defer close(chout)
-
-		for {
-			select {
-			case message := <-chin:
-				outputMessage := OutputMessage{
-					Type:    OutputMessageTypeBroadcast,
-					Payload: message,
 				}
 
 				select {
@@ -387,7 +416,11 @@ func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-cha
 
 		for {
 			select {
-			case message := <-chin:
+			case message, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				if message.Type == InputMessageTypeSnakeCommand {
 					select {
 					case chout <- message.Payload:
@@ -408,7 +441,11 @@ func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-
 	go func() {
 		for {
 			select {
-			case message := <-chin:
+			case message, ok := <-chin:
+				if !ok {
+					return
+				}
+
 				if message.Type == InputMessageTypeBroadcast {
 					b.BroadcastMessage(broadcast.BroadcastMessage(message.Payload))
 				}

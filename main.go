@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -28,6 +29,8 @@ const (
 var (
 	Version = "dev"
 	Build   = "dev"
+	Author  = "Ivan Pushkin"
+	License = "MIT"
 )
 
 var (
@@ -45,6 +48,8 @@ var (
 	logLevel    string
 )
 
+const logName = "api"
+
 func usage() {
 	fmt.Fprint(os.Stderr, "Wellcome to snake-server!\n\n")
 	fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
@@ -57,7 +62,7 @@ func init() {
 	flag.BoolVar(&flagEnableTLS, "tls-enable", false, "enable TLS")
 	flag.StringVar(&certFile, "tls-cert", "", "path to certificate file")
 	flag.StringVar(&keyFile, "tls-key", "", "path to key file")
-	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "groups limit")
+	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "game groups limit")
 	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
@@ -70,9 +75,13 @@ func logger() *logrus.Logger {
 	logger := logrus.New()
 	if flagJSONLog {
 		logger.Formatter = &logrus.JSONFormatter{}
-	} else {
-		// TODO: Set up formatter with colors for windows ?
-		// https://github.com/sirupsen/logrus/issues/172
+	} else if runtime.GOOS == "windows" {
+		// Log Output on Windows shows Bash format
+		// See: https://gitlab.com/gitlab-org/gitlab-runner/issues/6
+		// See: https://github.com/sirupsen/logrus/issues/172
+		logger.Formatter = &logrus.TextFormatter{
+			DisableColors: true,
+		}
 	}
 	if level, err := logrus.ParseLevel(logLevel); err != nil {
 		logger.SetLevel(logrus.InfoLevel)
@@ -93,6 +102,8 @@ func main() {
 	logger := logger()
 
 	logger.WithFields(logrus.Fields{
+		"author":  Author,
+		"license": License,
 		"version": Version,
 		"build":   Build,
 	}).Info("wellcome to snake server!")
@@ -111,30 +122,39 @@ func main() {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
 
-	rootRouter := mux.NewRouter()
+	rootRouter := mux.NewRouter().StrictSlash(true)
+	rootRouter.Path(handlers.URLRouteWellcome).Methods(handlers.MethodWellcome).Handler(handlers.NewWellcomeHandler(logger))
+	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
 
-	// Web-Socket route
-	rootRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
+	// Web-Socket routes
+	wsRouter := rootRouter.PathPrefix("/ws").Subrouter()
+	wsRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
 
 	// API routes
-	apiRouter := mux.NewRouter().StrictSlash(true)
-	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Version, Build))
+	apiRouter := rootRouter.PathPrefix("/api").Subrouter()
+	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
 	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
+
+	httpMux := http.NewServeMux()
+
+	httpMux.Handle("/", rootRouter)
+
 	// Use middlewares for API routes
-	rootRouter.NewRoute().Handler(negroni.New(
+	httpMux.Handle("/api/", negroni.New(
 		middlewares.NewRecovery(logger),
-		middlewares.NewLogger(logger, "api"),
+		middlewares.NewLogger(logger, logName),
 		middlewares.NewCORS(),
-		negroni.Wrap(apiRouter),
+		negroni.Wrap(rootRouter),
 	))
 
 	n := negroni.New()
 	n.Use(middlewares.NewServerInfo(ServerName, Version, Build))
-	n.UseHandler(rootRouter)
+	n.UseHandler(httpMux)
 
 	logger.WithFields(logrus.Fields{
 		"address": address,

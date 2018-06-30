@@ -2,58 +2,100 @@ package playground
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 
+	"github.com/ivan1993spb/snake-server/concurrent-map"
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-type entity struct {
-	object   interface{}
-	location engine.Location
-}
+var FindRetriesNumber = 32
 
-var ErrEmptyLocation = errors.New("empty location")
-
-// TODO: Use this map github.com/orcaman/concurrent-map or sync.Map ?
+var ErrRetriesLimit = errors.New("retries limit was reached")
 
 type Playground struct {
-	scene         *engine.Scene
-	entities      []entity
-	entitiesMutex *sync.RWMutex
+	cMap *cmap.ConcurrentMap
+
+	entities    []*entity
+	entitiesMux *sync.RWMutex
+
+	area engine.Area
+}
+
+type ErrCreatePlayground struct {
+	Err error
+}
+
+func (e ErrCreatePlayground) Error() string {
+	return "cannot create playground: " + e.Err.Error()
 }
 
 func NewPlayground(width, height uint8) (*Playground, error) {
-	scene, err := engine.NewScene(width, height)
+	area, err := engine.NewArea(height, width)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create playground: %s", err)
+		return nil, ErrCreatePlayground{err}
+	}
+
+	cMap, err := cmap.New(calcShardCount(area.Size()))
+	if err != nil {
+		return nil, ErrCreatePlayground{err}
 	}
 
 	return &Playground{
-		scene:         scene,
-		entities:      []entity{},
-		entitiesMutex: &sync.RWMutex{},
+		cMap:        cMap,
+		entities:    make([]*entity, 0),
+		entitiesMux: &sync.RWMutex{},
+		area:        area,
 	}, nil
 }
 
 func (pg *Playground) unsafeObjectExists(object interface{}) bool {
 	for i := range pg.entities {
-		if pg.entities[i].object == object {
+		if pg.entities[i].GetObject() == object {
 			return true
 		}
 	}
 	return false
 }
 
+func (pg *Playground) unsafeAddEntity(e *entity) error {
+	if pg.unsafeObjectExists(e.GetObject()) {
+		return errors.New("cannot add entity: object already exists")
+	}
+
+	pg.entities = append(pg.entities, e)
+	return nil
+}
+
+func (pg *Playground) addEntity(e *entity) error {
+	pg.entitiesMux.Lock()
+	defer pg.entitiesMux.Unlock()
+	return pg.unsafeAddEntity(e)
+}
+
+func (pg *Playground) unsafeDeleteEntity(e *entity) {
+	for i := range pg.entities {
+		if pg.entities[i] == e {
+			pg.entities = append(pg.entities[:i], pg.entities[i+1:]...)
+			break
+		}
+	}
+}
+
+func (pg *Playground) deleteEntity(e *entity) {
+	pg.entitiesMux.Lock()
+	pg.unsafeDeleteEntity(e)
+	pg.entitiesMux.Unlock()
+}
+
 func (pg *Playground) ObjectExists(object interface{}) bool {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeObjectExists(object)
 }
 
 func (pg *Playground) unsafeLocationExists(location engine.Location) bool {
 	for i := range pg.entities {
-		if pg.entities[i].location.Equals(location) {
+		if pg.entities[i].GetLocation().Equals(location) {
 			return true
 		}
 	}
@@ -61,14 +103,14 @@ func (pg *Playground) unsafeLocationExists(location engine.Location) bool {
 }
 
 func (pg *Playground) LocationExists(location engine.Location) bool {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeLocationExists(location)
 }
 
 func (pg *Playground) unsafeEntityExists(object interface{}, location engine.Location) bool {
 	for i := range pg.entities {
-		if pg.entities[i].object == object && pg.entities[i].location.Equals(location) {
+		if pg.entities[i].GetObject() == object && pg.entities[i].GetLocation().Equals(location) {
 			return true
 		}
 	}
@@ -76,81 +118,57 @@ func (pg *Playground) unsafeEntityExists(object interface{}, location engine.Loc
 }
 
 func (pg *Playground) EntityExists(object interface{}, location engine.Location) bool {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeEntityExists(object, location)
+}
+
+func (pg *Playground) unsafeGetEntityByObject(object interface{}) *entity {
+	for i := range pg.entities {
+		if pg.entities[i].GetObject() == object {
+			return pg.entities[i]
+		}
+	}
+	return nil
+}
+
+func (pg *Playground) getEntityByObject(object interface{}) *entity {
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
+	return pg.unsafeGetEntityByObject(object)
 }
 
 func (pg *Playground) unsafeGetObjectByLocation(location engine.Location) interface{} {
 	for i := range pg.entities {
-		if pg.entities[i].location.Equals(location) {
-			return pg.entities[i].object
+		if pg.entities[i].GetLocation().Equals(location) {
+			return pg.entities[i].GetObject()
 		}
 	}
 	return nil
 }
 
 func (pg *Playground) GetObjectByLocation(location engine.Location) interface{} {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeGetObjectByLocation(location)
 }
 
-func (pg *Playground) unsafeGetObjectByDot(dot engine.Dot) interface{} {
-	for i := range pg.entities {
-		if pg.entities[i].location.Contains(dot) {
-			return pg.entities[i].object
+func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
+	if v, ok := pg.cMap.Get(dot.Hash()); ok {
+		if e, ok := v.(*entity); ok {
+			return e.GetObject()
 		}
 	}
 	return nil
 }
 
-func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
-	return pg.unsafeGetObjectByDot(dot)
-}
-
-func (pg *Playground) unsafeGetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
-	for i := range pg.entities {
-		if pg.entities[i].location.Contains(dot) {
-			return pg.entities[i].object, pg.entities[i].location
+func (pg *Playground) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
+	if v, ok := pg.cMap.Get(dot.Hash()); ok {
+		if e, ok := v.(*entity); ok {
+			return e.GetObject(), e.GetLocation()
 		}
 	}
 	return nil, nil
-}
-
-func (pg *Playground) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
-	return pg.unsafeGetEntityByDot(dot)
-}
-
-func (pg *Playground) unsafeGetObjectsByDots(dots []engine.Dot) []interface{} {
-	if len(dots) == 0 {
-		return nil
-	}
-
-	objects := make([]interface{}, 0)
-	locations := make([]engine.Location, 0)
-
-	for _, dot := range dots {
-		flagObjectCreated := false
-		for _, location := range locations {
-			if location.Contains(dot) {
-				flagObjectCreated = true
-				break
-			}
-		}
-
-		if !flagObjectCreated {
-			object, location := pg.unsafeGetEntityByDot(dot)
-			objects = append(objects, object)
-			locations = append(locations, location)
-		}
-	}
-
-	return objects
 }
 
 func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
@@ -158,570 +176,404 @@ func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 		return nil
 	}
 
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
-	return pg.unsafeGetObjectsByDots(dots)
+	keys := make([]uint16, len(dots))
+	for i, dot := range dots {
+		keys[i] = dot.Hash()
+	}
+
+	objects := make([]interface{}, 0)
+
+	for _, value := range pg.cMap.MGet(keys) {
+		if e, ok := value.(*entity); ok {
+			object := e.GetObject()
+			flagObjectCreated := false
+
+			for i := range objects {
+				if objects[i] == object {
+					flagObjectCreated = true
+					break
+				}
+			}
+
+			if !flagObjectCreated {
+				objects = append(objects, object)
+			}
+		}
+	}
+
+	return objects
 }
 
-type ErrCreateObject struct {
-	Err error
+type errCreateObject string
+
+func (e errCreateObject) Error() string {
+	return "error create object: " + string(e)
 }
 
-func (e *ErrCreateObject) Error() string {
-	return "error create object"
-}
+func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
+	if !pg.area.ContainsLocation(location) {
+		return errCreateObject("area not contains location")
+	}
 
-type ErrLocationUsedByObject struct {
-	Location engine.Location
-}
-
-func (e *ErrLocationUsedByObject) Error() string {
-	return "passed location used by an object"
-}
-
-type ErrLocationDotsOccupiedByObjects struct {
-	Objects []interface{}
-}
-
-func (e *ErrLocationDotsOccupiedByObjects) Error() string {
-	return "dots of location is occupied by objects"
-}
-
-func (pg *Playground) unsafeCreateEntity(object interface{}, location engine.Location) {
-	pg.entities = append(pg.entities, entity{
+	e := &entity{
 		object:   object,
 		location: location,
-	})
-}
-
-func (pg *Playground) CreateObject(object interface{}, location engine.Location) *ErrCreateObject {
-	if location.Empty() {
-		return &ErrCreateObject{
-			Err: ErrEmptyLocation,
-		}
+		mux:      &sync.RWMutex{},
 	}
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return &ErrCreateObject{
-			Err: errors.New("passed object exists on playground"),
-		}
+	if !pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
+		return errCreateObject("location is occupied")
 	}
 
-	if pg.unsafeLocationExists(location) {
-		return &ErrCreateObject{
-			Err: &ErrLocationUsedByObject{
-				Location: location,
-			},
-		}
-	}
+	if err := pg.addEntity(e); err != nil {
+		// Rollback map if cannot add entity.
+		pg.cMap.MRemove(e.GetLocation().Hash())
 
-	if err := pg.scene.Locate(location); err != nil {
-		switch errLocateReason := err.Err.(type) {
-		case *engine.ErrLocated:
-			// Location is occupied on scene
-			return &ErrCreateObject{
-				Err: errLocateReason,
-			}
-		case *engine.ErrAreaNotContainsDot:
-			// A dot are not contained in area
-			return &ErrCreateObject{
-				Err: errLocateReason,
-			}
-		case *engine.ErrDotsOccupied:
-			// Dots of location is occupied by objects
-			return &ErrCreateObject{
-				Err: &ErrLocationDotsOccupiedByObjects{
-					Objects: pg.unsafeGetObjectsByDots(errLocateReason.Dots),
-				},
-			}
-		default:
-			// Unknown location error
-			return &ErrCreateObject{
-				Err: errLocateReason,
-			}
-		}
-	}
-
-	pg.unsafeCreateEntity(object, location.Copy())
-
-	return nil
-}
-
-type ErrCreateObjectAvailableDots struct {
-	Err error
-}
-
-func (e *ErrCreateObjectAvailableDots) Error() string {
-	return "error on creating objects available dots: " + e.Err.Error()
-}
-
-func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, *ErrCreateObjectAvailableDots) {
-	if location.Empty() {
-		return nil, &ErrCreateObjectAvailableDots{
-			Err: ErrEmptyLocation,
-		}
-	}
-
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return nil, &ErrCreateObjectAvailableDots{
-			Err: errors.New("passed object exists on playground"),
-		}
-	}
-
-	if pg.unsafeLocationExists(location) {
-		return nil, &ErrCreateObjectAvailableDots{
-			Err: &ErrLocationUsedByObject{
-				Location: location,
-			},
-		}
-	}
-
-	location = pg.scene.LocateAvailableDots(location)
-
-	if len(location) == 0 {
-		return nil, &ErrCreateObjectAvailableDots{
-			Err: errors.New("location dots are occupied"),
-		}
-	}
-
-	pg.unsafeCreateEntity(object, location.Copy())
-
-	return location.Copy(), nil
-}
-
-func (pg *Playground) unsafeDeleteEntity(object interface{}, location engine.Location) error {
-	for i := range pg.entities {
-		if pg.entities[i].object == object && pg.entities[i].location.Equals(location) {
-			pg.entities = append(pg.entities[:i], pg.entities[i+1:]...)
-			return nil
-		}
-	}
-
-	return errors.New("cannot delete entity: entity not found")
-}
-
-type ErrDeleteObject struct {
-	Err error
-}
-
-func (e *ErrDeleteObject) Error() string {
-	return "error on object deletion"
-}
-
-func (pg *Playground) DeleteObject(object interface{}, location engine.Location) *ErrDeleteObject {
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if !pg.unsafeEntityExists(object, location) {
-		return &ErrDeleteObject{
-			Err: errors.New("passed object and location entity does not exists"),
-		}
-	}
-
-	if err := pg.scene.Delete(location); err != nil {
-		switch errDeleteReason := err.Err.(type) {
-		case *engine.ErrNotLocated:
-			if err := pg.unsafeDeleteEntity(object, location); err != nil {
-				// Concurrent invocation of unsafe method of playground
-				return &ErrDeleteObject{
-					Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-				}
-			}
-			return &ErrDeleteObject{
-				Err: errors.New("object is not located on scene"),
-			}
-		default:
-			// Unknown deletion error
-			return &ErrDeleteObject{
-				Err: errDeleteReason,
-			}
-		}
-	}
-
-	if err := pg.unsafeDeleteEntity(object, location); err != nil {
-		// Concurrent invocation of unsafe method of playground
-		return &ErrDeleteObject{
-			Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-		}
+		return errCreateObject(err.Error())
 	}
 
 	return nil
 }
 
-func (pg *Playground) unsafeUpdateEntity(object interface{}, old, new engine.Location) error {
-	for i := 0; i < len(pg.entities); i++ {
-		if pg.entities[i].object == object && pg.entities[i].location.Equals(old) {
-			pg.entities[i].location = new
-			return nil
-		}
-	}
+type errCreateObjectAvailableDots string
 
-	return errors.New("cannot update entity: entity not found")
+func (e errCreateObjectAvailableDots) Error() string {
+	return "error create object available dots: " + string(e)
 }
 
-type ErrUpdateObject struct {
-	Err error
+func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
+	if !pg.area.ContainsLocation(location) {
+		return nil, errCreateObjectAvailableDots("area not contains location")
+	}
+
+	e := &entity{
+		object:   object,
+		location: location,
+		mux:      &sync.RWMutex{},
+	}
+
+	hashes := pg.cMap.MSetIfAbsent(e.GetPreparedMap())
+
+	if len(hashes) == 0 {
+		return nil, errCreateObjectAvailableDots("dots in location are occupied")
+	}
+
+	e.SetLocation(engine.HashToLocation(hashes))
+
+	if err := pg.addEntity(e); err != nil {
+		// Rollback map if cannot add entity.
+		pg.cMap.MRemove(e.GetLocation().Hash())
+
+		return nil, errCreateObjectAvailableDots(err.Error())
+	}
+
+	return e.GetLocation(), nil
 }
 
-func (e *ErrUpdateObject) Error() string {
-	return "update object error: " + e.Err.Error()
+type errDeleteObject string
+
+func (e errDeleteObject) Error() string {
+	return "error delete object: " + string(e)
 }
 
-func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) *ErrUpdateObject {
-	if old.Equals(new) {
-		return nil
+func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
+	e := pg.getEntityByObject(object)
+	if e == nil {
+		return errDeleteObject("cannot find entity by object")
 	}
 
-	if old.Empty() || new.Empty() {
-		return &ErrUpdateObject{
-			Err: ErrEmptyLocation,
-		}
-	}
+	pg.cMap.MRemove(e.GetLocation().Hash())
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if !pg.unsafeEntityExists(object, old) {
-		return &ErrUpdateObject{
-			Err: errors.New("passed object and location entity does not exists"),
-		}
-	}
-
-	if pg.unsafeLocationExists(new) {
-		return &ErrUpdateObject{
-			Err: &ErrLocationUsedByObject{
-				Location: new,
-			},
-		}
-	}
-
-	if err := pg.scene.Relocate(old, new); err != nil {
-		switch errRelocateReason := err.Err.(type) {
-		case *engine.ErrLocated:
-			// New location is already occupied on scene but is not registered on playground
-			return &ErrUpdateObject{
-				Err: errRelocateReason,
-			}
-		case *engine.ErrNotLocated:
-			// Старый объект не находится в том месте на сцене !
-			if err := pg.unsafeDeleteEntity(object, old); err != nil {
-				// Concurrent invocation of unsafe method of playground
-				return &ErrUpdateObject{
-					Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-				}
-			}
-			return &ErrUpdateObject{
-				Err: errors.New("object is not located on scene"),
-			}
-		case *engine.ErrDelete:
-			// Ошибка при удалении старого объекта
-			switch errDeleteReason := errRelocateReason.Err.(type) {
-			case *engine.ErrNotLocated:
-				// Старый объект не находится на сцене
-				if err := pg.unsafeDeleteEntity(object, old); err != nil {
-					// Concurrent invocation of unsafe method of playground
-					return &ErrUpdateObject{
-						Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-					}
-				}
-				return &ErrUpdateObject{
-					Err: errors.New("object is not located on scene"),
-				}
-			default:
-				// Unknown deletion error
-				return &ErrUpdateObject{
-					Err: errDeleteReason,
-				}
-			}
-		case *engine.ErrLocate:
-			// Ошибка при размещении нового объекта
-			switch errLocateReason := errRelocateReason.Err.(type) {
-			case *engine.ErrLocated:
-				// Новый объект уже на сцене аллоцирован
-				return &ErrUpdateObject{
-					Err: errLocateReason,
-				}
-			case *engine.ErrAreaNotContainsDot:
-				// Точка выходит за рамки карты !
-				return &ErrUpdateObject{
-					Err: errLocateReason,
-				}
-			case *engine.ErrDotsOccupied:
-				return &ErrUpdateObject{
-					Err: &ErrLocationDotsOccupiedByObjects{
-						Objects: pg.unsafeGetObjectsByDots(errLocateReason.Dots),
-					},
-				}
-			default:
-				// Unknown location error
-				return &ErrUpdateObject{
-					Err: errLocateReason,
-				}
-			}
-		default:
-			// Unknown relocation error
-			return &ErrUpdateObject{
-				Err: fmt.Errorf("unknown error: %s", errRelocateReason),
-			}
-		}
-	}
-
-	if err := pg.unsafeUpdateEntity(object, old, new.Copy()); err != nil {
-		// Concurrent invocation of unsafe methods on playground
-		return &ErrUpdateObject{
-			Err: err,
-		}
-	}
+	pg.deleteEntity(e)
 
 	return nil
 }
 
-type ErrUpdateObjectAvailableDots struct {
-	Err error
+type errUpdateObject string
+
+func (e errUpdateObject) Error() string {
+	return "error update object: " + string(e)
 }
 
-func (e *ErrUpdateObjectAvailableDots) Error() string {
-	return "error update object available dots: " + e.Err.Error()
+func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) error {
+	e := pg.getEntityByObject(object)
+
+	if e == nil {
+		return errUpdateObject("cannot find entity by object")
+	}
+
+	actualLocation := e.GetLocation()
+	diff := actualLocation.Difference(new)
+
+	keysToRemove := make([]uint16, len(diff))
+	dotsToSet := make(map[uint16]interface{})
+
+	for _, dot := range diff {
+		if new.Contains(dot) {
+			dotsToSet[dot.Hash()] = e
+		} else {
+			keysToRemove = append(keysToRemove, dot.Hash())
+		}
+	}
+
+	if !pg.cMap.MSetIfAllAbsent(dotsToSet) {
+		return errUpdateObject("cannot occupy new location")
+	}
+
+	pg.cMap.MRemove(keysToRemove)
+
+	e.SetLocation(new)
+
+	return nil
 }
 
-func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, *ErrUpdateObjectAvailableDots) {
-	if old.Empty() || new.Empty() {
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: ErrEmptyLocation,
-		}
-	}
+type errUpdateObjectAvailableDots string
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if !pg.unsafeEntityExists(object, old) {
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: errors.New("passed object and location entity does not exists"),
-		}
-	}
-
-	if pg.unsafeLocationExists(new) {
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: &ErrLocationUsedByObject{
-				Location: new,
-			},
-		}
-	}
-
-	availableLocation, err := pg.scene.RelocateAvailableDots(old, new)
-	if err != nil {
-		switch errRelocateAvailableDotsReason := err.Err.(type) {
-		case *engine.ErrNotLocated:
-			// Old location is not actual for object
-			if err := pg.unsafeDeleteEntity(object, availableLocation); err != nil {
-				// Concurrent invocation of unsafe method of playground
-				return nil, &ErrUpdateObjectAvailableDots{
-					Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-				}
-			}
-
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: errors.New("object is not located on scene"),
-			}
-		case *engine.ErrDelete:
-			// Ошибка при удалении старого объекта
-			switch errDeleteReason := errRelocateAvailableDotsReason.Err.(type) {
-			case *engine.ErrNotLocated:
-				// Старый объект не находится на сцене
-				if err := pg.unsafeDeleteEntity(object, old); err != nil {
-					// Concurrent invocation of unsafe method of playground
-					return nil, &ErrUpdateObjectAvailableDots{
-						Err: errors.New("cannot delete entity: concurrent invocation of unsafe methods of playground"),
-					}
-				}
-				return nil, &ErrUpdateObjectAvailableDots{
-					Err: errors.New("object is not located on scene"),
-				}
-			default:
-				// Unknown deletion error
-				return nil, &ErrUpdateObjectAvailableDots{
-					Err: errDeleteReason,
-				}
-			}
-		case *engine.ErrDotsOccupied:
-			// Case of all dots of new location are occupied
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: &ErrLocationDotsOccupiedByObjects{
-					Objects: pg.unsafeGetObjectsByDots(errRelocateAvailableDotsReason.Dots),
-				},
-			}
-		default:
-			// Unknown relocate available dots error
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: fmt.Errorf("unknown error: %s", errRelocateAvailableDotsReason),
-			}
-		}
-	}
-
-	if len(availableLocation) == 0 {
-		// RelocateAvailableDots did not return error but return empty location
-
-		// Concurrent invocation of unsafe method of playground
-		if err := pg.unsafeDeleteEntity(object, old); err != nil {
-			return nil, &ErrUpdateObjectAvailableDots{
-				Err: err,
-			}
-		}
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: errors.New("all dots is occupied"),
-		}
-	}
-
-	if err := pg.unsafeUpdateEntity(object, old, availableLocation.Copy()); err != nil {
-		// Concurrent invocation of unsafe method of playground
-		return nil, &ErrUpdateObjectAvailableDots{
-			Err: err,
-		}
-	}
-
-	return availableLocation.Copy(), nil
+func (e errUpdateObjectAvailableDots) Error() string {
+	return "error update object available dots: " + string(e)
 }
 
-type ErrCreateObjectRandomDot string
+func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
+	e := pg.getEntityByObject(object)
 
-func (e ErrCreateObjectRandomDot) Error() string {
-	return "cannot create object of random dot: " + string(e)
+	if e == nil {
+		return nil, errUpdateObjectAvailableDots("cannot find entity by object")
+	}
+
+	actualLocation := e.GetLocation()
+	diff := actualLocation.Difference(new)
+
+	keysToRemove := make([]uint16, len(diff))
+	dotsToSet := make(map[uint16]interface{})
+
+	for _, dot := range diff {
+		if new.Contains(dot) {
+			dotsToSet[dot.Hash()] = e
+		} else {
+			keysToRemove = append(keysToRemove, dot.Hash())
+		}
+	}
+
+	if len(dotsToSet) > 0 {
+		hashes := pg.cMap.MSetIfAbsent(dotsToSet)
+		if len(hashes) > 0 {
+			for _, hash := range hashes {
+				actualLocation = actualLocation.Add(engine.HashToDot(hash))
+			}
+		}
+	}
+
+	if len(keysToRemove) > 0 {
+		pg.cMap.MRemove(keysToRemove)
+		for _, key := range keysToRemove {
+			actualLocation = actualLocation.Delete(engine.HashToDot(key))
+		}
+	}
+
+	if len(actualLocation) == 0 {
+		return nil, errUpdateObjectAvailableDots("all dots to set are occupied")
+	}
+
+	e.SetLocation(actualLocation)
+
+	return e.GetLocation(), nil
+}
+
+type errCreateObjectRandomDot string
+
+func (e errCreateObjectRandomDot) Error() string {
+	return "error create object random dot: " + string(e)
 }
 
 func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return nil, ErrCreateObjectRandomDot("object to create already created")
+	e := &entity{
+		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
-	location, err := pg.scene.LocateRandomDot()
-	if err != nil {
-		return nil, ErrCreateObjectRandomDot(err.Error())
+	for i := 0; i < FindRetriesNumber; i++ {
+		dot := pg.area.NewRandomDot(0, 0)
+		e.location = engine.Location{dot}
+
+		if pg.cMap.SetIfAbsent(dot.Hash(), e) {
+			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
+				return nil, errCreateObjectRandomDot(err.Error())
+			}
+
+			return engine.Location{dot}, nil
+		}
 	}
 
-	pg.unsafeCreateEntity(object, location.Copy())
-
-	return location.Copy(), nil
+	return nil, errCreateObjectRandomDot(ErrRetriesLimit.Error())
 }
 
-type ErrCreateRandomRectObject string
+type errCreateObjectRandomRect string
 
-func (e ErrCreateRandomRectObject) Error() string {
-	return "cannot create random rect object: " + string(e)
+func (e errCreateObjectRandomRect) Error() string {
+	return "error create object random rect: " + string(e)
 }
 
 func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
 	if rw*rh == 0 {
-		return nil, ErrCreateRandomRectObject("invalid rectangle size")
+		return nil, errCreateObjectRandomRect("invalid rect size: 0")
 	}
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return nil, ErrCreateRandomRectObject("object to create already created")
+	if !pg.area.ContainsRect(engine.NewRect(0, 0, rw, rh)) {
+		return nil, errCreateObjectRandomRect("area cannot contain located rect")
 	}
 
-	location, err := pg.scene.LocateRandomRect(rw, rh)
-	if err != nil {
-		return nil, ErrCreateRandomRectObject(err.Error())
+	e := &entity{
+		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
-	pg.unsafeCreateEntity(object, location.Copy())
+	for i := 0; i < FindRetriesNumber; i++ {
+		rect, err := pg.area.NewRandomRect(rw, rh, 0, 0)
+		if err != nil {
+			continue
+		}
+		e.location = rect.Location()
 
-	return location.Copy(), nil
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
+			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
+				return nil, errCreateObjectRandomRect(err.Error())
+			}
+
+			return e.GetLocation(), nil
+		}
+	}
+
+	return nil, errCreateObjectRandomRect(ErrRetriesLimit.Error())
 }
 
-type ErrCreateRandomRectMarginObject string
+type errCreateObjectRandomRectMargin string
 
-func (e ErrCreateRandomRectMarginObject) Error() string {
-	return "cannot create random rect object with margin: " + string(e)
+func (e errCreateObjectRandomRectMargin) Error() string {
+	return "error create object random rect with margin: " + string(e)
 }
 
 func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
 	if rw*rh == 0 {
-		return nil, ErrCreateRandomRectMarginObject("invalid rectangle size")
+		return nil, errCreateObjectRandomRectMargin("invalid rect size: 0")
 	}
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return nil, ErrCreateRandomRectMarginObject("object to create already created")
+	if !pg.area.ContainsRect(engine.NewRect(0, 0, rw+margin*2, rh+margin*2)) {
+		return nil, errCreateObjectRandomRectMargin("area cannot contain located rect with margin")
 	}
 
-	location, err := pg.scene.LocateRandomRectMargin(rw, rh, margin)
-	if err != nil {
-		return nil, ErrCreateRandomRectMarginObject(err.Error())
+	e := &entity{
+		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
-	pg.unsafeCreateEntity(object, location.Copy())
+	for i := 0; i < FindRetriesNumber; i++ {
+		rect, err := pg.area.NewRandomRect(rw+margin*2, rh+margin*2, 0, 0)
+		if err != nil {
+			continue
+		}
 
-	return location.Copy(), nil
+		if pg.cMap.HasAny(rect.Location().Hash()) {
+			continue
+		}
+
+		e.location = engine.NewRect(rect.X()+margin, rect.Y()+margin, rw, rh).Location()
+
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
+			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
+				return nil, errCreateObjectRandomRectMargin(err.Error())
+			}
+
+			return e.GetLocation(), nil
+		}
+	}
+
+	return nil, errCreateObjectRandomRectMargin(ErrRetriesLimit.Error())
 }
 
-type ErrCreateObjectRandomByDotsMask string
+type errCreateObjectRandomByDotsMask string
 
-func (e ErrCreateObjectRandomByDotsMask) Error() string {
-	return "cannot create object random by dots mask: " + string(e)
+func (e errCreateObjectRandomByDotsMask) Error() string {
+	return "error create object random by dots mask: " + string(e)
 }
 
 func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
-	if dm.Empty() {
-		return nil, ErrCreateObjectRandomByDotsMask("passed dots mask is empty")
+	if !pg.area.ContainsRect(engine.NewRect(0, 0, dm.Width(), dm.Height())) {
+		return nil, errCreateObjectRandomByDotsMask("area cannot contain located by dots mask object")
 	}
 
-	pg.entitiesMutex.Lock()
-	defer pg.entitiesMutex.Unlock()
-
-	if pg.unsafeObjectExists(object) {
-		return nil, ErrCreateObjectRandomByDotsMask("object to create already created")
+	e := &entity{
+		object: object,
+		mux:    &sync.RWMutex{},
 	}
 
-	location, err := pg.scene.LocateRandomByDotsMask(dm)
-	if err != nil {
-		return nil, ErrCreateObjectRandomByDotsMask(err.Error())
+	for i := 0; i < FindRetriesNumber; i++ {
+		rect, err := pg.area.NewRandomRect(dm.Width(), dm.Height(), 0, 0)
+		if err != nil {
+			continue
+		}
+
+		location := dm.Location(rect.X(), rect.Y())
+
+		if pg.cMap.HasAny(location.Hash()) {
+			continue
+		}
+
+		e.location = location
+
+		if pg.cMap.MSetIfAllAbsent(e.GetPreparedMap()) {
+			if err := pg.addEntity(e); err != nil {
+				// Rollback map if cannot add entity.
+				pg.cMap.MRemove(e.GetLocation().Hash())
+
+				return nil, errCreateObjectRandomByDotsMask(err.Error())
+			}
+
+			return e.GetLocation(), nil
+		}
 	}
 
-	pg.unsafeCreateEntity(object, location.Copy())
+	return nil, errCreateObjectRandomByDotsMask(ErrRetriesLimit.Error())
+}
 
-	return location.Copy(), nil
+func (pg *Playground) LocationOccupied(location engine.Location) bool {
+	return pg.cMap.HasAll(location.Hash())
 }
 
 func (pg *Playground) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
-	return pg.scene.Navigate(dot, dir, dis)
+	return pg.area.Navigate(dot, dir, dis)
 }
 
 func (pg *Playground) Size() uint16 {
-	return pg.scene.Size()
+	return pg.area.Size()
 }
 
 func (pg *Playground) Width() uint8 {
-	return pg.scene.Width()
+	return pg.area.Width()
 }
 
 func (pg *Playground) Height() uint8 {
-	return pg.scene.Height()
+	return pg.area.Height()
 }
 
 func (pg *Playground) unsafeGetObjects() []interface{} {
 	objects := make([]interface{}, len(pg.entities))
 	for i, entity := range pg.entities {
-		objects[i] = entity.object
+		objects[i] = entity.GetObject()
 	}
 	return objects
 }
 
 func (pg *Playground) GetObjects() []interface{} {
-	pg.entitiesMutex.RLock()
-	defer pg.entitiesMutex.RUnlock()
+	pg.entitiesMux.RLock()
+	defer pg.entitiesMux.RUnlock()
 	return pg.unsafeGetObjects()
 }

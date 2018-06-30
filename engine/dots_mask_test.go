@@ -388,3 +388,41 @@ func Test_LocationToDotsMask(t *testing.T) {
 	}
 	require.Equal(t, dm1, LocationToDotsMask(location1))
 }
+
+func Test_DotsMask_DotCount(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{
+			{1, 1, 0},
+			{0, 1, 1},
+			{1, 1, 0},
+		},
+	}
+	require.Equal(t, uint16(6), dm1.DotCount())
+
+	dm2 := &DotsMask{
+		mask: [][]uint8{},
+	}
+	require.Equal(t, uint16(0), dm2.DotCount())
+
+	dm3 := &DotsMask{
+		mask: [][]uint8{
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+		},
+	}
+	require.Equal(t, uint16(0), dm3.DotCount())
+
+	dm4 := &DotsMask{
+		mask: [][]uint8{
+			{1, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 0, 1, 0, 1},
+			{0, 0, 0, 0, 0, 0},
+		},
+	}
+	require.Equal(t, uint16(3), dm4.DotCount())
+}

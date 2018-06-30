@@ -94,8 +94,8 @@ func (h *getGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *getGameHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrGetGameHandler(err.Error()))

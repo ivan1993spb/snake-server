@@ -41,6 +41,7 @@ func (g *Game) Start(stop <-chan struct{}) {
 	observers.WallObserver{}.Observe(stop, g.world, g.logger)
 	observers.AppleObserver{}.Observe(stop, g.world, g.logger)
 	observers.SnakeObserver{}.Observe(stop, g.world, g.logger)
+	observers.WatermelonObserver{}.Observe(stop, g.world, g.logger)
 }
 
 func (g *Game) World() *world.World {

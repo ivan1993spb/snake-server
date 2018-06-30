@@ -7,7 +7,7 @@ import (
 
 const (
 	broadcastMainChanBufferSize = 64
-	broadcastChanBufferSize     = 32
+	broadcastChanBufferSize     = 64
 	broadcastSendTimeout        = time.Millisecond * 100
 )
 
@@ -29,6 +29,20 @@ func NewGroupBroadcast() *GroupBroadcast {
 		chs:    make([]chan BroadcastMessage, 0),
 		chsMux: &sync.RWMutex{},
 	}
+}
+
+func (gb *GroupBroadcast) BroadcastMessageTimeout(message BroadcastMessage, timeout time.Duration) bool {
+	var timer = time.NewTimer(timeout)
+	defer timer.Stop()
+
+	select {
+	case gb.chMain <- message:
+		return true
+	case <-gb.chStop:
+	case <-timer.C:
+	}
+
+	return false
 }
 
 func (gb *GroupBroadcast) BroadcastMessage(message BroadcastMessage) {
@@ -89,6 +103,11 @@ func (gb *GroupBroadcast) createChan() chan BroadcastMessage {
 }
 
 func (gb *GroupBroadcast) deleteChan(ch chan BroadcastMessage) {
+	go func() {
+		for range ch {
+		}
+	}()
+
 	gb.chsMux.Lock()
 	for i := range gb.chs {
 		if gb.chs[i] == ch {
@@ -155,12 +174,23 @@ func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessag
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- message:
+						return
+					case <-stop:
+						return
+					case <-gb.chStop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
 	}
 }
+
 func (gb *GroupBroadcast) stop() {
 	close(gb.chStop)
 	close(gb.chMain)

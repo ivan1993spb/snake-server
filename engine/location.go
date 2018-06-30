@@ -157,3 +157,19 @@ func (l1 Location) Intersection(l2 Location) (intersection Location) {
 	}
 	return
 }
+
+func (l Location) Hash() []uint16 {
+	hash := make([]uint16, 0, len(l))
+	for _, dot := range l {
+		hash = append(hash, dot.Hash())
+	}
+	return hash
+}
+
+func HashToLocation(hashes []uint16) Location {
+	location := make(Location, 0, len(hashes))
+	for _, hash := range hashes {
+		location = append(location, HashToDot(hash))
+	}
+	return location
+}
