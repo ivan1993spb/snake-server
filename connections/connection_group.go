@@ -15,9 +15,9 @@ import (
 
 const (
 	chanBroadcastBuffer  = 128
-	chanGameEventsBuffer = 128
-	chanBytesProxyBuffer = 64
-	chanBytesOutBuffer   = 64
+	chanGameEventsBuffer = 512
+	chanBytesProxyBuffer = 512
+	chanBytesOutBuffer   = 128
 )
 
 const sendBytesTimeout = time.Millisecond * 50
