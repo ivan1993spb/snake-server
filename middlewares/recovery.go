@@ -26,8 +26,8 @@ func (t *textPanicFormatter) FormatPanicError(rw http.ResponseWriter, r *http.Re
 }
 
 func (t *textPanicFormatter) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		t.logger.WithError(err).Error("cannot send response on panic")
