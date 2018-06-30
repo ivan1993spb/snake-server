@@ -5,7 +5,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls snake. The task of the game is to grow the biggest snake. In order to do this gamers can eat apples, watermelons and the remains of dead snakes of other gamers. If the snake hits a wall, the snake will die, and the player will start again with small snake.
+The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake.
 
 ## Client
 
@@ -62,8 +62,8 @@ Use `snake-server --help` for help info.
 Arguments:
 
 * `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
-* `--conns-limit` - **int** - open web-socket connections limit (default: *1000*)
-* `--groups-limit` - **int** - groups limit for server (default: *100*)
+* `--conns-limit` - **int** - opened web-socket connections limit (default: *1000*)
+* `--groups-limit` - **int** - game groups limit for server (default: *100*)
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 * `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
@@ -77,7 +77,7 @@ All API methods provide JSON format. If errors occurred methods return HTTP stat
 
 ### Request `POST /api/games`
 
-Request creates game and returns JSON details.
+Request creates game and returns JSON game object.
 
 ```
 curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
@@ -146,7 +146,7 @@ curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 
 ### Request `GET /api/capacity`
 
-Request returns server capacity. Capacity is the number of opened connections divided by the number of allowed connections for server instance.
+Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
 
 ```
 curl -s -X GET http://localhost:8080/api/capacity | jq
@@ -245,7 +245,7 @@ Output message can be type of:
 
 * *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of game objects on playground
 * *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
-* *broadcast* - message payload contains a group broadcast messages. Output message of type *broadcast* is **string**
+* *broadcast* - message payload contains a group broadcast messages. Payload of output message of type *broadcast* contains **string** message
 
 Examples:
 
