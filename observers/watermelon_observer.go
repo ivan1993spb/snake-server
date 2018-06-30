@@ -10,7 +10,7 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const chanWatermelonObserverEventsBuffer = 32
+const chanWatermelonObserverEventsBuffer = 64
 
 const addWatermelonDelay = time.Minute
 
