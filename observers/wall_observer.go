@@ -8,7 +8,7 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const ruinsFactor = 0.20
+const ruinsFactor = 0.15
 
 var dotsMaskOne = engine.NewDotsMask([][]uint8{{1}})
 
