@@ -103,6 +103,11 @@ func (gb *GroupBroadcast) createChan() chan BroadcastMessage {
 }
 
 func (gb *GroupBroadcast) deleteChan(ch chan BroadcastMessage) {
+	go func() {
+		for range ch {
+		}
+	}()
+
 	gb.chsMux.Lock()
 	for i := range gb.chs {
 		if gb.chs[i] == ch {
@@ -169,7 +174,17 @@ func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessag
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- message:
+						return
+					case <-stop:
+						return
+					case <-gb.chStop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
