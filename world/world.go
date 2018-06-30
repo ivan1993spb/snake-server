@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	worldEventsChanMainBufferSize  = 512
-	worldEventsChanProxyBufferSize = 128
+	worldEventsChanMainBufferSize  = 1024
+	worldEventsChanProxyBufferSize = 1024
 )
 
 const worldEventsSendTimeout = time.Millisecond * 50
