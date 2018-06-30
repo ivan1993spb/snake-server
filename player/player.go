@@ -12,7 +12,7 @@ import (
 
 const countdown = 5
 
-const chanMessageBuffer = 16
+const chanMessageBuffer = 128
 
 const chanErrorBuffer = 32
 
