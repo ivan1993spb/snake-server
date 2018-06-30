@@ -48,6 +48,8 @@ var (
 	logLevel    string
 )
 
+const logName = "api"
+
 func usage() {
 	fmt.Fprint(os.Stderr, "Wellcome to snake-server!\n\n")
 	fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
@@ -138,7 +140,7 @@ func main() {
 	// Use middlewares for API routes
 	rootRouter.NewRoute().Handler(negroni.New(
 		middlewares.NewRecovery(logger),
-		middlewares.NewLogger(logger, "api"),
+		middlewares.NewLogger(logger, logName),
 		middlewares.NewCORS(),
 		negroni.Wrap(apiRouter),
 	))
