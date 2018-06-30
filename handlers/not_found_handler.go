@@ -25,8 +25,8 @@ func NewNotFoundHandler(logger logrus.FieldLogger) http.Handler {
 }
 
 func (h *notFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusNotFound)
 
 	if _, err := w.Write(notFoundJSONResponse); err != nil {
 		h.logger.Error(ErrNotFoundHandler(err.Error()))

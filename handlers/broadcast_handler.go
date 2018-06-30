@@ -116,8 +116,8 @@ func (h *broadcastHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *broadcastHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrBroadcastHandler(err.Error()))

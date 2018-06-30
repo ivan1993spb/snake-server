@@ -47,8 +47,8 @@ func NewGetInfoHandler(logger logrus.FieldLogger, author, license, version, buil
 }
 
 func (h *getInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(h.info); err != nil {
 		h.logger.Error(ErrGetInfoHandler(err.Error()))

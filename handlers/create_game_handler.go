@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -20,9 +21,20 @@ const (
 	postFieldMapHeight       = "height"
 )
 
+const (
+	minMapWidth  = 8
+	minMapHeight = 8
+)
+
+var (
+	strErrLessThanMinMapWidth  = fmt.Sprintf("map width less than %d", minMapWidth)
+	strErrLessThanMinMapHeight = fmt.Sprintf("map height less than %d", minMapHeight)
+)
+
 type responseCreateGameHandler struct {
 	ID     int   `json:"id"`
 	Limit  int   `json:"limit"`
+	Count  int   `json:"count"`
 	Width  uint8 `json:"width"`
 	Height uint8 `json:"height"`
 }
@@ -78,11 +90,11 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if mapWidth == 0 {
-		h.logger.Warnln(ErrCreateGameHandler("invalid map width"), mapWidth)
+	if mapWidth < minMapWidth {
+		h.logger.Warnln(ErrCreateGameHandler("invalid map width less than min"), mapWidth)
 		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
 			Code: http.StatusBadRequest,
-			Text: "invalid width",
+			Text: strErrLessThanMinMapWidth,
 		})
 		return
 	}
@@ -96,11 +108,11 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if mapHeight == 0 {
-		h.logger.Warnln(ErrCreateGameHandler("invalid map height"), mapHeight)
+	if mapHeight < minMapHeight {
+		h.logger.Warnln(ErrCreateGameHandler("invalid map height less than min"), mapHeight)
 		h.writeResponseJSON(w, http.StatusBadRequest, &responseCreateGameHandlerError{
 			Code: http.StatusBadRequest,
-			Text: "invalid height",
+			Text: strErrLessThanMinMapHeight,
 		})
 		return
 	}
@@ -153,14 +165,15 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.writeResponseJSON(w, http.StatusCreated, &responseCreateGameHandler{
 		ID:     id,
 		Limit:  group.GetLimit(),
+		Count:  0,
 		Width:  uint8(mapWidth),
 		Height: uint8(mapHeight),
 	})
 }
 
 func (h *createGameHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
