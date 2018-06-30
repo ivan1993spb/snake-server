@@ -98,6 +98,11 @@ func (w *World) createChanProxy() chan Event {
 }
 
 func (w *World) deleteChanProxy(chProxy chan Event) {
+	go func() {
+		for range chProxy {
+		}
+	}()
+
 	w.chsProxyMux.Lock()
 	for i := range w.chsProxy {
 		if w.chsProxy[i] == chProxy {
@@ -161,7 +166,17 @@ func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, time
 				return
 			case <-ticker.C:
 				if len(ch) == cap(ch) {
-					<-ch
+					select {
+					case <-ch:
+					case ch <- event:
+						return
+					case <-w.stopGlobal:
+						return
+					case <-stop:
+						return
+					case <-timer.C:
+						return
+					}
 				}
 			}
 		}
