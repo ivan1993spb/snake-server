@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	playground "github.com/ivan1993spb/snake-server/cplayground"
 	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/playground"
 )
 
 const (

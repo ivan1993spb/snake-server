@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	playground "github.com/ivan1993spb/snake-server/cplayground"
 	"github.com/ivan1993spb/snake-server/engine"
+	"github.com/ivan1993spb/snake-server/playground"
 )
 
 func Test_World_Events(t *testing.T) {

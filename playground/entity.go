@@ -1,4 +1,4 @@
-package cplayground
+package playground
 
 import (
 	"sync"
