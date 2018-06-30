@@ -35,41 +35,43 @@ func calcRuinsCount(size uint16) uint16 {
 type WallObserver struct{}
 
 func (WallObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
-	area, err := engine.NewArea(w.Width(), w.Height())
-	if err != nil {
-		logger.WithError(err).Error("cannot create area in wall observer")
-		return
-	}
+	go func() {
+		area, err := engine.NewArea(w.Width(), w.Height())
+		if err != nil {
+			logger.WithError(err).Error("cannot create area in wall observer")
+			return
+		}
 
-	size := area.Size()
-	ruinsCount := calcRuinsCount(size)
-	var counter uint16
+		size := area.Size()
+		ruinsCount := calcRuinsCount(size)
+		var counter uint16
 
-	for counter < ruinsCount {
-		for i := 0; i < len(ruins); i++ {
-			mask := ruins[i].TurnRandom()
+		for counter < ruinsCount {
+			for i := 0; i < len(ruins); i++ {
+				mask := ruins[i].TurnRandom()
 
-			if area.Width() >= mask.Width() && area.Height() >= mask.Height() {
-				rect, err := area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
-				if err != nil {
-					continue
-				}
+				if area.Width() >= mask.Width() && area.Height() >= mask.Height() {
+					rect, err := area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
+					if err != nil {
+						continue
+					}
 
-				location := mask.Location(rect.X(), rect.Y())
-				if location.DotCount() > ruinsCount-counter {
-					location = location[:ruinsCount-counter]
-				}
+					location := mask.Location(rect.X(), rect.Y())
+					if location.DotCount() > ruinsCount-counter {
+						location = location[:ruinsCount-counter]
+					}
 
-				if w.LocationOccupied(location) {
-					continue
-				}
+					if w.LocationOccupied(location) {
+						continue
+					}
 
-				if _, err := wall.NewWallLocation(w, location); err != nil {
-					logger.WithError(err).Error("error on wall creation")
-				} else {
-					counter += location.DotCount()
+					if _, err := wall.NewWallLocation(w, location); err != nil {
+						logger.WithError(err).Error("error on wall creation")
+					} else {
+						counter += location.DotCount()
+					}
 				}
 			}
 		}
-	}
+	}()
 }
