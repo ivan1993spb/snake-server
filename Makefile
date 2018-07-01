@@ -4,7 +4,7 @@ EXECUTABLES=git go rm docker
 _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
 
-IMAGE=ivan1993spb/snake-server:latest
+IMAGE=ivan1993spb/snake-server
 IMAGE_GOLANG=golang:1.9.5-alpine3.7
 
 REPO=github.com/ivan1993spb/snake-server
@@ -20,10 +20,16 @@ LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
 
 docker/build:
-	@docker build $(BUILD_ARGS) -t $(IMAGE) .
+	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) .
+	@docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
+	@echo "Build $(BUILD) tagged $(IMAGE):$(VERSION)"
+	@echo "Build $(BUILD) tagged $(IMAGE):latest"
 
 docker/push:
-	@docker push $(IMAGE)
+	@echo "Push build $(BUILD) with tag $(IMAGE):$(VERSION)"
+	@docker push $(IMAGE):$(VERSION)
+	@echo "Push build $(BUILD) with tag $(IMAGE):latest"
+	@docker push $(IMAGE):latest
 
 go/vet:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
