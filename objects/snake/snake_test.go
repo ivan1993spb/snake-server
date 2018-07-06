@@ -14,7 +14,7 @@ func Test_NewSnake(t *testing.T) {
 
 }
 
-func Test_Snake_calculateDelay(t *testing.T) {
+func Test_Snake_calculateDelay_ReturnsNotZero(t *testing.T) {
 	firstSnake := &Snake{
 		length: 10,
 		mux:    &sync.RWMutex{},
@@ -26,8 +26,6 @@ func Test_Snake_calculateDelay(t *testing.T) {
 		mux:    &sync.RWMutex{},
 	}
 	require.NotZero(t, secondSnake.calculateDelay())
-
-	require.True(t, firstSnake.calculateDelay() < secondSnake.calculateDelay())
 }
 
 func Test_Snake_setMovementDirection(t *testing.T) {

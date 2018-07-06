@@ -70,7 +70,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 				p.logger.Errorln("cannot create snake to player:", err)
 				continue
 			}
-			snakeStop := s.Run(localStopper)
+			snakeStop := s.Run(localStopper, p.logger)
 
 			chout <- NewMessageSnake(s.GetUUID())
 

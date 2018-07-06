@@ -30,7 +30,7 @@ func Test_NewCorpse_CreatesCorpseAndLocatesObject(t *testing.T) {
 	}))
 }
 
-func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
+func Test_Corpse_Bite_ReturnsValidNutritionalValue(t *testing.T) {
 	w, err := world.NewWorld(100, 100)
 	require.Nil(t, err, "cannot initialize world")
 	require.NotNil(t, w, "cannot initialize world")
@@ -55,7 +55,9 @@ func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
 	})
 	require.Nil(t, err, "cannot create object")
 
-	nutritionalValue := corpse.NutritionalValue(engine.Dot{10, 0})
+	nutritionalValue, ok, err := corpse.Bite(engine.Dot{10, 0})
+	require.Nil(t, err)
+	require.True(t, ok)
 	require.Equal(t, corpseNutritionalValue, nutritionalValue)
 	require.True(t, corpse.location.Equals(engine.Location{
 		engine.Dot{9, 0},
@@ -64,7 +66,7 @@ func Test_Corpse_NutritionalValue_ReturnsValidNutritionalValue(t *testing.T) {
 	}))
 }
 
-func Test_Corpse_NutritionalValue_ReturnsZeroForInvalidDot(t *testing.T) {
+func Test_Corpse_Bite_ReturnsZeroForInvalidDot(t *testing.T) {
 	w, err := world.NewWorld(100, 100)
 	require.Nil(t, err, "cannot initialize world")
 	require.NotNil(t, w, "cannot initialize world")
@@ -89,7 +91,9 @@ func Test_Corpse_NutritionalValue_ReturnsZeroForInvalidDot(t *testing.T) {
 	})
 	require.Nil(t, err, "cannot create object")
 
-	nutritionalValue := corpse.NutritionalValue(engine.Dot{10, 10})
+	nutritionalValue, ok, err := corpse.Bite(engine.Dot{10, 10})
+	require.Nil(t, err)
+	require.False(t, ok)
 	require.Equal(t, uint16(0), nutritionalValue)
 	require.Equal(t, engine.Location{
 		engine.Dot{10, 0},
