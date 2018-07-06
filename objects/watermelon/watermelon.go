@@ -68,7 +68,13 @@ func (w *Watermelon) String() string {
 	return fmt.Sprintf("watermelon %s", w.location)
 }
 
-func (w *Watermelon) NutritionalValue(dot engine.Dot) uint16 {
+type errWatermelonBite string
+
+func (e errWatermelonBite) Error() string {
+	return "watermelon bite error: " + string(e)
+}
+
+func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
@@ -76,17 +82,26 @@ func (w *Watermelon) NutritionalValue(dot engine.Dot) uint16 {
 		newDots := w.location.Delete(dot)
 
 		if len(newDots) > 0 {
-			// TODO: Handle errors?
-			newLoc, _ := w.world.UpdateObjectAvailableDots(w, w.location, newDots)
-			w.location = newLoc
-		} else {
-			w.world.DeleteObject(w, w.location)
+			newLocation, err := w.world.UpdateObjectAvailableDots(w, w.location, newDots)
+			if err != nil {
+				return 0, false, errWatermelonBite(err.Error())
+			}
+			if len(newLocation) > 0 {
+				w.location = newLocation
+				return watermelonNutritionalValue, true, nil
+			}
 		}
 
-		return watermelonNutritionalValue
+		if err := w.world.DeleteObject(w, w.location); err != nil {
+			return 0, false, errWatermelonBite(err.Error())
+		}
+
+		w.location = w.location[:0]
+
+		return watermelonNutritionalValue, true, nil
 	}
 
-	return 0
+	return 0, false, errWatermelonBite("watermelon does not contain dot")
 }
 
 func (w *Watermelon) MarshalJSON() ([]byte, error) {
@@ -101,6 +116,6 @@ func (w *Watermelon) MarshalJSON() ([]byte, error) {
 
 type watermelon struct {
 	UUID string       `json:"uuid"`
-	Dots []engine.Dot `json:"dots"`
+	Dots []engine.Dot `json:"dots,omitempty"`
 	Type string       `json:"type"`
 }

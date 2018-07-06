@@ -35,7 +35,8 @@ type ConnectionGroup struct {
 	chs    []chan []byte
 	chsMux *sync.RWMutex
 
-	stop chan struct{}
+	stop    chan struct{}
+	stopper *sync.Once
 }
 
 func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8) (*ConnectionGroup, error) {
@@ -54,6 +55,7 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, h
 			chs:        make([]chan []byte, 0),
 			chsMux:     &sync.RWMutex{},
 			stop:       make(chan struct{}),
+			stopper:    &sync.Once{},
 		}, nil
 	}
 
@@ -179,7 +181,9 @@ func (cg *ConnectionGroup) doBroadcast(data []byte) {
 }
 
 func (cg *ConnectionGroup) Stop() {
-	close(cg.stop)
+	cg.stopper.Do(func() {
+		close(cg.stop)
+	})
 }
 
 func (cg *ConnectionGroup) GetWorldWidth() uint8 {

@@ -106,7 +106,7 @@ func main() {
 		"license": License,
 		"version": Version,
 		"build":   Build,
-	}).Info("wellcome to snake server!")
+	}).Info("wellcome to snake-server!")
 
 	logger.WithFields(logrus.Fields{
 		"conns_limit":  connsLimit,

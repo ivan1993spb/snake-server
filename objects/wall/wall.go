@@ -13,14 +13,14 @@ import (
 
 const wallTypeLabel = "wall"
 
+const wallMinBreakForce = 1000
+
 type Wall struct {
 	uuid     string
 	world    *world.World
 	location engine.Location
 	mux      *sync.RWMutex
 }
-
-const wallStrengthFactor = 1000
 
 type ErrCreateWall string
 
@@ -66,26 +66,41 @@ func NewWallLocation(world *world.World, location engine.Location) (*Wall, error
 	return wall, nil
 }
 
-func (w *Wall) Break(dot engine.Dot) {
+type errWallBreak string
+
+func (e errWallBreak) Error() string {
+	return "wall break error: " + string(e)
+}
+
+func (w *Wall) Break(dot engine.Dot, force float32) (success bool, err error) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
 	if w.location.Contains(dot) {
+		if force < wallMinBreakForce {
+			return false, nil
+		}
+
 		location := w.location.Delete(dot)
 
-		if w.location.DotCount() > 0 {
+		if location.DotCount() > 0 {
 			if err := w.world.UpdateObject(w, w.location, location); err != nil {
-				// TODO: Handle error.
+				return false, errWallBreak(err.Error())
 			} else {
 				w.location = location
 			}
-			return
+		} else {
+			if err := w.world.DeleteObject(w, w.location); err != nil {
+				return false, errWallBreak(err.Error())
+			}
+
+			w.location = w.location[:0]
 		}
+
+		return true, nil
 	}
 
-	if w.location.DotCount() == 0 {
-		w.world.DeleteObject(w, w.location)
-	}
+	return false, errWallBreak("wall does not contain dot")
 }
 
 func (w *Wall) String() string {
@@ -106,6 +121,6 @@ func (w *Wall) MarshalJSON() ([]byte, error) {
 
 type wall struct {
 	UUID string          `json:"uuid"`
-	Dots engine.Location `json:"dots"`
+	Dots engine.Location `json:"dots,omitempty"`
 	Type string          `json:"type"`
 }

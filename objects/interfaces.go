@@ -4,17 +4,15 @@ import "github.com/ivan1993spb/snake-server/engine"
 
 // Food interface describes methods that must be implemented all edible objects
 type Food interface {
-	NutritionalValue(dot engine.Dot) uint16
+	Bite(dot engine.Dot) (nv uint16, success bool, err error)
 }
 
+// Alive interface describes methods that must be implemented all alive objects
 type Alive interface {
-	Kill(dot engine.Dot)
+	Hit(dot engine.Dot, force float32) (success bool, err error)
 }
 
-type Strong interface {
-	Strength(dot engine.Dot)
+// Object interface describes methods that must be implemented all not alive objects
+type Object interface {
+	Break(dot engine.Dot, force float32) (success bool, err error)
 }
-
-// Если предмет съедобный - то он кусается Food - Bite
-// Если предмет твердый - то он ломается Hard - Break
-// Если предмет живой - Alive - Kill

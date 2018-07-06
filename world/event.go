@@ -25,6 +25,21 @@ func (event EventType) String() string {
 	return "unknown"
 }
 
+var eventTypesJSONs = map[EventType][]byte{
+	EventTypeError:         []byte(`"error"`),
+	EventTypeObjectCreate:  []byte(`"create"`),
+	EventTypeObjectDelete:  []byte(`"delete"`),
+	EventTypeObjectUpdate:  []byte(`"update"`),
+	EventTypeObjectChecked: []byte(`"checked"`),
+}
+
+func (event EventType) MarshalJSON() ([]byte, error) {
+	if json, ok := eventTypesJSONs[event]; ok {
+		return json, nil
+	}
+	return []byte(`"unknown"`), nil
+}
+
 type Event struct {
 	Type    EventType
 	Payload interface{}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/objects"
@@ -16,12 +17,18 @@ import (
 )
 
 const (
-	snakeStartLength    = 3
-	snakeStartSpeed     = time.Millisecond * 500
-	snakeSpeedFactor    = 1.02
-	snakeStrengthFactor = 1
-	snakeStartMargin    = 1
-	snakeTypeLabel      = "snake"
+	snakeTypeLabel = "snake"
+
+	snakeStartSpeed  = time.Millisecond * 500
+	snakeSpeedFactor = 1
+
+	snakeStartLength = 3
+	snakeStartMargin = 1
+
+	snakeMaxInteractionRetries = 5
+
+	snakeForceBaby  = 1
+	snakeForceAdult = 2
 )
 
 type Command string
@@ -52,6 +59,9 @@ type Snake struct {
 	direction engine.Direction
 
 	mux *sync.RWMutex
+
+	stopper *sync.Once
+	stop    chan struct{}
 }
 
 // NewSnake creates new snake
@@ -79,6 +89,8 @@ func newDefaultSnake(world *world.World) *Snake {
 		length:    snakeStartLength,
 		direction: engine.RandomDirection(),
 		mux:       &sync.RWMutex{},
+		stopper:   &sync.Once{},
+		stop:      make(chan struct{}),
 	}
 }
 
@@ -118,10 +130,17 @@ func (s *Snake) String() string {
 	return fmt.Sprintf("snake %s", s.location)
 }
 
-func (s *Snake) die() {
+func (s *Snake) die() error {
 	s.mux.RLock()
-	s.world.DeleteObject(s, engine.Location(s.location))
-	s.mux.RUnlock()
+	defer s.mux.RUnlock()
+
+	if err := s.world.DeleteObject(s, s.location); err != nil {
+		return fmt.Errorf("die snake error: %s", err)
+	}
+
+	// Do not empty location to pass it for corpse creation.
+
+	return nil
 }
 
 func (s *Snake) feed(f uint16) {
@@ -132,29 +151,82 @@ func (s *Snake) feed(f uint16) {
 	}
 }
 
-func (s *Snake) strength() float32 {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	return snakeStrengthFactor * float32(s.length)
+type errSnakeHit string
+
+func (e errSnakeHit) Error() string {
+	return "snake hit error: " + string(e)
 }
 
-func (s *Snake) Run(stop <-chan struct{}) <-chan struct{} {
+func (s *Snake) Hit(dot engine.Dot, force float32) (success bool, err error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if s.location.Contains(dot) {
+		if force > s.unsafeGetForce() {
+			s.stopper.Do(func() {
+				close(s.stop)
+			})
+
+			newLocation := s.location.Delete(dot)
+			if err := s.world.UpdateObject(s, s.location, newLocation); err != nil {
+				return false, errSnakeHit(err.Error())
+			}
+
+			s.location = newLocation
+
+			return true, nil
+		}
+
+		return false, nil
+	}
+
+	return false, errSnakeHit("snake does not contain dot")
+}
+
+func (s *Snake) unsafeGetForce() float32 {
+	if s.length > snakeStartLength {
+		return snakeForceAdult
+	}
+	return snakeForceBaby
+}
+
+func (s *Snake) getForce() float32 {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	return s.unsafeGetForce()
+}
+
+func (s *Snake) Run(stop <-chan struct{}, logger logrus.FieldLogger) <-chan struct{} {
 	snakeStop := make(chan struct{})
+	logger = logger.WithField("uuid", s.uuid)
 
 	go func() {
 		var ticker = time.NewTicker(s.calculateDelay())
 		defer ticker.Stop()
 		defer close(snakeStop)
-		defer s.die()
+		defer func() {
+			if err := s.die(); err != nil {
+				logger.WithError(err).Error("die snake error")
+			}
+		}()
+		defer s.stopper.Do(func() {
+			close(s.stop)
+		})
 
 		for {
 			select {
 			case <-ticker.C:
 				if err := s.move(); err != nil {
-					// TODO: Handle error.
+					if err != errUnsuccessfulInteraction {
+						logger.WithError(err).Error("snake move error")
+					}
 					return
 				}
 			case <-stop:
+				// Global stop
+				return
+			case <-s.stop:
+				// Local snake stop
 				return
 			}
 		}
@@ -163,24 +235,39 @@ func (s *Snake) Run(stop <-chan struct{}) <-chan struct{} {
 	return snakeStop
 }
 
+type errSnakeMove string
+
+func (e errSnakeMove) Error() string {
+	return "move snake error: " + string(e)
+}
+
+var errUnsuccessfulInteraction = errSnakeMove("unsuccessful interaction")
+
 func (s *Snake) move() error {
 	// Calculate next position
 	dot, err := s.getNextHeadDot()
 	if err != nil {
-		return err
+		return errSnakeMove(err.Error())
 	}
 
-	if object := s.world.GetObjectByDot(dot); object != nil {
-		if food, ok := object.(objects.Food); ok {
-			s.feed(food.NutritionalValue(dot))
-		} else {
-			//s.die()
+	retries := 0
 
-			return errors.New("snake dies")
+	for {
+		if object := s.world.GetObjectByDot(dot); object != nil {
+			if success, err := s.interactObject(object, dot); err != nil {
+				return errSnakeMove(err.Error())
+			} else if !success {
+				return errUnsuccessfulInteraction
+			}
+		} else {
+			break
 		}
 
-		// TODO: Reload ticker.
-		//ticker = time.NewTicker(s.calculateDelay())
+		if retries >= snakeMaxInteractionRetries {
+			return errSnakeMove("interaction retries limit reached")
+		}
+
+		retries++
 	}
 
 	s.mux.RLock()
@@ -200,6 +287,43 @@ func (s *Snake) move() error {
 	s.setLocation(tmpLocation)
 
 	return nil
+}
+
+type errInteractObject string
+
+func (e errInteractObject) Error() string {
+	return "object interaction error: " + string(e)
+}
+
+func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool, err error) {
+	if food, ok := object.(objects.Food); ok {
+		nv, success, err := food.Bite(dot)
+		if err != nil {
+			return false, errInteractObject(err.Error())
+		}
+		if success {
+			s.feed(nv)
+		}
+		return success, nil
+	}
+
+	if alive, ok := object.(objects.Alive); ok {
+		success, err := alive.Hit(dot, s.getForce())
+		if err != nil {
+			return false, errInteractObject(err.Error())
+		}
+		return success, nil
+	}
+
+	if object, ok := object.(objects.Object); ok {
+		success, err := object.Break(dot, s.getForce())
+		if err != nil {
+			return false, errInteractObject(err.Error())
+		}
+		return success, nil
+	}
+
+	return false, nil
 }
 
 func (s *Snake) calculateDelay() time.Duration {
@@ -271,6 +395,6 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 
 type snake struct {
 	UUID string       `json:"uuid"`
-	Dots []engine.Dot `json:"dots"`
+	Dots []engine.Dot `json:"dots,omitempty"`
 	Type string       `json:"type"`
 }

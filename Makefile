@@ -1,5 +1,5 @@
 
-EXECUTABLES=git go rm docker
+EXECUTABLES=git go find docker
 
 _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
@@ -18,6 +18,8 @@ ARCHITECTURES=386 amd64
 
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
+
+default: build
 
 docker/build:
 	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) .
@@ -56,4 +58,4 @@ install:
 	@go install $(LDFLAGS) -v
 
 clean:
-	@rm -f $(BINARY_NAME)-*-*-*
+	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete

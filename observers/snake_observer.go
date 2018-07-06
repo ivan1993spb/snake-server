@@ -20,7 +20,7 @@ func (SnakeObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus
 					if c, err := corpse.NewCorpse(w, s.GetLocation()); err != nil {
 						logger.WithError(err).Error("cannot create corpse")
 					} else {
-						c.Run(stop)
+						c.Run(stop, logger)
 					}
 				}
 			}

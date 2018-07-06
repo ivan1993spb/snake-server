@@ -7,6 +7,7 @@ import (
 
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -70,7 +71,13 @@ func (c *Corpse) String() string {
 	return fmt.Sprint("corpse ", c.location)
 }
 
-func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
+type errCorpseBite string
+
+func (e errCorpseBite) Error() string {
+	return "corpse bite error: " + string(e)
+}
+
+func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -78,24 +85,34 @@ func (c *Corpse) NutritionalValue(dot engine.Dot) uint16 {
 		newDots := c.location.Delete(dot)
 
 		if len(newDots) > 0 {
-			// TODO: Handle errors?
-			newLoc, _ := c.world.UpdateObjectAvailableDots(c, c.location, newDots)
-			c.location = newLoc
-		} else {
-			c.world.DeleteObject(c, c.location)
-			if !c.isStopped {
-				close(c.stop)
-				c.isStopped = true
+			newLocation, err := c.world.UpdateObjectAvailableDots(c, c.location, newDots)
+			if err != nil {
+				return 0, false, errCorpseBite(err.Error())
+			}
+			if len(newLocation) > 0 {
+				c.location = newLocation
+				return corpseNutritionalValue, true, nil
 			}
 		}
 
-		return corpseNutritionalValue
+		if !c.isStopped {
+			close(c.stop)
+			c.isStopped = true
+		}
+
+		if err := c.world.DeleteObject(c, c.location); err != nil {
+			return 0, false, errCorpseBite(err.Error())
+		}
+
+		c.location = c.location[:0]
+
+		return corpseNutritionalValue, true, nil
 	}
 
-	return 0
+	return 0, false, nil
 }
 
-func (c *Corpse) Run(stop <-chan struct{}) {
+func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 	go func() {
 		var timer = time.NewTimer(corpseMaxExperience)
 		defer timer.Stop()
@@ -104,11 +121,18 @@ func (c *Corpse) Run(stop <-chan struct{}) {
 			// global stop
 		case <-timer.C:
 			c.mux.Lock()
-			c.world.DeleteObject(c, c.location)
+
 			if !c.isStopped {
 				close(c.stop)
 				c.isStopped = true
 			}
+
+			if err := c.world.DeleteObject(c, c.location); err != nil {
+				logger.WithError(err).Error("corpse stop error")
+			}
+
+			c.location = c.location[:0]
+
 			c.mux.Unlock()
 		case <-c.stop:
 			// Corpse was eaten.
@@ -128,6 +152,6 @@ func (c *Corpse) MarshalJSON() ([]byte, error) {
 
 type corpse struct {
 	UUID string          `json:"uuid"`
-	Dots engine.Location `json:"dots"`
+	Dots engine.Location `json:"dots,omitempty"`
 	Type string          `json:"type"`
 }

@@ -1,11 +1,11 @@
 
-# Snake server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml)
+# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml)
 
 Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake.
+The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
 
 ## Client
 
@@ -38,7 +38,7 @@ Steps to get snake-server:
 
 * `go get -u github.com/ivan1993spb/snake-server` to load source code
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
-* `make build`
+* `make`
 * `make install`
 * `snake-server` to start server
 * Use `snake-server -h` to see usage information
@@ -345,7 +345,7 @@ Examples:
     "type": "player",
     "payload": {
         "type": "notice",
-        "payload": "welcome to snake server!"
+        "payload": "welcome to snake-server!"
     }
 }
 {

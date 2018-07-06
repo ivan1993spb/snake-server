@@ -20,6 +20,8 @@ type Apple struct {
 	mux   *sync.RWMutex
 }
 
+const appleNutritionalValue uint16 = 1
+
 type ErrCreateApple string
 
 func (e ErrCreateApple) Error() string {
@@ -52,17 +54,24 @@ func (a *Apple) String() string {
 	return fmt.Sprintf("apple %s", a.dot)
 }
 
-func (a *Apple) NutritionalValue(dot engine.Dot) uint16 {
+type errAppleBite string
+
+func (e errAppleBite) Error() string {
+	return "apple bite error: " + string(e)
+}
+
+func (a *Apple) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 
 	if a.dot.Equals(dot) {
-		// TODO: Handle error?
-		a.world.DeleteObject(a, engine.Location{a.dot})
-		return 1
+		if err := a.world.DeleteObject(a, engine.Location{a.dot}); err != nil {
+			return 0, false, errAppleBite(err.Error())
+		}
+		return appleNutritionalValue, true, nil
 	}
 
-	return 0
+	return 0, false, errAppleBite("apple does not contain dot")
 }
 
 func (a *Apple) MarshalJSON() ([]byte, error) {
