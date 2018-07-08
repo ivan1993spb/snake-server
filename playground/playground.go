@@ -30,7 +30,7 @@ func (e ErrCreatePlayground) Error() string {
 }
 
 func NewPlayground(width, height uint8) (*Playground, error) {
-	area, err := engine.NewArea(height, width)
+	area, err := engine.NewArea(width, height)
 	if err != nil {
 		return nil, ErrCreatePlayground{err}
 	}
