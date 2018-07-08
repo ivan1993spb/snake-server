@@ -1,15 +1,22 @@
 
-# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml)
+# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest)
 
 Server for online arcade game - snake.
+
+## Table of contents
+
+- [Game rules](#game-rules)
+- [Installation](#installation)
+- [Basic usage](#basic-usage)
+- [CLI arguments](#cli-arguments)
+- [Client](#client)
+- [API description](#api-description)
+- [Game Web-Socket messages description](#game-web-socket-messages-description)
+- [License](#license)
 
 ## Game rules
 
 The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
-
-## Client
-
-* Python client repo: https://github.com/ivan1993spb/snake-client
 
 ## Installation
 
@@ -55,6 +62,27 @@ Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-ser
 * `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
 * `docker run --rm ivan1993spb/snake-server -h` for usage information
 
+Add alias for running snake-server container:
+
+* `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
+* `snake-server --help`
+
+## Basic usage
+
+Start snake-server:
+
+```
+snake-server
+```
+
+Add game for 5 players with map width 40 dots and height 30 dots:
+
+```
+curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
+```
+
+Now web-socket ready to serve players on url `http://localhost:8080/ws/games/0`
+
 ## CLI arguments
 
 Use `snake-server --help` for help info.
@@ -70,6 +98,10 @@ Arguments:
 * `--tls-cert` - **string** - path to certificate file
 * `--tls-enable` - **bool** - flag: enable TLS
 * `--tls-key` - **string** - path to key file
+
+## Client
+
+* Python client repo: https://github.com/ivan1993spb/snake-client
 
 ## API description
 
