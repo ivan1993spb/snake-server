@@ -8,7 +8,7 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-var FindRetriesNumber = 32
+var FindRetriesNumber = 64
 
 var ErrRetriesLimit = errors.New("retries limit was reached")
 
