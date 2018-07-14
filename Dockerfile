@@ -1,4 +1,4 @@
-FROM golang:1.9.5-alpine3.7 AS intermediate
+FROM golang:1.10-alpine3.7 AS intermediate
 
 ARG VERSION=docker
 ARG BUILD=docker

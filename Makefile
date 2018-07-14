@@ -5,7 +5,7 @@ _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
 
 IMAGE=ivan1993spb/snake-server
-IMAGE_GOLANG=golang:1.9.5-alpine3.7
+IMAGE_GOLANG=golang:1.10-alpine3.7
 
 REPO=github.com/ivan1993spb/snake-server
 
