@@ -122,19 +122,227 @@ func Test_Playground_DeleteObject(t *testing.T) {
 	require.Empty(t, pg.cMap.MGet(engine.Location{{1, 1}}.Hash()))
 }
 
-func Test_Playground_CreateObjectAvailableDots_EmptyScene(t *testing.T) {
-	t.SkipNow()
-	// TODO: Implement test.
+func Test_Playground_CreateObjectAvailableDots_EmptySquareScene(t *testing.T) {
+	pg := &Playground{
+		cMap:       cmap.NewDefault(),
+		objects:    make([]interface{}, 0),
+		objectsMux: &sync.RWMutex{},
+		area:       engine.MustArea(100, 100),
+	}
+
+	object := &struct {
+		data string
+	}{"first"}
+
+	location := engine.Location{
+		{1, 1},
+		{1, 2},
+		{1, 3},
+		{1, 4},
+		{1, 5},
+		{1, 6},
+		{2, 6},
+		{3, 6},
+		{4, 6},
+		{5, 6},
+	}
+
+	actualLocation, err := pg.CreateObjectAvailableDots(object, location)
+	require.Nil(t, err)
+	require.True(t, location.Equals(actualLocation))
+
+	for _, dot := range pg.area.Dots() {
+		actualObject, ok := pg.cMap.Get(dot.Hash())
+
+		if location.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object, actualObject, "dot %s", dot)
+		} else {
+			require.False(t, ok, "dot %s", dot)
+			require.Nil(t, actualObject, "dot %s", dot)
+		}
+	}
+}
+
+func Test_Playground_CreateObjectAvailableDots_NotEmptyScene(t *testing.T) {
+	pg := &Playground{
+		cMap:       cmap.NewDefault(),
+		objects:    make([]interface{}, 0),
+		objectsMux: &sync.RWMutex{},
+		area:       engine.MustArea(100, 100),
+	}
+
+	// Object to create
+	object1 := &struct {
+		data string
+	}{"first"}
+	location1 := engine.Location{
+		{1, 1},
+		{1, 2},
+		{1, 3},
+		{1, 4},
+		{1, 5},
+		{1, 6},
+	}
+
+	// Located object
+	object2 := &struct {
+		data string
+	}{"second"}
+	location2 := engine.Location{
+		{2, 1},
+		{2, 2},
+		{2, 3},
+		{2, 4},
+		{2, 5},
+		{2, 6},
+	}
+
+	pg.cMap.MSet(prepareMap(object2, location2))
+	pg.objects = append(pg.objects, object2)
+	for _, dot := range location2 {
+		require.True(t, pg.cMap.Has(dot.Hash()))
+		actual, ok := pg.cMap.Get(dot.Hash())
+		require.True(t, ok)
+		require.Equal(t, object2, actual)
+	}
+
+	location1Actual, err := pg.CreateObjectAvailableDots(object1, location1)
+	require.Nil(t, err)
+	require.True(t, location1.Equals(location1Actual))
+
+	for _, dot := range pg.area.Dots() {
+		actualObject, ok := pg.cMap.Get(dot.Hash())
+
+		if location1.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object1, actualObject, "dot %s", dot)
+		} else if location2.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object2, actualObject, "dot %s", dot)
+		} else {
+			require.False(t, ok, "dot %s", dot)
+			require.Nil(t, actualObject, "dot %s", dot)
+		}
+	}
 }
 
 func Test_Playground_CreateObjectAvailableDots_LocationNotAvailable(t *testing.T) {
-	t.SkipNow()
-	// TODO: Implement test.
+	pg := &Playground{
+		cMap:       cmap.NewDefault(),
+		objects:    make([]interface{}, 0),
+		objectsMux: &sync.RWMutex{},
+		area:       engine.MustArea(100, 100),
+	}
+
+	// Object to create
+	object1 := &struct {
+		data string
+	}{"first"}
+	location1 := engine.Location{
+		{1, 1},
+		{1, 2},
+		{1, 3},
+		{1, 4},
+		{1, 5},
+		{1, 6},
+	}
+
+	// Located object
+	object2 := &struct {
+		data string
+	}{"second"}
+	location2 := location1.Copy()
+
+	pg.cMap.MSet(prepareMap(object2, location2))
+	pg.objects = append(pg.objects, object2)
+	for _, dot := range location2 {
+		require.True(t, pg.cMap.Has(dot.Hash()))
+		actual, ok := pg.cMap.Get(dot.Hash())
+		require.True(t, ok)
+		require.Equal(t, object2, actual)
+	}
+
+	location1Actual, err := pg.CreateObjectAvailableDots(object1, location1)
+	require.NotNil(t, err)
+	require.Nil(t, location1Actual)
+
+	for _, dot := range pg.area.Dots() {
+		actualObject, ok := pg.cMap.Get(dot.Hash())
+
+		if location2.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object2, actualObject, "dot %s", dot)
+		}
+	}
 }
 
 func Test_Playground_CreateObjectAvailableDots_LocationsIntersects(t *testing.T) {
-	t.SkipNow()
-	// TODO: Implement test.
+	pg := &Playground{
+		cMap:       cmap.NewDefault(),
+		objects:    make([]interface{}, 0),
+		objectsMux: &sync.RWMutex{},
+		area:       engine.MustArea(100, 100),
+	}
+
+	// Object to create
+	object1 := &struct {
+		data string
+	}{"first"}
+	location1 := engine.Location{
+		{2, 1},
+		{1, 2},
+		{1, 3},
+		{1, 4},
+		{2, 5},
+		{2, 6},
+	}
+	location1Expected := engine.Location{
+		{1, 2},
+		{1, 3},
+		{1, 4},
+	}
+
+	// Located object
+	object2 := &struct {
+		data string
+	}{"second"}
+	location2 := engine.Location{
+		{2, 1},
+		{2, 2},
+		{2, 3},
+		{2, 4},
+		{2, 5},
+		{2, 6},
+	}
+
+	pg.cMap.MSet(prepareMap(object2, location2))
+	pg.objects = append(pg.objects, object2)
+	for _, dot := range location2 {
+		require.True(t, pg.cMap.Has(dot.Hash()))
+		actual, ok := pg.cMap.Get(dot.Hash())
+		require.True(t, ok)
+		require.Equal(t, object2, actual)
+	}
+
+	location1Actual, err := pg.CreateObjectAvailableDots(object1, location1)
+	require.Nil(t, err)
+	require.True(t, location1Expected.Equals(location1Actual))
+
+	for _, dot := range pg.area.Dots() {
+		actualObject, ok := pg.cMap.Get(dot.Hash())
+
+		if location1Expected.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object1, actualObject, "dot %s", dot)
+		} else if location2.Contains(dot) {
+			require.True(t, ok, "dot %s", dot)
+			require.Equal(t, object2, actualObject, "dot %s", dot)
+		} else {
+			require.False(t, ok, "dot %s", dot)
+			require.Nil(t, actualObject, "dot %s", dot)
+		}
+	}
 }
 
 func Test_Playground_UpdateObjectAvailableDots_EmptyMap(t *testing.T) {
