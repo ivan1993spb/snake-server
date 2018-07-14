@@ -306,6 +306,16 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 					return
 				}
 
+				// Do not send internal game errors to clients
+				if event.Type == game.EventTypeError {
+					continue
+				}
+
+				// Do not send checked events to clients
+				if event.Type == game.EventTypeObjectChecked {
+					continue
+				}
+
 				outputMessage := OutputMessage{
 					Type:    OutputMessageTypeGame,
 					Payload: event,
