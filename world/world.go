@@ -249,7 +249,7 @@ func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Lo
 		Type:    EventTypeObjectCreate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) DeleteObject(object interface{}, location engine.Location) error {
@@ -265,7 +265,7 @@ func (w *World) DeleteObject(object interface{}, location engine.Location) error
 		Type:    EventTypeObjectDelete,
 		Payload: object,
 	})
-	return err
+	return nil
 }
 
 func (w *World) UpdateObject(object interface{}, old, new engine.Location) error {
@@ -296,7 +296,7 @@ func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Lo
 		Type:    EventTypeObjectUpdate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
@@ -312,7 +312,7 @@ func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, erro
 		Type:    EventTypeObjectCreate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
@@ -328,7 +328,7 @@ func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine
 		Type:    EventTypeObjectCreate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
@@ -344,7 +344,7 @@ func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin 
 		Type:    EventTypeObjectCreate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
@@ -360,7 +360,7 @@ func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.Dots
 		Type:    EventTypeObjectCreate,
 		Payload: object,
 	})
-	return location, err
+	return location, nil
 }
 
 func (w *World) LocationOccupied(location engine.Location) bool {
