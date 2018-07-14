@@ -39,6 +39,14 @@ func NewArea(width, height uint8) (Area, error) {
 	}, nil
 }
 
+func MustArea(width, height uint8) Area {
+	area, err := NewArea(width, height)
+	if err != nil {
+		panic(err)
+	}
+	return area
+}
+
 func NewUsefulArea(width, height uint8) (Area, error) {
 	if width < minAreaWidth || height < minAreaHeight {
 		return Area{}, errors.New("try to add useless area with extra small size")
