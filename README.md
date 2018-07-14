@@ -1,5 +1,5 @@
 
-# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest)
+# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
 Server for online arcade game - snake.
 
@@ -7,11 +7,20 @@ Server for online arcade game - snake.
 
 - [Game rules](#game-rules)
 - [Installation](#installation)
-- [Basic usage](#basic-usage)
+    * [Download and install binary](#download-and-install-binary)
+    * [Build and install from source](#build-and-install-from-source)
+    * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
 - [CLI arguments](#cli-arguments)
-- [Client](#client)
+- [Basic usage](#basic-usage)
+- [Clients](#clients)
 - [API description](#api-description)
+    * [API requests](#api-requests)
+    * [API errors](#api-errors)
 - [Game Web-Socket messages description](#game-web-socket-messages-description)
+    * [Game primitives](#game-primitives)
+    * [Game objects](#game-objects)
+    * [Output messages](#output-messages)
+    * [Input messages](#input-messages)
 - [License](#license)
 
 ## Game rules
@@ -67,22 +76,6 @@ Add alias for running snake-server container:
 * `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
 * `snake-server --help`
 
-## Basic usage
-
-Start snake-server:
-
-```
-snake-server
-```
-
-Add game for 5 players with map width 40 dots and height 30 dots:
-
-```
-curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
-```
-
-Now web-socket ready to serve players on url `http://localhost:8080/ws/games/0`
-
 ## CLI arguments
 
 Use `snake-server --help` for help info.
@@ -99,15 +92,38 @@ Arguments:
 * `--tls-enable` - **bool** - flag: enable TLS
 * `--tls-key` - **string** - path to key file
 
-## Client
+## Basic usage
+
+Start snake-server:
+
+```
+snake-server
+```
+
+Add game for 5 players with map width 40 dots and height 30 dots:
+
+```
+curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
+```
+
+Now web-socket ready to serve players on url `ws://localhost:8080/ws/games/0`
+
+## Clients
+
+You are welcome to create your own client using described API.
+
+Some samples you can see here:
 
 * Python client repo: https://github.com/ivan1993spb/snake-client
+* JS client repo: https://github.com/ivan1993spb/ivan1993spb.github.io
 
 ## API description
 
 All API methods provide JSON format. If errors occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
 
-### Request `POST /api/games`
+### API requests
+
+#### Request `POST /api/games`
 
 Request creates game and returns JSON game object.
 
@@ -122,7 +138,7 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/
 }
 ```
 
-### Request `GET /api/games`
+#### Request `GET /api/games`
 
 Request returns info about all games on server.
 
@@ -150,7 +166,7 @@ curl -s -X GET http://localhost:8080/api/games | jq
 }
 ```
 
-### Request `GET /api/games/{id}`
+#### Request `GET /api/games/{id}`
 
 Request returns information about game by id.
 
@@ -165,7 +181,7 @@ curl -s -X GET http://localhost:8080/api/games/0 | jq
 }
 ```
 
-### Request `DELETE /api/games/{id}`
+#### Request `DELETE /api/games/{id}`
 
 Request deletes game by id if there is not players in the game.
 
@@ -176,7 +192,7 @@ curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 }
 ```
 
-### Request `GET /api/capacity`
+#### Request `GET /api/capacity`
 
 Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
 
@@ -187,7 +203,7 @@ curl -s -X GET http://localhost:8080/api/capacity | jq
 }
 ```
 
-### Request `GET /api/info`
+#### Request `GET /api/info`
 
 Request returns common info about server: author, license, version, build.
 
@@ -201,7 +217,7 @@ curl -s -X GET http://localhost:8080/api/info | jq
 }
 ```
 
-### Request `POST /api/games/{id}/broadcast`
+#### Request `POST /api/games/{id}/broadcast`
 
 Request sends message to all players in selected game. Returns `true` on success.
 
@@ -247,7 +263,7 @@ curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 
 ## Game Web-Socket messages description
 
-Request `GET /ws/games/{id}` connects to game Web-Socket JSON stream by game identificator.
+Request `ws://localhost:8080/ws/games/0` connects to game Web-Socket JSON stream by game identificator.
 
 On connection establishing handler:
 
@@ -259,6 +275,29 @@ On connection establishing handler:
 * Pushes game events and objects in output messages
 
 There are input and output web-socket messages.
+
+### Game primitives
+
+Primitives that used to explain game objects:
+
+* Direction: `"north"`, `"west"`, `"south"`, `"east"`
+* Dot: `[x, y]`
+* Dot list: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
+
+### Game objects
+
+Game objects:
+
+* Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
+* Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
+* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
+
+Objects TODO:
+
+* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
+* ...
 
 ### Output messages
 
@@ -431,29 +470,6 @@ Example:
     "payload": "hello world!"
 }
 ```
-
-### Game primitives
-
-Primitives that used to explain game objects:
-
-* Direction: `"north"`, `"west"`, `"south"`, `"east"`
-* Dot: `[x, y]`
-* Dot list: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
-
-### Game objects
-
-Game objects:
-
-* Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
-* Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
-
-Objects TODO:
-
-* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
-* ...
 
 ### Input messages
 
