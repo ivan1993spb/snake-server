@@ -342,6 +342,21 @@ func (m *ConcurrentMap) RemoveCb(key uint16, cb RemoveCb) bool {
 	return remove
 }
 
+func (m *ConcurrentMap) MRemoveCb(keys []uint16, cb RemoveCb) {
+	shardsKeys := m.sortShardsKeys(keys)
+
+	for shardIndex, keys := range shardsKeys {
+		shard := m.shards[shardIndex]
+		shard.mux.Lock()
+		for _, key := range keys {
+			if v, ok := shard.items[key]; ok && cb(key, v, ok) {
+				delete(shard.items, key)
+			}
+		}
+		shard.mux.Unlock()
+	}
+}
+
 // Removes an element from the map and returns it
 func (m *ConcurrentMap) Pop(key uint16) (v interface{}, exists bool) {
 	// Try to get shard.
