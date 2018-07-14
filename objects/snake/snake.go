@@ -375,6 +375,14 @@ func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 		}
 
 		currentDir := engine.CalculateDirection(s.location[1], s.location[0])
+		// If the dots are not nearby, reverse the direction
+		if s.location[1].DistanceTo(s.location[0]) > 1 {
+			if dir, err := currentDir.Reverse(); err != nil {
+				return errSetMovementDirection("cannot calculate current movement direction")
+			} else {
+				currentDir = dir
+			}
+		}
 
 		rNextDir, err := nextDir.Reverse()
 		if err != nil {
