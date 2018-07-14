@@ -30,16 +30,16 @@ type Corpse struct {
 	isStopped bool
 }
 
-type ErrCreateCorpse string
+type errCreateCorpse string
 
-func (e ErrCreateCorpse) Error() string {
+func (e errCreateCorpse) Error() string {
 	return "error on corpse creation: " + string(e)
 }
 
 // Corpse are created when a snake dies
 func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	if location.Empty() {
-		return nil, ErrCreateCorpse("location is empty")
+		return nil, errCreateCorpse("location is empty")
 	}
 
 	corpse := &Corpse{
@@ -47,20 +47,24 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 		mux:  &sync.RWMutex{},
 	}
 
+	corpse.mux.Lock()
+	defer corpse.mux.Unlock()
+
 	location, err := world.CreateObjectAvailableDots(corpse, location)
 	if err != nil {
-		return nil, ErrCreateCorpse(err.Error())
+		return nil, errCreateCorpse(err.Error())
 	}
 
 	if location.Empty() {
-		return nil, ErrCreateCorpse("no location available")
+		if err := world.DeleteObject(corpse, location); err != nil {
+			return nil, errCreateCorpse("no location located and cannot delete corpse")
+		}
+		return nil, errCreateCorpse("no location located")
 	}
 
-	corpse.mux.Lock()
 	corpse.world = world
 	corpse.location = location
 	corpse.stop = make(chan struct{})
-	corpse.mux.Unlock()
 
 	return corpse, nil
 }

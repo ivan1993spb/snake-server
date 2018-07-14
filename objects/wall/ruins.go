@@ -75,12 +75,13 @@ func NewWallRuins(world *world.World) (*Wall, error) {
 		mux:   &sync.RWMutex{},
 	}
 
+	wall.mux.Lock()
+	defer wall.mux.Unlock()
+
 	if resultLocation, err := world.CreateObjectAvailableDots(wall, wallLocation); err != nil {
 		return nil, ErrCreateWallRuins(err.Error())
 	} else {
-		wall.mux.Lock()
 		wall.location = resultLocation
-		wall.mux.Unlock()
 	}
 
 	return wall, nil

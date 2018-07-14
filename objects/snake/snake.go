@@ -76,8 +76,6 @@ func NewSnake(world *world.World) (*Snake, error) {
 		location = location.Reverse()
 	}
 
-	snake.setLocation(location)
-
 	return snake, nil
 }
 
@@ -94,22 +92,32 @@ func newDefaultSnake(world *world.World) *Snake {
 	}
 }
 
-func (s *Snake) locate() (engine.Location, error) {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	switch s.direction {
-	case engine.DirectionNorth, engine.DirectionSouth:
-		return s.world.CreateObjectRandomRectMargin(s, 1, uint8(snakeStartLength), snakeStartMargin)
-	case engine.DirectionEast, engine.DirectionWest:
-		return s.world.CreateObjectRandomRectMargin(s, uint8(snakeStartLength), 1, snakeStartMargin)
-	}
-	return nil, errors.New("invalid direction")
+type errSnakeLocate string
+
+func (e errSnakeLocate) Error() string {
+	return "snake locate error: " + string(e)
 }
 
-func (s *Snake) setLocation(location engine.Location) {
+func (s *Snake) locate() (location engine.Location, err error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	switch s.direction {
+	case engine.DirectionNorth, engine.DirectionSouth:
+		location, err = s.world.CreateObjectRandomRectMargin(s, 1, uint8(snakeStartLength), snakeStartMargin)
+	case engine.DirectionEast, engine.DirectionWest:
+		location, err = s.world.CreateObjectRandomRectMargin(s, uint8(snakeStartLength), 1, snakeStartMargin)
+	default:
+		return nil, errSnakeLocate("invalid initial direction")
+	}
+
+	if err != nil {
+		return nil, errSnakeLocate(err.Error())
+	}
+
 	s.location = location
+
+	return
 }
 
 func (s *Snake) GetUUID() string {
@@ -146,8 +154,8 @@ func (s *Snake) die() error {
 func (s *Snake) feed(f uint16) {
 	if f > 0 {
 		s.mux.Lock()
-		defer s.mux.Unlock()
 		s.length += f
+		s.mux.Unlock()
 	}
 }
 
@@ -163,16 +171,16 @@ func (s *Snake) Hit(dot engine.Dot, force float32) (success bool, err error) {
 
 	if s.location.Contains(dot) {
 		if force > s.unsafeGetForce() {
-			s.stopper.Do(func() {
-				close(s.stop)
-			})
-
 			newLocation := s.location.Delete(dot)
 			if err := s.world.UpdateObject(s, s.location, newLocation); err != nil {
 				return false, errSnakeHit(err.Error())
 			}
 
 			s.location = newLocation
+
+			s.stopper.Do(func() {
+				close(s.stop)
+			})
 
 			return true, nil
 		}
@@ -270,21 +278,22 @@ func (s *Snake) move() error {
 		retries++
 	}
 
-	s.mux.RLock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	tmpLocation := make(engine.Location, len(s.location)+1)
 	copy(tmpLocation[1:], s.location)
-	s.mux.RUnlock()
 	tmpLocation[0] = dot
 
 	if s.length < uint16(len(tmpLocation)) {
 		tmpLocation = tmpLocation[:len(tmpLocation)-1]
 	}
 
-	if err := s.world.UpdateObject(s, engine.Location(s.location), tmpLocation); err != nil {
+	if err := s.world.UpdateObject(s, s.location, tmpLocation); err != nil {
 		return fmt.Errorf("update snake error: %s", err)
 	}
 
-	s.setLocation(tmpLocation)
+	s.location = tmpLocation
 
 	return nil
 }

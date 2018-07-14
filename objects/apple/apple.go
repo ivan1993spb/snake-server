@@ -22,9 +22,9 @@ type Apple struct {
 
 const appleNutritionalValue uint16 = 1
 
-type ErrCreateApple string
+type errCreateApple string
 
-func (e ErrCreateApple) Error() string {
+func (e errCreateApple) Error() string {
 	return "cannot create apple: " + string(e)
 }
 
@@ -35,15 +35,23 @@ func NewApple(world *world.World) (*Apple, error) {
 		mux:  &sync.RWMutex{},
 	}
 
+	apple.mux.Lock()
+	defer apple.mux.Unlock()
+
 	location, err := world.CreateObjectRandomDot(apple)
 	if err != nil {
-		return nil, ErrCreateApple(err.Error())
+		return nil, errCreateApple(err.Error())
 	}
 
-	apple.mux.Lock()
+	if location.Empty() {
+		if err := world.DeleteObject(apple, location); err != nil {
+			return nil, errCreateApple("no location located and cannot delete apple")
+		}
+		return nil, errCreateApple("no location located")
+	}
+
 	apple.dot = location.Dot(0)
 	apple.world = world
-	apple.mux.Unlock()
 
 	return apple, nil
 }
