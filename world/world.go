@@ -197,30 +197,6 @@ func (w *World) stop() {
 	w.chsProxy = w.chsProxy[:0]
 }
 
-func (w *World) ObjectExists(object interface{}) bool {
-	return w.pg.ObjectExists(object)
-}
-
-func (w *World) LocationExists(location engine.Location) bool {
-	return w.pg.LocationExists(location)
-}
-
-func (w *World) EntityExists(object interface{}, location engine.Location) bool {
-	return w.pg.EntityExists(object, location)
-}
-
-func (w *World) GetObjectByLocation(location engine.Location) interface{} {
-	if object := w.pg.GetObjectByLocation(location); object != nil {
-		w.event(Event{
-			Type:    EventTypeObjectChecked,
-			Payload: object,
-		})
-		return object
-	}
-	return nil
-
-}
-
 func (w *World) GetObjectByDot(dot engine.Dot) interface{} {
 	if object := w.pg.GetObjectByDot(dot); object != nil {
 		w.event(Event{
@@ -230,17 +206,6 @@ func (w *World) GetObjectByDot(dot engine.Dot) interface{} {
 		return object
 	}
 	return nil
-}
-
-func (w *World) GetEntityByDot(dot engine.Dot) (interface{}, engine.Location) {
-	if object, location := w.pg.GetEntityByDot(dot); object != nil && !location.Empty() {
-		w.event(Event{
-			Type:    EventTypeObjectChecked,
-			Payload: object,
-		})
-		return object, location
-	}
-	return nil, nil
 }
 
 func (w *World) GetObjectsByDots(dots []engine.Dot) []interface{} {
