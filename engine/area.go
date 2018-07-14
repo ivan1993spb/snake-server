@@ -26,7 +26,7 @@ func (e *ErrInvalidAreaSize) Error() string {
 }
 
 func NewArea(width, height uint8) (Area, error) {
-	if width*height == 0 {
+	if uint16(width)*uint16(height) == 0 {
 		return Area{}, &ErrInvalidAreaSize{
 			Width:  width,
 			Height: height,
