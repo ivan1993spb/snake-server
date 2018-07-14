@@ -22,12 +22,12 @@ const corpseTypeLabel = "corpse"
 
 // Snakes can eat corpses
 type Corpse struct {
-	uuid      string
-	world     *world.World
-	location  engine.Location
-	mux       *sync.RWMutex
-	stop      chan struct{}
-	isStopped bool
+	uuid     string
+	world    *world.World
+	location engine.Location
+	mux      *sync.RWMutex
+	stop     chan struct{}
+	stopper  *sync.Once
 }
 
 type errCreateCorpse string
@@ -65,6 +65,7 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	corpse.world = world
 	corpse.location = location
 	corpse.stop = make(chan struct{})
+	corpse.stopper = &sync.Once{}
 
 	return corpse, nil
 }
@@ -99,12 +100,14 @@ func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 			}
 		}
 
-		if !c.isStopped {
-			close(c.stop)
-			c.isStopped = true
-		}
+		var err error
 
-		if err := c.world.DeleteObject(c, c.location); err != nil {
+		c.stopper.Do(func() {
+			close(c.stop)
+			err = c.world.DeleteObject(c, c.location)
+		})
+
+		if err != nil {
 			return 0, false, errCorpseBite(err.Error())
 		}
 
@@ -126,12 +129,14 @@ func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 		case <-timer.C:
 			c.mux.Lock()
 
-			if !c.isStopped {
-				close(c.stop)
-				c.isStopped = true
-			}
+			var err error
 
-			if err := c.world.DeleteObject(c, c.location); err != nil {
+			c.stopper.Do(func() {
+				close(c.stop)
+				err = c.world.DeleteObject(c, c.location)
+			})
+
+			if err != nil {
 				logger.WithError(err).Error("corpse stop error")
 			}
 
