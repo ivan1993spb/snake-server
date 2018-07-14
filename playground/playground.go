@@ -140,6 +140,10 @@ func (e errCreateObject) Error() string {
 }
 
 func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
+	if location.Empty() {
+		return errCreateObject("passed empty location")
+	}
+
 	if !pg.area.ContainsLocation(location) {
 		return errCreateObject("area not contains location")
 	}
@@ -165,6 +169,10 @@ func (e errCreateObjectAvailableDots) Error() string {
 }
 
 func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
+	if location.Empty() {
+		return nil, errCreateObjectAvailableDots("passed empty location")
+	}
+
 	if !pg.area.ContainsLocation(location) {
 		return nil, errCreateObjectAvailableDots("area not contains location")
 	}
@@ -172,27 +180,39 @@ func (pg *Playground) CreateObjectAvailableDots(object interface{}, location eng
 	hashes := pg.cMap.MSetIfAbsent(prepareMap(object, location))
 
 	if len(hashes) == 0 {
-		return nil, errCreateObjectAvailableDots("dots in location are occupied")
+		return nil, errCreateObjectAvailableDots("all dots in location are occupied")
 	}
 
-	location = engine.HashToLocation(hashes)
+	resultLocation := engine.HashToLocation(hashes)
 
 	if err := pg.addObject(object); err != nil {
 		// Rollback map if cannot add object.
-		pg.cMap.MRemove(location.Hash())
+		pg.cMap.MRemove(resultLocation.Hash())
 
 		return nil, errCreateObjectAvailableDots(err.Error())
 	}
 
-	return location, nil
+	return resultLocation, nil
+}
+
+type errDeleteObject string
+
+func (e errDeleteObject) Error() string {
+	return "error delete object: " + string(e)
 }
 
 func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
-	pg.cMap.MRemoveCb(location.Hash(), func(key uint16, v interface{}, exists bool) bool {
-		return v == object && exists
-	})
+	if !location.Empty() {
+		pg.cMap.MRemoveCb(location.Hash(), func(key uint16, v interface{}, exists bool) bool {
+			return exists && v == object
+		})
+	}
 
-	return pg.deleteObject(object)
+	if err := pg.deleteObject(object); err != nil {
+		return errDeleteObject(err.Error())
+	}
+
+	return nil
 }
 
 type errUpdateObject string
@@ -220,7 +240,7 @@ func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location)
 	}
 
 	pg.cMap.MRemoveCb(keysToRemove, func(key uint16, v interface{}, exists bool) bool {
-		return v == object && exists
+		return exists && v == object
 	})
 
 	return nil
@@ -233,7 +253,7 @@ func (e errUpdateObjectAvailableDots) Error() string {
 }
 
 func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
-	actualLocation := old
+	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
 	keysToRemove := make([]uint16, len(diff))
@@ -258,7 +278,7 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 
 	if len(keysToRemove) > 0 {
 		pg.cMap.MRemoveCb(keysToRemove, func(key uint16, v interface{}, exists bool) bool {
-			return v == object && exists
+			return exists && v == object
 		})
 		for _, key := range keysToRemove {
 			actualLocation = actualLocation.Delete(engine.HashToDot(key))
