@@ -66,23 +66,7 @@ type Snake struct {
 
 // NewSnake creates new snake
 func NewSnake(world *world.World) (*Snake, error) {
-	snake := newDefaultSnake(world)
-	location, err := snake.locate()
-	if err != nil {
-		return nil, fmt.Errorf("cannot create snake: %s", err)
-	}
-
-	if snake.direction == engine.DirectionSouth || snake.direction == engine.DirectionEast {
-		location = location.Reverse()
-	}
-
-	snake.setLocation(location)
-
-	return snake, nil
-}
-
-func newDefaultSnake(world *world.World) *Snake {
-	return &Snake{
+	snake := &Snake{
 		uuid:      uuid.Must(uuid.NewV4()).String(),
 		world:     world,
 		location:  make(engine.Location, snakeStartLength),
@@ -92,36 +76,53 @@ func newDefaultSnake(world *world.World) *Snake {
 		stopper:   &sync.Once{},
 		stop:      make(chan struct{}),
 	}
-}
 
-func (s *Snake) locate() (engine.Location, error) {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	switch s.direction {
-	case engine.DirectionNorth, engine.DirectionSouth:
-		return s.world.CreateObjectRandomRectMargin(s, 1, uint8(snakeStartLength), snakeStartMargin)
-	case engine.DirectionEast, engine.DirectionWest:
-		return s.world.CreateObjectRandomRectMargin(s, uint8(snakeStartLength), 1, snakeStartMargin)
+	if err := snake.initLocate(); err != nil {
+		return nil, fmt.Errorf("cannot create snake: %s", err)
 	}
-	return nil, errors.New("invalid direction")
+
+	return snake, nil
 }
 
-func (s *Snake) setLocation(location engine.Location) {
+type errSnakeInitLocate string
+
+func (e errSnakeInitLocate) Error() string {
+	return "snake initial locate error: " + string(e)
+}
+
+func (s *Snake) initLocate() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	var err error
+	var location engine.Location
+
+	switch s.direction {
+	case engine.DirectionNorth, engine.DirectionSouth:
+		location, err = s.world.CreateObjectRandomRectMargin(s, 1, snakeStartLength, snakeStartMargin)
+	case engine.DirectionEast, engine.DirectionWest:
+		location, err = s.world.CreateObjectRandomRectMargin(s, snakeStartLength, 1, snakeStartMargin)
+	default:
+		return errSnakeInitLocate("invalid initial direction")
+	}
+
+	if err != nil {
+		return errSnakeInitLocate(err.Error())
+	}
+
+	if s.direction == engine.DirectionSouth || s.direction == engine.DirectionEast {
+		location = location.Reverse()
+	}
+
 	s.location = location
+
+	return nil
 }
 
 func (s *Snake) GetUUID() string {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return s.uuid
-}
-
-func (s *Snake) setDirection(dir engine.Direction) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.direction = dir
 }
 
 func (s *Snake) String() string {
@@ -146,8 +147,8 @@ func (s *Snake) die() error {
 func (s *Snake) feed(f uint16) {
 	if f > 0 {
 		s.mux.Lock()
-		defer s.mux.Unlock()
 		s.length += f
+		s.mux.Unlock()
 	}
 }
 
@@ -163,16 +164,16 @@ func (s *Snake) Hit(dot engine.Dot, force float32) (success bool, err error) {
 
 	if s.location.Contains(dot) {
 		if force > s.unsafeGetForce() {
-			s.stopper.Do(func() {
-				close(s.stop)
-			})
-
 			newLocation := s.location.Delete(dot)
 			if err := s.world.UpdateObject(s, s.location, newLocation); err != nil {
 				return false, errSnakeHit(err.Error())
 			}
 
 			s.location = newLocation
+
+			s.stopper.Do(func() {
+				close(s.stop)
+			})
 
 			return true, nil
 		}
@@ -270,21 +271,22 @@ func (s *Snake) move() error {
 		retries++
 	}
 
-	s.mux.RLock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	tmpLocation := make(engine.Location, len(s.location)+1)
 	copy(tmpLocation[1:], s.location)
-	s.mux.RUnlock()
 	tmpLocation[0] = dot
 
 	if s.length < uint16(len(tmpLocation)) {
 		tmpLocation = tmpLocation[:len(tmpLocation)-1]
 	}
 
-	if err := s.world.UpdateObject(s, engine.Location(s.location), tmpLocation); err != nil {
+	if err := s.world.UpdateObject(s, s.location, tmpLocation); err != nil {
 		return fmt.Errorf("update snake error: %s", err)
 	}
 
-	s.setLocation(tmpLocation)
+	s.location = tmpLocation
 
 	return nil
 }
@@ -294,6 +296,8 @@ type errInteractObject string
 func (e errInteractObject) Error() string {
 	return "object interaction error: " + string(e)
 }
+
+var errInteractObjectUnexpectedType = errInteractObject("unexpected object type")
 
 func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool, err error) {
 	if food, ok := object.(objects.Food); ok {
@@ -323,7 +327,7 @@ func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool
 		return success, nil
 	}
 
-	return false, nil
+	return false, errInteractObjectUnexpectedType
 }
 
 func (s *Snake) calculateDelay() time.Duration {
@@ -355,21 +359,42 @@ func (s *Snake) Command(cmd Command) error {
 	return errors.New("cannot execute command: unknown command")
 }
 
+type errSetMovementDirection string
+
+func (e errSetMovementDirection) Error() string {
+	return "set movement direction error: " + string(e)
+}
+
 func (s *Snake) setMovementDirection(nextDir engine.Direction) error {
 	if engine.ValidDirection(nextDir) {
-		currDir := engine.CalculateDirection(s.location[1], s.location[0])
+		s.mux.Lock()
+		defer s.mux.Unlock()
+
+		if len(s.location) < 2 {
+			return errSetMovementDirection("cannot calculate current movement direction")
+		}
+
+		currentDir := engine.CalculateDirection(s.location[1], s.location[0])
+		// If the dots are not nearby, reverse the direction
+		if s.location[1].DistanceTo(s.location[0]) > 1 {
+			if dir, err := currentDir.Reverse(); err != nil {
+				return errSetMovementDirection("cannot calculate current movement direction")
+			} else {
+				currentDir = dir
+			}
+		}
 
 		rNextDir, err := nextDir.Reverse()
 		if err != nil {
-			return fmt.Errorf("cannot set movement direction: %s", err)
+			return errSetMovementDirection(err.Error())
 		}
 
 		// Next direction cannot be opposite to current direction
-		if rNextDir == currDir {
-			return errors.New("next direction cannot be opposite to current direction")
+		if rNextDir == currentDir {
+			return errSetMovementDirection("next direction cannot be opposite to current direction")
 		}
 
-		s.setDirection(nextDir)
+		s.direction = nextDir
 
 		return nil
 	}

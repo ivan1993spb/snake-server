@@ -70,7 +70,7 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.logger.Infoln("try to connect to game group id", id)
+	h.logger.WithField("game", id).Info("try to connect to game group")
 
 	group, err := h.groupManager.Get(id)
 	if err != nil {

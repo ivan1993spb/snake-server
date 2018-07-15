@@ -49,15 +49,16 @@ func NewWatermelon(world *world.World) (*Watermelon, error) {
 		mux:  &sync.RWMutex{},
 	}
 
+	watermelon.mux.Lock()
+	defer watermelon.mux.Unlock()
+
 	location, err := world.CreateObjectRandomRect(watermelon, watermelonWidth, watermelonHeight)
 	if err != nil {
 		return nil, ErrCreateWatermelon(err.Error())
 	}
 
-	watermelon.mux.Lock()
 	watermelon.world = world
 	watermelon.location = location
-	watermelon.mux.Unlock()
 
 	return watermelon, nil
 }

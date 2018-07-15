@@ -26,7 +26,7 @@ func (e *ErrInvalidAreaSize) Error() string {
 }
 
 func NewArea(width, height uint8) (Area, error) {
-	if width*height == 0 {
+	if uint16(width)*uint16(height) == 0 {
 		return Area{}, &ErrInvalidAreaSize{
 			Width:  width,
 			Height: height,
@@ -37,6 +37,14 @@ func NewArea(width, height uint8) (Area, error) {
 		width:  width,
 		height: height,
 	}, nil
+}
+
+func MustArea(width, height uint8) Area {
+	area, err := NewArea(width, height)
+	if err != nil {
+		panic(err)
+	}
+	return area
 }
 
 func NewUsefulArea(width, height uint8) (Area, error) {
@@ -63,8 +71,23 @@ func (a Area) Height() uint8 {
 	return a.height
 }
 
-func (a Area) Contains(dot Dot) bool {
-	// TODO: Rename method to ContainsDot.
+func (a Area) Dots() []Dot {
+	var x, y uint8
+	var dots = make([]Dot, 0, uint16(a.width)*uint16(a.height))
+
+	for x = 0; x < a.width; x++ {
+		for y = 0; y < a.height; y++ {
+			dots = append(dots, Dot{
+				X: x,
+				Y: y,
+			})
+		}
+	}
+
+	return dots
+}
+
+func (a Area) ContainsDot(dot Dot) bool {
 	return a.width > dot.X && a.height > dot.Y
 }
 
@@ -136,7 +159,7 @@ func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	}
 
 	// Area must contain passed dot
-	if !a.Contains(dot) {
+	if !a.ContainsDot(dot) {
 		return Dot{}, &ErrNavigation{
 			Err: &ErrAreaNotContainsDot{
 				Dot: dot,

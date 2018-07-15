@@ -78,24 +78,12 @@ func Test_World_UpdateObject(t *testing.T) {
 
 	err = world.UpdateObject(object, engine.Location{engine.Dot{0, 0}}, engine.Location{engine.Dot{1, 1}})
 	require.Nil(t, err)
-	require.True(t, pg.EntityExists(object, engine.Location{engine.Dot{1, 1}}))
-	require.False(t, pg.EntityExists(object, engine.Location{engine.Dot{0, 0}}))
-	require.False(t, pg.LocationExists(engine.Location{engine.Dot{0, 0}}))
-	require.True(t, pg.LocationExists(engine.Location{engine.Dot{1, 1}}))
 
 	err = world.UpdateObject(object, engine.Location{engine.Dot{1, 1}}, engine.Location{engine.Dot{3, 3}})
 	require.Nil(t, err)
-	require.True(t, pg.EntityExists(object, engine.Location{engine.Dot{3, 3}}))
-	require.False(t, pg.EntityExists(object, engine.Location{engine.Dot{1, 1}}))
-	require.False(t, pg.LocationExists(engine.Location{engine.Dot{1, 1}}))
-	require.True(t, pg.LocationExists(engine.Location{engine.Dot{3, 3}}))
 
 	err = world.UpdateObject(object, engine.Location{engine.Dot{3, 3}}, engine.Location{engine.Dot{0, 5}})
 	require.Nil(t, err)
-	require.True(t, pg.EntityExists(object, engine.Location{engine.Dot{0, 5}}))
-	require.False(t, pg.EntityExists(object, engine.Location{engine.Dot{3, 3}}))
-	require.False(t, pg.LocationExists(engine.Location{engine.Dot{3, 3}}))
-	require.True(t, pg.LocationExists(engine.Location{engine.Dot{0, 5}}))
 }
 
 func Benchmark_World_UpdateObject(b *testing.B) {

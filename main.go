@@ -51,7 +51,7 @@ var (
 const logName = "api"
 
 func usage() {
-	fmt.Fprint(os.Stderr, "Wellcome to snake-server!\n\n")
+	fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
 	fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
 	fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
 	flag.PrintDefaults()
@@ -106,7 +106,7 @@ func main() {
 		"license": License,
 		"version": Version,
 		"build":   Build,
-	}).Info("wellcome to snake-server!")
+	}).Info("welcome to snake-server!")
 
 	logger.WithFields(logrus.Fields{
 		"conns_limit":  connsLimit,
@@ -123,7 +123,7 @@ func main() {
 	}
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
-	rootRouter.Path(handlers.URLRouteWellcome).Methods(handlers.MethodWellcome).Handler(handlers.NewWellcomeHandler(logger))
+	rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
 	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
 
 	// Web-Socket routes
