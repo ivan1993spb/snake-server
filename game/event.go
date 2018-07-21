@@ -1,5 +1,6 @@
 package game
 
+//go:generate ffjson $GOFILE
 import "github.com/ivan1993spb/snake-server/world"
 
 type EventType uint8
@@ -42,6 +43,7 @@ func (event EventType) MarshalJSON() ([]byte, error) {
 	return []byte(`"unknown"`), nil
 }
 
+// ffjson: nodecoder
 type Event struct {
 	Type    EventType   `json:"type"`
 	Payload interface{} `json:"payload"`
