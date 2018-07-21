@@ -48,6 +48,7 @@ var snakeCommands = map[Command]engine.Direction{
 }
 
 // Snake object
+// ffjson: skip
 type Snake struct {
 	uuid string
 
@@ -418,6 +419,9 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type snake struct {
 	UUID string       `json:"uuid"`
 	Dots []engine.Dot `json:"dots,omitempty"`

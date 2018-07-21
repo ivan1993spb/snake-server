@@ -15,6 +15,7 @@ const wallTypeLabel = "wall"
 
 const wallMinBreakForce = 1000
 
+// ffjson: skip
 type Wall struct {
 	uuid     string
 	world    *world.World
@@ -120,6 +121,9 @@ func (w *Wall) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type wall struct {
 	UUID string          `json:"uuid"`
 	Dots engine.Location `json:"dots,omitempty"`

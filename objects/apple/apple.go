@@ -13,6 +13,7 @@ import (
 
 const appleTypeLabel = "apple"
 
+// ffjson: skip
 type Apple struct {
 	uuid  string
 	world *world.World
@@ -92,6 +93,9 @@ func (a *Apple) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type apple struct {
 	UUID string     `json:"uuid"`
 	Dot  engine.Dot `json:"dot"`
