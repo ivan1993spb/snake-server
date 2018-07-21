@@ -1,6 +1,10 @@
 package engine
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strconv"
+)
 
 type Dot struct {
 	X uint8
@@ -19,9 +23,17 @@ func (d1 Dot) Equals(d2 Dot) bool {
 	return d1 == d2
 }
 
+const dotExpectedSerializedSize = 10
+
 // Implementing json.Marshaler interface
 func (d Dot) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("[%d,%d]", d.X, d.Y)), nil
+	buff := bytes.NewBuffer(make([]byte, 0, dotExpectedSerializedSize))
+	buff.WriteByte('[')
+	buff.WriteString(strconv.Itoa(int(d.X)))
+	buff.WriteByte(',')
+	buff.WriteString(strconv.Itoa(int(d.Y)))
+	buff.WriteByte(']')
+	return buff.Bytes(), nil
 }
 
 func (d Dot) Hash() uint16 {
