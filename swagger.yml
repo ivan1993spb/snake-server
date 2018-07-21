@@ -27,6 +27,8 @@ paths:
   /games:
     get:
       description: Get all games
+      tags:
+        - Games
       responses:
         200:
           description: Returns games on server and additional information
@@ -34,6 +36,8 @@ paths:
             $ref: '#/definitions/Games'
     post:
       description: Create new game
+      tags:
+        - Games
       parameters:
         - name: limit
           in: formData
@@ -74,6 +78,8 @@ paths:
   /games/{id}:
     get:
       description: Get game by identificator
+      tags:
+        - Games
       parameters:
         - name: id
           in: path
@@ -100,6 +106,8 @@ paths:
             $ref: '#/definitions/Error'
     delete:
       description: Delete game by identificator
+      tags:
+        - Games
       parameters:
         - name: id
           in: path
@@ -130,6 +138,8 @@ paths:
             $ref: '#/definitions/Error'
   /capacity:
     get:
+      tags:
+        - Server
       description: Get server load (capacity)
       responses:
         200:
@@ -138,6 +148,8 @@ paths:
             $ref: '#/definitions/Capacity'
   /info:
     get:
+      tags:
+        - Server
       description: Get server information
       responses:
         200:
@@ -146,6 +158,8 @@ paths:
             $ref: '#/definitions/Info'
   /games/{id}/broadcast:
     post:
+      tags:
+        - Games
       description: Broadcast a message to players in game with passed identificator
       parameters:
         - name: id
@@ -182,6 +196,8 @@ paths:
             $ref: '#/definitions/Error'
   /games/{id}/objects:
     get:
+      tags:
+        - Games
       description: Get all objects on map
       parameters:
         - name: id
