@@ -101,3 +101,37 @@ func Test_Rect_Dot_SquareRectWithXY(t *testing.T) {
 	require.Equal(t, Dot{6, 7}, rect.Dot(7))
 	require.Equal(t, Dot{7, 7}, rect.Dot(8))
 }
+
+func Test_Rect_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		rect Rect
+		json []byte
+	}{
+		{
+			Rect{},
+			[]byte("[0,0,0,0]"),
+		},
+		{
+			Rect{1, 2, 3, 4},
+			[]byte("[1,2,3,4]"),
+		},
+		{
+			Rect{4, 3, 2, 1},
+			[]byte("[4,3,2,1]"),
+		},
+		{
+			Rect{255, 200, 160, 100},
+			[]byte("[255,200,160,100]"),
+		},
+		{
+			Rect{255, 200, 160, 255},
+			[]byte("[255,200,160,255]"),
+		},
+	}
+
+	for i, test := range tests {
+		actualJSON, err := test.rect.MarshalJSON()
+		require.Nil(t, err, "test %d", i)
+		require.Equal(t, test.json, actualJSON, "test %d", i)
+	}
+}
