@@ -210,25 +210,62 @@ Request returns common info about server: author, license, version, build.
 ```
 curl -s -X GET http://localhost:8080/api/info | jq
 {
-  "author": "Ivan Pushkin",
-  "license": "MIT",
-  "version": "v3.1.1-rc",
-  "build": "85b6b0e"
+    "author": "Ivan Pushkin",
+    "license": "MIT",
+    "version": "v3.1.1-rc",
+    "build": "85b6b0e"
 }
 ```
 
 #### Request `POST /api/games/{id}/broadcast`
 
-Request sends message to all players in selected game. Returns `true` on success.
+Request sends message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
 
 ```
 curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
 {
-  "success": true
+    "success": true
 }
 ```
 
-**Request body size is limited: maximum 128 bytes**
+#### Request `GET /api/games/{id}/objects`
+
+Request returns all objects on map of game with passed identifier.
+
+```
+curl -s -X GET http://localhost:8080/api/games/0/objects | jq
+{
+    "objects": [
+        {
+            "uuid": "066167c0-38eb-424e-82fc-942ded486a84",
+            "dots": [
+                [0, 2],
+                [1, 2],
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [2, 1]
+            ],
+            "type": "wall"
+        },
+        {
+            "uuid": "e91944bc-f31f-4b43-8a6c-2189db3734e5",
+            "dot": [18, 16],
+            "type": "apple"
+        },
+        {
+            "uuid": "680575ca-5ec0-4071-a495-be107b0fd255",
+            "dots": [
+                [9, 17],
+                [10, 17],
+                [9, 18],
+                [10, 18]
+            ],
+            "type": "watermelon"
+        }
+    ]
+}
+```
 
 ### API errors
 
