@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"encoding/json"
+	"bytes"
 	"errors"
 	"math/rand"
+	"strconv"
 )
 
 const (
@@ -238,10 +239,15 @@ func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	}
 }
 
+const areaExpectedSerializedSize = 10
+
 // Implementing json.Marshaler interface
 func (a Area) MarshalJSON() ([]byte, error) {
-	return json.Marshal([]uint8{
-		a.width,
-		a.height,
-	})
+	buff := bytes.NewBuffer(make([]byte, 0, areaExpectedSerializedSize))
+	buff.WriteByte('[')
+	buff.WriteString(strconv.Itoa(int(a.width)))
+	buff.WriteByte(',')
+	buff.WriteString(strconv.Itoa(int(a.height)))
+	buff.WriteByte(']')
+	return buff.Bytes(), nil
 }
