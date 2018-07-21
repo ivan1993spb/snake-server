@@ -1,3 +1,5 @@
+//go:generate ffjson $GOFILE
+
 package player
 
 type MessageType uint8
@@ -43,11 +45,13 @@ func (t MessageType) String() string {
 	return "unknown"
 }
 
+// ffjson: nodecoder
 type Message struct {
 	Type    MessageType `json:"type"`
 	Payload interface{} `json:"payload"`
 }
 
+// ffjson: nodecoder
 type MessageSize struct {
 	Width  uint8 `json:"width"`
 	Height uint8 `json:"height"`
