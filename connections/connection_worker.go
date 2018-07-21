@@ -14,16 +14,19 @@ import (
 )
 
 const (
-	chanOutputMessageBuffer     = 256
-	chanReadMessagesBuffer      = 128
-	chanDecodeMessageBuffer     = 128
-	chanEncodeMessageBuffer     = 1024
-	chanProxyInputMessageBuffer = 64
-	chanInputMessagesBuffer     = 64
-	chanSnakeCommandsBuffer     = 64
-	chanMergeBytesBuffer        = 1024
+	chanPlayerOutputMessageBuffer = 256
+	chanPlayerEncodeMessageBuffer = 1024
 
-	sendInputMessageTimeout = time.Millisecond * 50
+	chanMergeBytesBuffer = 8192
+
+	chanReadMessagesBuffer      = 32
+	chanDecodeMessageBuffer     = 32
+	chanProxyInputMessageBuffer = 32
+	chanInputMessagesBuffer     = 32
+	chanSnakeCommandsBuffer     = 32
+
+	sendInputMessageTimeout  = time.Millisecond
+	sendOutputMessageTimeout = time.Millisecond * 25
 )
 
 type ConnectionWorker struct {
@@ -51,7 +54,7 @@ func (e ErrStartConnectionWorker) Error() string {
 	return "error start connection worker: " + string(e)
 }
 
-func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast, gameBytes <-chan []byte) error {
+func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast, gamePreparedMessages <-chan *websocket.PreparedMessage) error {
 	if cw.flagStarted {
 		return ErrStartConnectionWorker("connection worker already started")
 	}
@@ -72,7 +75,10 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	// Output
 	chPlayer := p.Start(chStop, chCommands)
 	chOutputBytes := cw.encode(chStop, cw.listenPlayer(chStop, chPlayer))
-	cw.write(cw.mergeBytesCh(chStop, chOutputBytes, gameBytes), chStop)
+	chPlayerPreparedMessages := cw.prepare(chStop, chOutputBytes)
+	chPreparedMessages := cw.mergePreparedMessagesChs(chStop, chPlayerPreparedMessages, gamePreparedMessages)
+	chPreparedMessagesTimeout := cw.chPreparedMessageTimeout(chPreparedMessages, chStop, sendOutputMessageTimeout)
+	cw.write(chPreparedMessagesTimeout, chStop)
 
 	select {
 	case <-chStop:
@@ -237,54 +243,25 @@ func (cw *ConnectionWorker) input(stop <-chan struct{}, buffer uint) <-chan Inpu
 }
 
 func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage InputMessage, stop <-chan struct{}, timeout time.Duration) {
-	const tickSize = 5
-
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 
-	var ticker = time.NewTicker(timeout / tickSize)
-	defer ticker.Stop()
-
-	if cap(ch) == 0 {
-		select {
-		case ch <- inputMessage:
-		case <-stop:
-		case <-timer.C:
-		}
-	} else {
-		for {
-			select {
-			case ch <- inputMessage:
-				return
-			case <-stop:
-				return
-			case <-timer.C:
-				return
-			case <-ticker.C:
-				if len(ch) == cap(ch) {
-					select {
-					case <-ch:
-					case ch <- inputMessage:
-						return
-					case <-stop:
-						return
-					case <-timer.C:
-						return
-					}
-				}
-			}
-		}
+	select {
+	case ch <- inputMessage:
+	case <-stop:
+	case <-timer.C:
+		cw.logger.Warn("send input message time is out")
 	}
 }
 
-func (cw *ConnectionWorker) mergeBytesCh(stop <-chan struct{}, chins ...<-chan []byte) <-chan []byte {
-	chout := make(chan []byte, chanMergeBytesBuffer)
+func (cw *ConnectionWorker) mergePreparedMessagesChs(stop <-chan struct{}, chins ...<-chan *websocket.PreparedMessage) <-chan *websocket.PreparedMessage {
+	chout := make(chan *websocket.PreparedMessage, chanMergeBytesBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
 
 	for _, chin := range chins {
-		go func(chin <-chan []byte) {
+		go func(chin <-chan *websocket.PreparedMessage) {
 			defer wg.Done()
 
 			for {
@@ -314,16 +291,51 @@ func (cw *ConnectionWorker) mergeBytesCh(stop <-chan struct{}, chins ...<-chan [
 	return chout
 }
 
-func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
+func (cw *ConnectionWorker) chPreparedMessageTimeout(chin <-chan *websocket.PreparedMessage, stop <-chan struct{}, timeout time.Duration) <-chan *websocket.PreparedMessage {
+	chout := make(chan *websocket.PreparedMessage, cap(chin))
+
 	go func() {
+		defer close(chout)
+
 		for {
 			select {
-			case data, ok := <-chin:
+			case pm, ok := <-chin:
 				if !ok {
 					return
 				}
 
-				if err := cw.conn.WriteMessage(websocket.TextMessage, data); err != nil {
+				timer := time.NewTimer(timeout)
+
+				select {
+				case chout <- pm:
+					timer.Stop()
+				case <-timer.C:
+					cw.logger.Warn("send message for writing time is out")
+					timer.Stop()
+					continue
+				case <-stop:
+					timer.Stop()
+					return
+				}
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
+func (cw *ConnectionWorker) write(chin <-chan *websocket.PreparedMessage, stop <-chan struct{}) {
+	go func() {
+		for {
+			select {
+			case pm, ok := <-chin:
+				if !ok {
+					return
+				}
+
+				if err := cw.conn.WritePreparedMessage(pm); err != nil {
 					if !websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 						cw.logger.Errorln("write output message error:", err)
 					}
@@ -336,8 +348,40 @@ func (cw *ConnectionWorker) write(chin <-chan []byte, stop <-chan struct{}) {
 	}()
 }
 
+func (cw *ConnectionWorker) prepare(stop <-chan struct{}, chin <-chan []byte) <-chan *websocket.PreparedMessage {
+	chout := make(chan *websocket.PreparedMessage, cap(chin))
+
+	go func() {
+		defer close(chout)
+
+		for {
+			select {
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
+
+				if pm, err := websocket.NewPreparedMessage(websocket.TextMessage, data); err != nil {
+					cw.logger.Errorln("prepare player output message error:", err)
+				} else {
+					select {
+					case chout <- pm:
+					case <-stop:
+						return
+					}
+				}
+
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return chout
+}
+
 func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputMessage) <-chan []byte {
-	chout := make(chan []byte, chanEncodeMessageBuffer)
+	chout := make(chan []byte, chanPlayerEncodeMessageBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
@@ -377,7 +421,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 }
 
 func (cw *ConnectionWorker) listenPlayer(stop <-chan struct{}, chin <-chan player.Message) <-chan OutputMessage {
-	chout := make(chan OutputMessage, chanOutputMessageBuffer)
+	chout := make(chan OutputMessage, chanPlayerOutputMessageBuffer)
 
 	go func() {
 		defer close(chout)
@@ -447,7 +491,7 @@ func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-
 				}
 
 				if message.Type == InputMessageTypeBroadcast {
-					b.BroadcastMessage(broadcast.BroadcastMessage(message.Payload))
+					b.BroadcastMessage(broadcast.Message(message.Payload))
 				}
 			case <-stop:
 				return

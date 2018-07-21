@@ -2,10 +2,10 @@ package connections
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
@@ -15,12 +15,19 @@ import (
 
 const (
 	chanBroadcastBuffer  = 128
-	chanGameEventsBuffer = 512
-	chanBytesProxyBuffer = 512
-	chanBytesOutBuffer   = 128
-)
+	chanGameEventsBuffer = 8192
+	chanBytesProxyBuffer = 8192
+	chanBytesOutBuffer   = 8192
 
-const sendBytesTimeout = time.Millisecond * 50
+	chanEncodeGroupMessageBuffer = 8192
+
+	sendPreparedMessageTimeout = time.Millisecond * 50
+
+	broadcastOutputMessageBufferMonitoringDelay = time.Second * 10
+	gameOutputMessageBufferMonitoringDelay      = time.Second * 10
+	encodeGroupMessageBufferMonitoringDelay     = time.Second * 10
+	preparedMessageBufferMonitoringDelay        = time.Second * 10
+)
 
 type ConnectionGroup struct {
 	limit      int
@@ -32,17 +39,23 @@ type ConnectionGroup struct {
 	game      *game.Game
 	broadcast *broadcast.GroupBroadcast
 
-	chs    []chan []byte
+	chs    []chan *websocket.PreparedMessage
 	chsMux *sync.RWMutex
 
 	stop    chan struct{}
 	stopper *sync.Once
 }
 
+type errCreateConnectionGroup string
+
+func (e errCreateConnectionGroup) Error() string {
+	return "cannot create connection group: " + string(e)
+}
+
 func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8) (*ConnectionGroup, error) {
 	g, err := game.NewGame(logger, width, height)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create connection group: %s", err)
+		return nil, errCreateConnectionGroup(err.Error())
 	}
 
 	if connectionLimit > 0 {
@@ -52,14 +65,14 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, h
 			game:       g,
 			broadcast:  broadcast.NewGroupBroadcast(),
 			logger:     logger,
-			chs:        make([]chan []byte, 0),
+			chs:        make([]chan *websocket.PreparedMessage, 0),
 			chsMux:     &sync.RWMutex{},
 			stop:       make(chan struct{}),
 			stopper:    &sync.Once{},
 		}, nil
 	}
 
-	return nil, errors.New("cannot create connection group: invalid connection limit")
+	return nil, errCreateConnectionGroup("invalid connection limit")
 }
 
 func (cg *ConnectionGroup) GetLimit() int {
@@ -147,19 +160,21 @@ func (cg *ConnectionGroup) Start() {
 
 	chMessagesGame := cg.listenGame(cg.stop, cg.game.ListenEvents(cg.stop, chanGameEventsBuffer))
 	chMessagesBroadcast := cg.listenBroadcast(cg.stop, cg.broadcast.ListenMessages(cg.stop, chanBroadcastBuffer))
-	cg.broadcastBytes(cg.encode(cg.stop, chMessagesGame, chMessagesBroadcast))
+	chBytes := cg.encode(cg.stop, chMessagesGame, chMessagesBroadcast)
+	chPreparedMessages := cg.prepare(cg.stop, chBytes)
+	cg.broadcastPreparedMessages(chPreparedMessages)
 }
 
-func (cg *ConnectionGroup) broadcastBytes(chin <-chan []byte) {
+func (cg *ConnectionGroup) broadcastPreparedMessages(chin <-chan *websocket.PreparedMessage) {
 	go func() {
 		for {
 			select {
-			case data, ok := <-chin:
+			case pm, ok := <-chin:
 				if !ok {
 					return
 				}
 
-				cg.doBroadcast(data)
+				cg.doBroadcast(pm)
 			case <-cg.stop:
 				return
 			}
@@ -167,13 +182,13 @@ func (cg *ConnectionGroup) broadcastBytes(chin <-chan []byte) {
 	}()
 }
 
-func (cg *ConnectionGroup) doBroadcast(data []byte) {
+func (cg *ConnectionGroup) doBroadcast(pm *websocket.PreparedMessage) {
 	cg.chsMux.RLock()
 	defer cg.chsMux.RUnlock()
 
 	for _, ch := range cg.chs {
 		select {
-		case ch <- data:
+		case ch <- pm:
 		case <-cg.stop:
 			return
 		}
@@ -198,8 +213,8 @@ func (cg *ConnectionGroup) GetObjects() []interface{} {
 	return cg.game.World().GetObjects()
 }
 
-func (cg *ConnectionGroup) createChan() chan []byte {
-	ch := make(chan []byte, chanBytesProxyBuffer)
+func (cg *ConnectionGroup) createChan() chan *websocket.PreparedMessage {
+	ch := make(chan *websocket.PreparedMessage, chanBytesProxyBuffer)
 
 	cg.chsMux.Lock()
 	cg.chs = append(cg.chs, ch)
@@ -208,7 +223,7 @@ func (cg *ConnectionGroup) createChan() chan []byte {
 	return ch
 }
 
-func (cg *ConnectionGroup) deleteChan(ch chan []byte) {
+func (cg *ConnectionGroup) deleteChan(ch chan *websocket.PreparedMessage) {
 	go func() {
 		for range ch {
 		}
@@ -225,9 +240,9 @@ func (cg *ConnectionGroup) deleteChan(ch chan []byte) {
 	cg.chsMux.Unlock()
 }
 
-func (cg *ConnectionGroup) proxyCh(stop <-chan struct{}, buffer uint) <-chan []byte {
+func (cg *ConnectionGroup) proxyCh(stop <-chan struct{}, buffer uint) <-chan *websocket.PreparedMessage {
 	ch := cg.createChan()
-	chOut := make(chan []byte, buffer)
+	chOut := make(chan *websocket.PreparedMessage, buffer)
 
 	go func() {
 		defer close(chOut)
@@ -243,7 +258,7 @@ func (cg *ConnectionGroup) proxyCh(stop <-chan struct{}, buffer uint) <-chan []b
 				if !ok {
 					return
 				}
-				cg.send(chOut, message, stop, sendBytesTimeout)
+				cg.sendTimeout(chOut, message, stop, sendPreparedMessageTimeout)
 			}
 		}
 	}()
@@ -251,57 +266,32 @@ func (cg *ConnectionGroup) proxyCh(stop <-chan struct{}, buffer uint) <-chan []b
 	return chOut
 }
 
-func (cg *ConnectionGroup) send(ch chan []byte, data []byte, stop <-chan struct{}, timeout time.Duration) {
-	const tickSize = 5
-
+func (cg *ConnectionGroup) sendTimeout(ch chan *websocket.PreparedMessage, pm *websocket.PreparedMessage, stop <-chan struct{}, timeout time.Duration) {
+	const warnFormat = "game group message was not send to connection: %s"
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
-
-	var ticker = time.NewTicker(timeout / tickSize)
-	defer ticker.Stop()
-
-	if cap(ch) == 0 {
-		select {
-		case ch <- data:
-		case <-cg.stop:
-		case <-stop:
-		case <-timer.C:
-		}
-	} else {
-		for {
-			select {
-			case ch <- data:
-				return
-			case <-cg.stop:
-				return
-			case <-stop:
-				return
-			case <-timer.C:
-				return
-			case <-ticker.C:
-				if len(ch) == cap(ch) {
-					select {
-					case <-ch:
-					case ch <- data:
-						return
-					case <-stop:
-						return
-					case <-cg.stop:
-						return
-					case <-timer.C:
-						return
-					}
-				}
-			}
+	select {
+	case ch <- pm:
+	case <-cg.stop:
+		cg.logger.Warnf(warnFormat, "game group stopped")
+	case <-stop:
+		cg.logger.Warnf(warnFormat, "connection handler stopped")
+	case <-timer.C:
+		cg.logger.Warnf(warnFormat, "time is out")
+		if len(ch) == cap(ch) {
+			cg.logger.Warn("connection group output channel buffer is overflow for connection")
 		}
 	}
 }
 
 func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Event) <-chan OutputMessage {
-	chout := make(chan OutputMessage, chanOutputMessageBuffer)
+	chout := make(chan OutputMessage, cap(chin))
 
 	go func() {
 		defer close(chout)
+
+		ticker := time.NewTicker(gameOutputMessageBufferMonitoringDelay)
+		defer ticker.Stop()
 
 		for {
 			select {
@@ -332,6 +322,11 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 				}
 			case <-stop:
 				return
+			case <-ticker.C:
+				cg.logger.WithFields(logrus.Fields{
+					"buffered_messages": len(chout),
+					"buffer_size":       cap(chout),
+				}).Debug("game output messages buffer monitoring")
 			}
 		}
 	}()
@@ -339,11 +334,14 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 	return chout
 }
 
-func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan broadcast.BroadcastMessage) <-chan OutputMessage {
-	chout := make(chan OutputMessage, chanOutputMessageBuffer)
+func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan broadcast.Message) <-chan OutputMessage {
+	chout := make(chan OutputMessage, cap(chin))
 
 	go func() {
 		defer close(chout)
+
+		ticker := time.NewTicker(broadcastOutputMessageBufferMonitoringDelay)
+		defer ticker.Stop()
 
 		for {
 			select {
@@ -364,6 +362,11 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 				}
 			case <-stop:
 				return
+			case <-ticker.C:
+				cg.logger.WithFields(logrus.Fields{
+					"buffered_messages": len(chout),
+					"buffer_size":       cap(chout),
+				}).Debug("broadcast output messages buffer monitoring")
 			}
 		}
 	}()
@@ -372,7 +375,7 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 }
 
 func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMessage) <-chan []byte {
-	chout := make(chan []byte, chanEncodeMessageBuffer)
+	chout := make(chan []byte, chanEncodeGroupMessageBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
@@ -380,6 +383,10 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 	for _, chin := range chins {
 		go func(chin <-chan OutputMessage) {
 			defer wg.Done()
+
+			ticker := time.NewTicker(encodeGroupMessageBufferMonitoringDelay)
+			defer ticker.Stop()
+
 			for {
 				select {
 				case <-stop:
@@ -398,6 +405,11 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 							return
 						}
 					}
+				case <-ticker.C:
+					cg.logger.WithFields(logrus.Fields{
+						"buffered_messages": len(chout),
+						"buffer_size":       chanEncodeGroupMessageBuffer,
+					}).Debug("encoded group messages buffer monitoring")
 				}
 			}
 		}(chin)
@@ -411,6 +423,45 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 	return chout
 }
 
+func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-chan *websocket.PreparedMessage {
+	chout := make(chan *websocket.PreparedMessage, cap(chin))
+
+	go func() {
+		defer close(chout)
+
+		ticker := time.NewTicker(preparedMessageBufferMonitoringDelay)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case data, ok := <-chin:
+				if !ok {
+					return
+				}
+
+				if pm, err := websocket.NewPreparedMessage(websocket.TextMessage, data); err != nil {
+					cg.logger.Errorln("prepare group output message error:", err)
+				} else {
+					select {
+					case chout <- pm:
+					case <-stop:
+						return
+					}
+				}
+			case <-stop:
+				return
+			case <-ticker.C:
+				cg.logger.WithFields(logrus.Fields{
+					"buffered_messages": len(chout),
+					"buffer_size":       cap(chout),
+				}).Debug("prepared messages buffer monitoring")
+			}
+		}
+	}()
+
+	return chout
+}
+
 func (cg *ConnectionGroup) BroadcastMessageTimeout(message string, timeout time.Duration) bool {
-	return cg.broadcast.BroadcastMessageTimeout(broadcast.BroadcastMessage(message), timeout)
+	return cg.broadcast.BroadcastMessageTimeout(broadcast.Message(message), timeout)
 }
