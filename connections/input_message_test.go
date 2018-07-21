@@ -23,7 +23,7 @@ func Test_InputMessageType_UnmarshalJSON_InvalidMessageType(t *testing.T) {
 	data := []byte(`{"type": "invalid", "payload": "north"}`)
 	var inputMessage InputMessage
 	err := ffjson.Unmarshal(data, &inputMessage)
-	require.Equal(t, ErrUnknownInputMessageType, err)
+	require.NotNil(t, err)
 }
 
 func Test_InputMessageType_UnmarshalJSON_BroadcastMessageTypes(t *testing.T) {

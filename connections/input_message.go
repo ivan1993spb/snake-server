@@ -30,6 +30,9 @@ func (t *InputMessageType) UnmarshalJSON(data []byte) error {
 	return ErrUnknownInputMessageType
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: noencoder
 type InputMessage struct {
 	Type    InputMessageType `json:"type"`
 	Payload string           `json:"payload"`
