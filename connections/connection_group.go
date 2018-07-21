@@ -293,6 +293,8 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 		ticker := time.NewTicker(gameOutputMessageBufferMonitoringDelay)
 		defer ticker.Stop()
 
+		var count = 0
+
 		for {
 			select {
 			case event, ok := <-chin:
@@ -317,6 +319,7 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 
 				select {
 				case chout <- outputMessage:
+					count++
 				case <-stop:
 					return
 				}
@@ -326,7 +329,11 @@ func (cg *ConnectionGroup) listenGame(stop <-chan struct{}, chin <-chan game.Eve
 				cg.logger.WithFields(logrus.Fields{
 					"buffered_messages": len(chout),
 					"buffer_size":       cap(chout),
+					"time_frame":        gameOutputMessageBufferMonitoringDelay,
+					"count":             count,
 				}).Debug("game output messages buffer monitoring")
+
+				count = 0
 			}
 		}
 	}()
@@ -343,6 +350,8 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 		ticker := time.NewTicker(broadcastOutputMessageBufferMonitoringDelay)
 		defer ticker.Stop()
 
+		var count = 0
+
 		for {
 			select {
 			case message, ok := <-chin:
@@ -357,6 +366,7 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 
 				select {
 				case chout <- outputMessage:
+					count++
 				case <-stop:
 					return
 				}
@@ -366,7 +376,11 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 				cg.logger.WithFields(logrus.Fields{
 					"buffered_messages": len(chout),
 					"buffer_size":       cap(chout),
+					"time_frame":        broadcastOutputMessageBufferMonitoringDelay,
+					"count":             count,
 				}).Debug("broadcast output messages buffer monitoring")
+
+				count = 0
 			}
 		}
 	}()
@@ -380,12 +394,14 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
 
-	for _, chin := range chins {
-		go func(chin <-chan OutputMessage) {
+	for i, chin := range chins {
+		go func(i int, chin <-chan OutputMessage) {
 			defer wg.Done()
 
 			ticker := time.NewTicker(encodeGroupMessageBufferMonitoringDelay)
 			defer ticker.Stop()
+
+			var count = 0
 
 			for {
 				select {
@@ -401,6 +417,7 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 					} else {
 						select {
 						case chout <- data:
+							count++
 						case <-stop:
 							return
 						}
@@ -409,10 +426,15 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 					cg.logger.WithFields(logrus.Fields{
 						"buffered_messages": len(chout),
 						"buffer_size":       chanEncodeGroupMessageBuffer,
+						"time_frame":        encodeGroupMessageBufferMonitoringDelay,
+						"count":             count,
+						"channel":           i,
 					}).Debug("encoded group messages buffer monitoring")
+
+					count = 0
 				}
 			}
-		}(chin)
+		}(i, chin)
 	}
 
 	go func() {
@@ -432,6 +454,8 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 		ticker := time.NewTicker(preparedMessageBufferMonitoringDelay)
 		defer ticker.Stop()
 
+		var count = 0
+
 		for {
 			select {
 			case data, ok := <-chin:
@@ -444,6 +468,7 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 				} else {
 					select {
 					case chout <- pm:
+						count++
 					case <-stop:
 						return
 					}
@@ -454,7 +479,11 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 				cg.logger.WithFields(logrus.Fields{
 					"buffered_messages": len(chout),
 					"buffer_size":       cap(chout),
+					"time_frame":        preparedMessageBufferMonitoringDelay,
+					"count":             count,
 				}).Debug("prepared messages buffer monitoring")
+
+				count = 0
 			}
 		}
 	}()
