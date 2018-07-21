@@ -33,7 +33,7 @@ You can download server binary, build server from source or pull server docker i
 
 ### Download and install binary
 
-You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
+You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases/latest
 
 Or using curl:
 
@@ -106,7 +106,7 @@ Add game for 5 players with map width 40 dots and height 30 dots:
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
-Now web-socket ready to serve players on url `ws://localhost:8080/ws/games/0`
+Now web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
 
 ## Clients
 
@@ -309,7 +309,7 @@ On connection establishing handler:
 * Returns all objects on playground
 * Creates snake
 * Returns snake uuid
-* Pushes game events and objects in output messages
+* Pushes game events and objects to web-socket stream
 
 There are input and output web-socket messages.
 
@@ -325,15 +325,15 @@ Primitives that used to explain game objects:
 
 Game objects:
 
-* Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
-* Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
+* Apple: `{"type": "apple", "uuid": string , "dot": [x, y]}`
+* Corpse: `{"type": "corpse", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Snake: `{"type": "snake", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Wall: `{"type": "wall", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Watermelon: `{"type": "watermelon", "uuid": string , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
 
 Objects TODO:
 
-* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
+* Mouse: `{"type": "mouse", "uuid": string , dot: [x, y], "dir": "north"}`
 * ...
 
 ### Output messages
