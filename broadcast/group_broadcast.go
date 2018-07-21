@@ -11,6 +11,7 @@ const (
 	broadcastSendTimeout        = time.Millisecond * 100
 )
 
+// TODO: Rename type.
 type BroadcastMessage string
 
 type GroupBroadcast struct {
@@ -137,7 +138,7 @@ func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-ch
 				if !ok {
 					return
 				}
-				gb.send(chOut, message, stop, broadcastSendTimeout)
+				gb.sendMessageTimeout(chOut, message, stop, broadcastSendTimeout)
 			}
 		}
 	}()
@@ -145,49 +146,14 @@ func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-ch
 	return chOut
 }
 
-func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessage, stop <-chan struct{}, timeout time.Duration) {
-	const tickSize = 5
-
+func (gb *GroupBroadcast) sendMessageTimeout(ch chan BroadcastMessage, message BroadcastMessage, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
-
-	var ticker = time.NewTicker(timeout / tickSize)
-	defer ticker.Stop()
-
-	if cap(ch) == 0 {
-		select {
-		case ch <- message:
-		case <-gb.chStop:
-		case <-stop:
-		case <-timer.C:
-		}
-	} else {
-		for {
-			select {
-			case ch <- message:
-				return
-			case <-gb.chStop:
-				return
-			case <-stop:
-				return
-			case <-timer.C:
-				return
-			case <-ticker.C:
-				if len(ch) == cap(ch) {
-					select {
-					case <-ch:
-					case ch <- message:
-						return
-					case <-stop:
-						return
-					case <-gb.chStop:
-						return
-					case <-timer.C:
-						return
-					}
-				}
-			}
-		}
+	select {
+	case ch <- message:
+	case <-gb.chStop:
+	case <-stop:
+	case <-timer.C:
 	}
 }
 
