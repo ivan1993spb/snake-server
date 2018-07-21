@@ -8,7 +8,8 @@ import (
 const (
 	broadcastMainChanBufferSize = 64
 	broadcastChanBufferSize     = 64
-	broadcastSendTimeout        = time.Millisecond * 100
+
+	broadcastSendTimeout = time.Millisecond
 )
 
 type Message string
