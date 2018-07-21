@@ -194,6 +194,10 @@ func (cg *ConnectionGroup) GetWorldHeight() uint8 {
 	return cg.game.World().Height()
 }
 
+func (cg *ConnectionGroup) GetObjects() []interface{} {
+	return cg.game.World().GetObjects()
+}
+
 func (cg *ConnectionGroup) createChan() chan []byte {
 	ch := make(chan []byte, chanBytesProxyBuffer)
 
