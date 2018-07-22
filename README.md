@@ -192,31 +192,6 @@ curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 }
 ```
 
-#### Request `GET /api/capacity`
-
-Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
-
-```
-curl -s -X GET http://localhost:8080/api/capacity | jq
-{
-    "capacity": 0.02
-}
-```
-
-#### Request `GET /api/info`
-
-Request returns common info about server: author, license, version, build.
-
-```
-curl -s -X GET http://localhost:8080/api/info | jq
-{
-    "author": "Ivan Pushkin",
-    "license": "MIT",
-    "version": "v3.1.1-rc",
-    "build": "85b6b0e"
-}
-```
-
 #### Request `POST /api/games/{id}/broadcast`
 
 Request sends message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
@@ -264,6 +239,31 @@ curl -s -X GET http://localhost:8080/api/games/0/objects | jq
             "type": "watermelon"
         }
     ]
+}
+```
+
+#### Request `GET /api/capacity`
+
+Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
+
+```
+curl -s -X GET http://localhost:8080/api/capacity | jq
+{
+    "capacity": 0.02
+}
+```
+
+#### Request `GET /api/info`
+
+Request returns common info about server: author, license, version, build.
+
+```
+curl -s -X GET http://localhost:8080/api/info | jq
+{
+    "author": "Ivan Pushkin",
+    "license": "MIT",
+    "version": "v3.1.1-rc",
+    "build": "85b6b0e"
 }
 ```
 
