@@ -30,6 +30,18 @@ func (t *InputMessageType) UnmarshalJSON(data []byte) error {
 	return ErrUnknownInputMessageType
 }
 
+var inputMessageTypeLabels = map[InputMessageType]string{
+	InputMessageTypeSnakeCommand: "snake",
+	InputMessageTypeBroadcast:    "broadcast",
+}
+
+func (t InputMessageType) String() string {
+	if label, ok := inputMessageTypeLabels[t]; ok {
+		return label
+	}
+	return "unknown"
+}
+
 //go:generate ffjson $GOFILE
 
 // ffjson: noencoder
