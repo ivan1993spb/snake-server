@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	chanPlayerOutputMessageBuffer = 256
-	chanPlayerEncodeMessageBuffer = 1024
+	chanPlayerOutputMessageBuffer  = 256
+	chanPlayerEncodedMessageBuffer = 1024
 
-	chanMergeBytesBuffer = 8192
+	chanMergePreparedMessageBuffer = 8192
 
 	chanReadMessagesBuffer           = 64
 	chanDecodeMessageBuffer          = 64
@@ -259,7 +259,7 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 }
 
 func (cw *ConnectionWorker) mergePreparedMessagesChs(stop <-chan struct{}, chins ...<-chan *websocket.PreparedMessage) <-chan *websocket.PreparedMessage {
-	chout := make(chan *websocket.PreparedMessage, chanMergeBytesBuffer)
+	chout := make(chan *websocket.PreparedMessage, chanMergePreparedMessageBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
@@ -385,7 +385,7 @@ func (cw *ConnectionWorker) prepare(stop <-chan struct{}, chin <-chan []byte) <-
 }
 
 func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputMessage) <-chan []byte {
-	chout := make(chan []byte, chanPlayerEncodeMessageBuffer)
+	chout := make(chan []byte, chanPlayerEncodedMessageBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
