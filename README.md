@@ -59,6 +59,9 @@ Or get snake-server of specific version:
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `make`
 * `make install`
+
+Then:
+
 * `snake-server` to start server
 * Use `snake-server -h` to see usage information
 
