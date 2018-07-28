@@ -29,3 +29,49 @@ func Test_Dot_Equals(t *testing.T) {
 	require.False(t, Dot{255, 0}.Equals(Dot{0, 255}))
 	require.False(t, Dot{0, 0xff}.Equals(Dot{0xff, 0}))
 }
+
+func Test_Dot_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		dot  Dot
+		json []byte
+	}{
+		{
+			Dot{10, 10},
+			[]byte("[10,10]"),
+		},
+		{
+			Dot{255, 255},
+			[]byte("[255,255]"),
+		},
+		{
+			Dot{0, 0},
+			[]byte("[0,0]"),
+		},
+		{
+			Dot{0, 1},
+			[]byte("[0,1]"),
+		},
+		{
+			Dot{2, 1},
+			[]byte("[2,1]"),
+		},
+		{
+			Dot{255, 1},
+			[]byte("[255,1]"),
+		},
+		{
+			Dot{255, 100},
+			[]byte("[255,100]"),
+		},
+		{
+			Dot{0, 255},
+			[]byte("[0,255]"),
+		},
+	}
+
+	for i, test := range tests {
+		actualJSON, err := test.dot.MarshalJSON()
+		require.Nil(t, err, "test %d", i)
+		require.Equal(t, test.json, actualJSON, "test %d", i)
+	}
+}

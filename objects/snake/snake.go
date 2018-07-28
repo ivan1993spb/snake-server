@@ -29,6 +29,8 @@ const (
 
 	snakeForceBaby  = 1
 	snakeForceAdult = 2
+
+	snakeHitAward = 3
 )
 
 type Command string
@@ -48,6 +50,7 @@ var snakeCommands = map[Command]engine.Direction{
 }
 
 // Snake object
+// ffjson: skip
 type Snake struct {
 	uuid string
 
@@ -316,6 +319,9 @@ func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool
 		if err != nil {
 			return false, errInteractObject(err.Error())
 		}
+		if success {
+			s.feed(snakeHitAward)
+		}
 		return success, nil
 	}
 
@@ -418,6 +424,9 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type snake struct {
 	UUID string       `json:"uuid"`
 	Dots []engine.Dot `json:"dots,omitempty"`

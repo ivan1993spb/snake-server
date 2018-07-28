@@ -36,7 +36,6 @@ func (l Location) Add(dot Dot) Location {
 	return append(newLocation, dot)
 }
 
-// TODO: Remove this method (?)
 // Reverse reverses dot sequence in object
 func (l Location) Reverse() Location {
 	if len(l) > 0 {

@@ -101,3 +101,49 @@ func Test_Area_Navigate_SquareMaxArea255x255(t *testing.T) {
 		require.Equal(t, test.expectedErr, actualErr, fmt.Sprintf("number %d", i))
 	}
 }
+
+func Test_Area_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		area Area
+		json []byte
+	}{
+		{
+			Area{10, 10},
+			[]byte("[10,10]"),
+		},
+		{
+			Area{255, 255},
+			[]byte("[255,255]"),
+		},
+		{
+			Area{0, 0},
+			[]byte("[0,0]"),
+		},
+		{
+			Area{0, 1},
+			[]byte("[0,1]"),
+		},
+		{
+			Area{2, 1},
+			[]byte("[2,1]"),
+		},
+		{
+			Area{255, 1},
+			[]byte("[255,1]"),
+		},
+		{
+			Area{255, 100},
+			[]byte("[255,100]"),
+		},
+		{
+			Area{0, 255},
+			[]byte("[0,255]"),
+		},
+	}
+
+	for i, test := range tests {
+		actualJSON, err := test.area.MarshalJSON()
+		require.Nil(t, err, "test %d", i)
+		require.Equal(t, test.json, actualJSON, "test %d", i)
+	}
+}

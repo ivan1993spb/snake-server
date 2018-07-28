@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	worldEventsChanMainBufferSize  = 1024
-	worldEventsChanProxyBufferSize = 1024
+	worldEventsChanMainBufferSize  = 4096
+	worldEventsChanProxyBufferSize = 4096
 )
 
-const worldEventsSendTimeout = time.Millisecond * 50
+const worldEventsSendTimeout = time.Millisecond
 
 type World struct {
 	pg          *playground.Playground
@@ -23,6 +23,7 @@ type World struct {
 	chsProxyMux *sync.RWMutex
 	stopGlobal  chan struct{}
 	flagStarted bool
+	startedMux  *sync.Mutex
 }
 
 func NewWorld(width, height uint8) (*World, error) {
@@ -37,6 +38,9 @@ func NewWorld(width, height uint8) (*World, error) {
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}),
+
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}, nil
 }
 
@@ -48,6 +52,9 @@ func (w *World) event(event Event) {
 }
 
 func (w *World) Start(stop <-chan struct{}) {
+	w.startedMux.Lock()
+	defer w.startedMux.Unlock()
+
 	if w.flagStarted {
 		return
 	}
@@ -129,7 +136,7 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 			case <-w.stopGlobal:
 				return
 			case event := <-chProxy:
-				w.sendEvent(chOut, event, stop, worldEventsSendTimeout)
+				w.sendEvent(chOut, event, stop)
 			}
 		}
 	}()
@@ -137,49 +144,30 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 	return chOut
 }
 
-func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
-	const tickSize = 5
+func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}) {
+	if event.Type == EventTypeObjectUpdate || event.Type == EventTypeObjectChecked {
+		w.sendEventTimeout(ch, event, stop, worldEventsSendTimeout)
+	} else {
+		w.sendEventStrict(ch, event, stop)
+	}
+}
 
+func (w *World) sendEventStrict(ch chan Event, event Event, stop <-chan struct{}) {
+	select {
+	case ch <- event:
+	case <-w.stopGlobal:
+	case <-stop:
+	}
+}
+
+func (w *World) sendEventTimeout(ch chan Event, event Event, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
-
-	var ticker = time.NewTicker(timeout / tickSize)
-	defer ticker.Stop()
-
-	if cap(ch) == 0 {
-		select {
-		case ch <- event:
-		case <-w.stopGlobal:
-		case <-stop:
-		case <-timer.C:
-		}
-	} else {
-		for {
-			select {
-			case ch <- event:
-				return
-			case <-w.stopGlobal:
-				return
-			case <-stop:
-				return
-			case <-timer.C:
-				return
-			case <-ticker.C:
-				if len(ch) == cap(ch) {
-					select {
-					case <-ch:
-					case ch <- event:
-						return
-					case <-w.stopGlobal:
-						return
-					case <-stop:
-						return
-					case <-timer.C:
-						return
-					}
-				}
-			}
-		}
+	select {
+	case ch <- event:
+	case <-w.stopGlobal:
+	case <-stop:
+	case <-timer.C:
 	}
 }
 

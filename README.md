@@ -25,7 +25,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
+The player controls snake. The task of the game is to grow the biggest snake. In order to grow up players can eat apples, watermelons, snakes and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
 
 ## Installation
 
@@ -33,12 +33,12 @@ You can download server binary, build server from source or pull server docker i
 
 ### Download and install binary
 
-You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases
+You can download binary from releases page: https://github.com/ivan1993spb/snake-server/releases/latest
 
 Or using curl:
 
 * Setup variables *VERSION*, *PLATFORM* (darwin, linux or windows) and *ARCHITECTURE* (386 or amd64)
-* Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} -o snake-server`
+* Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz | tar xvz > snake-server`
 
 Then:
 
@@ -50,9 +50,12 @@ Then:
 
 In order to build snake-server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
 
-Steps to get snake-server:
+Use command `go get -u github.com/ivan1993spb/snake-server` to load latest source code, build and install snake-server to `${GOPATH}/bin`.
 
-* `go get -u github.com/ivan1993spb/snake-server` to load source code
+Or get snake-server of specific version:
+
+* `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+* Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `make`
 * `make install`
@@ -106,7 +109,7 @@ Add game for 5 players with map width 40 dots and height 30 dots:
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
-Now web-socket ready to serve players on url `ws://localhost:8080/ws/games/0`
+Now web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
 
 ## Clients
 
@@ -192,31 +195,6 @@ curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 }
 ```
 
-#### Request `GET /api/capacity`
-
-Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
-
-```
-curl -s -X GET http://localhost:8080/api/capacity | jq
-{
-    "capacity": 0.02
-}
-```
-
-#### Request `GET /api/info`
-
-Request returns common info about server: author, license, version, build.
-
-```
-curl -s -X GET http://localhost:8080/api/info | jq
-{
-    "author": "Ivan Pushkin",
-    "license": "MIT",
-    "version": "v3.1.1-rc",
-    "build": "85b6b0e"
-}
-```
-
 #### Request `POST /api/games/{id}/broadcast`
 
 Request sends message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
@@ -267,6 +245,31 @@ curl -s -X GET http://localhost:8080/api/games/0/objects | jq
 }
 ```
 
+#### Request `GET /api/capacity`
+
+Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
+
+```
+curl -s -X GET http://localhost:8080/api/capacity | jq
+{
+    "capacity": 0.02
+}
+```
+
+#### Request `GET /api/info`
+
+Request returns common info about server: author, license, version, build.
+
+```
+curl -s -X GET http://localhost:8080/api/info | jq
+{
+    "author": "Ivan Pushkin",
+    "license": "MIT",
+    "version": "v3.1.1-rc",
+    "build": "85b6b0e"
+}
+```
+
 ### API errors
 
 API methods returns status codes (400, 404, 500, etc.) with errors in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
@@ -309,7 +312,7 @@ On connection establishing handler:
 * Returns all objects on playground
 * Creates snake
 * Returns snake uuid
-* Pushes game events and objects in output messages
+* Pushes game events and objects to web-socket stream
 
 There are input and output web-socket messages.
 
@@ -320,20 +323,21 @@ Primitives that used to explain game objects:
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
 * Dot list: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
+* Rectangle: `[x, y, width, height]`
 
 ### Game objects
 
 Game objects:
 
-* Apple: `{"type": "apple", "uuid": ... , "dot": [x, y]}`
-* Corpse: `{"type": "corpse", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Snake: `{"type": "snake", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Wall: `{"type": "wall", "uuid": ... , "dots": [[x, y], [x, y], [x, y]]}`
-* Watermelon: `{"type": "watermelon", "uuid": ... , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
+* Apple: `{"type": "apple", "uuid": string , "dot": [x, y]}`
+* Corpse: `{"type": "corpse", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Snake: `{"type": "snake", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Wall: `{"type": "wall", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
+* Watermelon: `{"type": "watermelon", "uuid": string , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
 
 Objects TODO:
 
-* Mouse: `{"type": "mouse", "uuid": ... , dot: [x, y], "dir": "north"}`
+* Mouse: `{"type": "mouse", "uuid": string , dot: [x, y], "dir": "north"}`
 * ...
 
 ### Output messages

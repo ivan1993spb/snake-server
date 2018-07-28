@@ -59,3 +59,6 @@ install:
 
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
+
+go/generate:
+	@go list ./... | grep -v vendor | xargs go generate -v

@@ -1,6 +1,9 @@
 package engine
 
-import "encoding/json"
+import (
+	"bytes"
+	"strconv"
+)
 
 type Rect struct {
 	x uint8
@@ -55,14 +58,21 @@ func (r Rect) Dot(i uint16) Dot {
 	return Dot{uint8(i%uint16(r.w)) + r.x, uint8(i/uint16(r.w)) + r.y}
 }
 
+const rectExpectedSerializedSize = 20
+
 // Implementing json.Marshaler interface
 func (r Rect) MarshalJSON() ([]byte, error) {
-	return json.Marshal([]uint16{
-		uint16(r.x),
-		uint16(r.y),
-		uint16(r.w),
-		uint16(r.h),
-	})
+	buff := bytes.NewBuffer(make([]byte, 0, rectExpectedSerializedSize))
+	buff.WriteByte('[')
+	buff.WriteString(strconv.Itoa(int(r.x)))
+	buff.WriteByte(',')
+	buff.WriteString(strconv.Itoa(int(r.y)))
+	buff.WriteByte(',')
+	buff.WriteString(strconv.Itoa(int(r.w)))
+	buff.WriteByte(',')
+	buff.WriteString(strconv.Itoa(int(r.h)))
+	buff.WriteByte(']')
+	return buff.Bytes(), nil
 }
 
 func (r Rect) Dots() []Dot {

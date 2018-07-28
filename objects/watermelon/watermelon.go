@@ -30,6 +30,7 @@ const watermelonTypeLabel = "watermelon"
 
 const watermelonNutritionalValue = 5
 
+// ffjson: skip
 type Watermelon struct {
 	uuid     string
 	world    *world.World
@@ -115,6 +116,9 @@ func (w *Watermelon) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type watermelon struct {
 	UUID string       `json:"uuid"`
 	Dots []engine.Dot `json:"dots,omitempty"`

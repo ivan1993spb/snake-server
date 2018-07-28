@@ -6,32 +6,37 @@ import (
 )
 
 const (
-	broadcastMainChanBufferSize = 64
-	broadcastChanBufferSize     = 64
-	broadcastSendTimeout        = time.Millisecond * 100
+	broadcastMainChanBufferSize = 128
+	broadcastChanBufferSize     = 128
+
+	broadcastSendTimeout = time.Millisecond
 )
 
-type BroadcastMessage string
+type Message string
 
 type GroupBroadcast struct {
 	chStop chan struct{}
-	chMain chan BroadcastMessage
-	chs    []chan BroadcastMessage
+	chMain chan Message
+	chs    []chan Message
 	chsMux *sync.RWMutex
 
 	flagStarted bool
+	startedMux  *sync.Mutex
 }
 
 func NewGroupBroadcast() *GroupBroadcast {
 	return &GroupBroadcast{
 		chStop: make(chan struct{}),
-		chMain: make(chan BroadcastMessage, broadcastMainChanBufferSize),
-		chs:    make([]chan BroadcastMessage, 0),
+		chMain: make(chan Message, broadcastMainChanBufferSize),
+		chs:    make([]chan Message, 0),
 		chsMux: &sync.RWMutex{},
+
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}
 }
 
-func (gb *GroupBroadcast) BroadcastMessageTimeout(message BroadcastMessage, timeout time.Duration) bool {
+func (gb *GroupBroadcast) BroadcastMessageTimeout(message Message, timeout time.Duration) bool {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
 
@@ -45,7 +50,7 @@ func (gb *GroupBroadcast) BroadcastMessageTimeout(message BroadcastMessage, time
 	return false
 }
 
-func (gb *GroupBroadcast) BroadcastMessage(message BroadcastMessage) {
+func (gb *GroupBroadcast) BroadcastMessage(message Message) {
 	select {
 	case gb.chMain <- message:
 	case <-gb.chStop:
@@ -53,6 +58,9 @@ func (gb *GroupBroadcast) BroadcastMessage(message BroadcastMessage) {
 }
 
 func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
+	gb.startedMux.Lock()
+	defer gb.startedMux.Unlock()
+
 	if gb.flagStarted {
 		return
 	}
@@ -80,7 +88,7 @@ func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
 	}()
 }
 
-func (gb *GroupBroadcast) broadcast(message BroadcastMessage) {
+func (gb *GroupBroadcast) broadcast(message Message) {
 	gb.chsMux.RLock()
 	defer gb.chsMux.RUnlock()
 
@@ -92,8 +100,8 @@ func (gb *GroupBroadcast) broadcast(message BroadcastMessage) {
 	}
 }
 
-func (gb *GroupBroadcast) createChan() chan BroadcastMessage {
-	ch := make(chan BroadcastMessage, broadcastChanBufferSize)
+func (gb *GroupBroadcast) createChan() chan Message {
+	ch := make(chan Message, broadcastChanBufferSize)
 
 	gb.chsMux.Lock()
 	gb.chs = append(gb.chs, ch)
@@ -102,7 +110,7 @@ func (gb *GroupBroadcast) createChan() chan BroadcastMessage {
 	return ch
 }
 
-func (gb *GroupBroadcast) deleteChan(ch chan BroadcastMessage) {
+func (gb *GroupBroadcast) deleteChan(ch chan Message) {
 	go func() {
 		for range ch {
 		}
@@ -119,9 +127,9 @@ func (gb *GroupBroadcast) deleteChan(ch chan BroadcastMessage) {
 	gb.chsMux.Unlock()
 }
 
-func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-chan BroadcastMessage {
+func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-chan Message {
 	ch := gb.createChan()
-	chOut := make(chan BroadcastMessage, buffer)
+	chOut := make(chan Message, buffer)
 
 	go func() {
 		defer close(chOut)
@@ -137,7 +145,7 @@ func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-ch
 				if !ok {
 					return
 				}
-				gb.send(chOut, message, stop, broadcastSendTimeout)
+				gb.sendMessageTimeout(chOut, message, stop, broadcastSendTimeout)
 			}
 		}
 	}()
@@ -145,49 +153,14 @@ func (gb *GroupBroadcast) ListenMessages(stop <-chan struct{}, buffer uint) <-ch
 	return chOut
 }
 
-func (gb *GroupBroadcast) send(ch chan BroadcastMessage, message BroadcastMessage, stop <-chan struct{}, timeout time.Duration) {
-	const tickSize = 5
-
+func (gb *GroupBroadcast) sendMessageTimeout(ch chan Message, message Message, stop <-chan struct{}, timeout time.Duration) {
 	var timer = time.NewTimer(timeout)
 	defer timer.Stop()
-
-	var ticker = time.NewTicker(timeout / tickSize)
-	defer ticker.Stop()
-
-	if cap(ch) == 0 {
-		select {
-		case ch <- message:
-		case <-gb.chStop:
-		case <-stop:
-		case <-timer.C:
-		}
-	} else {
-		for {
-			select {
-			case ch <- message:
-				return
-			case <-gb.chStop:
-				return
-			case <-stop:
-				return
-			case <-timer.C:
-				return
-			case <-ticker.C:
-				if len(ch) == cap(ch) {
-					select {
-					case <-ch:
-					case ch <- message:
-						return
-					case <-stop:
-						return
-					case <-gb.chStop:
-						return
-					case <-timer.C:
-						return
-					}
-				}
-			}
-		}
+	select {
+	case ch <- message:
+	case <-gb.chStop:
+	case <-stop:
+	case <-timer.C:
 	}
 }
 

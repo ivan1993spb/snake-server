@@ -21,6 +21,8 @@ func Test_World_Events(t *testing.T) {
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}, 0),
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}
 
 	stopWorld := make(chan struct{})
@@ -71,6 +73,8 @@ func Test_World_UpdateObject(t *testing.T) {
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}, 0),
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}
 	stop := make(chan struct{})
 	world.Start(stop)

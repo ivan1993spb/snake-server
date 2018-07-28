@@ -17,7 +17,13 @@ func (SnakeObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus
 		for event := range w.Events(stop, chanSnakeObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {
 				if s, ok := event.Payload.(*snake.Snake); ok {
-					if c, err := corpse.NewCorpse(w, s.GetLocation()); err != nil {
+					location := s.GetLocation().Copy()
+					if location.Empty() {
+						logger.Warn("snake dies and returns empty location")
+						continue
+					}
+
+					if c, err := corpse.NewCorpse(w, location); err != nil {
 						logger.WithError(err).Error("cannot create corpse")
 					} else {
 						c.Run(stop, logger)

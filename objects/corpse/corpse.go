@@ -21,6 +21,7 @@ const corpseNutritionalValue uint16 = 2
 const corpseTypeLabel = "corpse"
 
 // Snakes can eat corpses
+// ffjson: skip
 type Corpse struct {
 	uuid     string
 	world    *world.World
@@ -43,8 +44,11 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	}
 
 	corpse := &Corpse{
-		uuid: uuid.Must(uuid.NewV4()).String(),
-		mux:  &sync.RWMutex{},
+		uuid:    uuid.Must(uuid.NewV4()).String(),
+		world:   world,
+		mux:     &sync.RWMutex{},
+		stop:    make(chan struct{}),
+		stopper: &sync.Once{},
 	}
 
 	corpse.mux.Lock()
@@ -62,10 +66,7 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 		return nil, errCreateCorpse("no location located")
 	}
 
-	corpse.world = world
 	corpse.location = location
-	corpse.stop = make(chan struct{})
-	corpse.stopper = &sync.Once{}
 
 	return corpse, nil
 }
@@ -159,6 +160,9 @@ func (c *Corpse) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//go:generate ffjson $GOFILE
+
+// ffjson: nodecoder
 type corpse struct {
 	UUID string          `json:"uuid"`
 	Dots engine.Location `json:"dots,omitempty"`
