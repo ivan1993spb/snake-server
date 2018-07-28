@@ -92,6 +92,7 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 		// On connection error
 	case <-stop:
 		// External stop
+		cw.logger.Warn("stop connection worker from external stopper channel")
 	}
 
 	broadcast.BroadcastMessage("user left your game group")
