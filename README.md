@@ -25,7 +25,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls snake. The task of the game is to grow the biggest snake. In order to do this players can eat apples, watermelons and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
+The player controls snake. The task of the game is to grow the biggest snake. In order to grow up players can eat apples, watermelons, snakes and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
 
 ## Installation
 
@@ -38,7 +38,7 @@ You can download binary from releases page: https://github.com/ivan1993spb/snake
 Or using curl:
 
 * Setup variables *VERSION*, *PLATFORM* (darwin, linux or windows) and *ARCHITECTURE* (386 or amd64)
-* Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} -o snake-server`
+* Use curl to download snake-server binary: `curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz | tar xvz > snake-server`
 
 Then:
 
@@ -50,9 +50,12 @@ Then:
 
 In order to build snake-server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
 
-Steps to get snake-server:
+Use command `go get -u github.com/ivan1993spb/snake-server` to load latest source code, build and install snake-server to `${GOPATH}/bin`.
 
-* `go get -u github.com/ivan1993spb/snake-server` to load source code
+Or get snake-server of specific version:
+
+* `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+* Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `make`
 * `make install`
@@ -320,6 +323,7 @@ Primitives that used to explain game objects:
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
 * Dot list: `[[x, y], [x, y], [x, y], [x, y], [x, y], [x, y]]`
+* Rectangle: `[x, y, width, height]`
 
 ### Game objects
 
