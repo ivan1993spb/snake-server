@@ -29,6 +29,8 @@ const (
 
 	snakeForceBaby  = 1
 	snakeForceAdult = 2
+
+	snakeHitAward = 3
 )
 
 type Command string
@@ -316,6 +318,9 @@ func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool
 		success, err := alive.Hit(dot, s.getForce())
 		if err != nil {
 			return false, errInteractObject(err.Error())
+		}
+		if success {
+			s.feed(snakeHitAward)
 		}
 		return success, nil
 	}
