@@ -91,18 +91,18 @@ var (
 )
 
 func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
+	m.groupsMutex.Lock()
+	defer m.groupsMutex.Unlock()
+
 	if !group.IsEmpty() {
 		return ErrDeleteNotEmptyGroup
 	}
 
-	m.groupsMutex.Lock()
-	defer m.groupsMutex.Unlock()
-
-	m.connsCount -= group.GetLimit()
-
 	for id := range m.groups {
 		if m.groups[id] == group {
 			delete(m.groups, id)
+			m.connsCount -= group.GetLimit()
+
 			return nil
 		}
 	}
