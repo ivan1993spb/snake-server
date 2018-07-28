@@ -23,6 +23,7 @@ type World struct {
 	chsProxyMux *sync.RWMutex
 	stopGlobal  chan struct{}
 	flagStarted bool
+	startedMux  *sync.Mutex
 }
 
 func NewWorld(width, height uint8) (*World, error) {
@@ -37,6 +38,9 @@ func NewWorld(width, height uint8) (*World, error) {
 		chsProxy:    make([]chan Event, 0),
 		chsProxyMux: &sync.RWMutex{},
 		stopGlobal:  make(chan struct{}),
+
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}, nil
 }
 
@@ -48,6 +52,9 @@ func (w *World) event(event Event) {
 }
 
 func (w *World) Start(stop <-chan struct{}) {
+	w.startedMux.Lock()
+	defer w.startedMux.Unlock()
+
 	if w.flagStarted {
 		return
 	}
