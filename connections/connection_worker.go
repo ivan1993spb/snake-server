@@ -19,13 +19,14 @@ const (
 
 	chanMergeBytesBuffer = 8192
 
-	chanReadMessagesBuffer      = 32
-	chanDecodeMessageBuffer     = 32
-	chanProxyInputMessageBuffer = 32
-	chanInputMessagesBuffer     = 32
-	chanSnakeCommandsBuffer     = 32
+	chanReadMessagesBuffer           = 64
+	chanDecodeMessageBuffer          = 64
+	chanProxyInputMessageBuffer      = 64
+	chanInputMessagesSnakeBuffer     = 64
+	chanInputMessagesBroadcastBuffer = 64
+	chanSnakeCommandsBuffer          = 64
 
-	sendInputMessageTimeout  = time.Millisecond
+	sendInputMessageTimeout  = time.Millisecond * 5
 	sendOutputMessageTimeout = time.Millisecond * 25
 )
 
@@ -67,8 +68,8 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputBytes, chStop := cw.read()
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
-	chCommands := cw.listenSnakeCommands(chStop, cw.input(chStop, chanInputMessagesBuffer))
-	cw.listenPlayerBroadcasts(chStop, cw.input(chStop, chanInputMessagesBuffer), broadcast)
+	chCommands := cw.listenSnakeCommands(chStop, cw.input(chStop, chanInputMessagesSnakeBuffer))
+	cw.listenPlayerBroadcasts(chStop, cw.input(chStop, chanInputMessagesBroadcastBuffer), broadcast)
 
 	p := player.NewPlayer(cw.logger, game.World())
 
@@ -250,7 +251,10 @@ func (cw *ConnectionWorker) sendInputMessage(ch chan InputMessage, inputMessage 
 	case ch <- inputMessage:
 	case <-stop:
 	case <-timer.C:
-		cw.logger.Warn("send input message time is out")
+		cw.logger.WithFields(logrus.Fields{
+			"timeout":      timeout,
+			"message_type": inputMessage.Type,
+		}).Warn("send input message to processing: time is out")
 	}
 }
 
