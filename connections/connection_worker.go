@@ -38,6 +38,7 @@ type ConnectionWorker struct {
 	chsInputMux *sync.RWMutex
 
 	flagStarted bool
+	startedMux  *sync.Mutex
 }
 
 func NewConnectionWorker(conn *websocket.Conn, logger logrus.FieldLogger) *ConnectionWorker {
@@ -46,6 +47,9 @@ func NewConnectionWorker(conn *websocket.Conn, logger logrus.FieldLogger) *Conne
 		logger:      logger,
 		chsInput:    make([]chan InputMessage, 0),
 		chsInputMux: &sync.RWMutex{},
+
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}
 }
 
@@ -56,11 +60,13 @@ func (e ErrStartConnectionWorker) Error() string {
 }
 
 func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadcast *broadcast.GroupBroadcast, gamePreparedMessages <-chan *websocket.PreparedMessage) error {
+	cw.startedMux.Lock()
 	if cw.flagStarted {
+		cw.startedMux.Unlock()
 		return ErrStartConnectionWorker("connection worker already started")
 	}
-
 	cw.flagStarted = true
+	cw.startedMux.Unlock()
 
 	broadcast.BroadcastMessage("user joined your game group")
 
