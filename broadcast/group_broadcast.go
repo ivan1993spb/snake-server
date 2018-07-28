@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	broadcastMainChanBufferSize = 64
-	broadcastChanBufferSize     = 64
+	broadcastMainChanBufferSize = 128
+	broadcastChanBufferSize     = 128
 
 	broadcastSendTimeout = time.Millisecond
 )
@@ -21,6 +21,7 @@ type GroupBroadcast struct {
 	chsMux *sync.RWMutex
 
 	flagStarted bool
+	startedMux  *sync.Mutex
 }
 
 func NewGroupBroadcast() *GroupBroadcast {
@@ -29,6 +30,9 @@ func NewGroupBroadcast() *GroupBroadcast {
 		chMain: make(chan Message, broadcastMainChanBufferSize),
 		chs:    make([]chan Message, 0),
 		chsMux: &sync.RWMutex{},
+
+		flagStarted: false,
+		startedMux:  &sync.Mutex{},
 	}
 }
 
@@ -54,6 +58,9 @@ func (gb *GroupBroadcast) BroadcastMessage(message Message) {
 }
 
 func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
+	gb.startedMux.Lock()
+	defer gb.startedMux.Unlock()
+
 	if gb.flagStarted {
 		return
 	}
