@@ -50,7 +50,7 @@ func MustArea(width, height uint8) Area {
 
 func NewUsefulArea(width, height uint8) (Area, error) {
 	if width < minAreaWidth || height < minAreaHeight {
-		return Area{}, errors.New("try to add useless area with extra small size")
+		return Area{}, errors.New("cannot add useless area with extra small size")
 	}
 
 	return Area{
@@ -108,13 +108,13 @@ func (a Area) ContainsLocation(location Location) bool {
 // NewRandomDot generates random dot on area with starting coordinates X and Y
 func (a Area) NewRandomDot(x, y uint8) Dot {
 	return Dot{
-		X: x + uint8(rand.Intn(int(a.width))),
-		Y: y + uint8(rand.Intn(int(a.height))),
+		X: x + uint8(rand.Intn(int(a.width-x))),
+		Y: y + uint8(rand.Intn(int(a.height-y))),
 	}
 }
 
 func (a Area) NewRandomRect(rw, rh, sx, sy uint8) (*Rect, error) {
-	if rw > a.width || rh > a.height {
+	if rw+sx > a.width || rh+sy > a.height {
 		return nil, errors.New("cannot get random rect on square: invalid Width or Height")
 	}
 
@@ -125,12 +125,12 @@ func (a Area) NewRandomRect(rw, rh, sx, sy uint8) (*Rect, error) {
 		h: rh,
 	}
 
-	if a.width-r.w > 0 {
-		r.x = uint8(rand.Intn(int(a.width - r.w)))
+	if a.width-r.w-r.x > 0 {
+		r.x += uint8(rand.Intn(int(a.width - r.w - r.x)))
 	}
 
-	if a.height-r.h > 0 {
-		r.y = uint8(rand.Intn(int(a.height - r.h)))
+	if a.height-r.h-r.y > 0 {
+		r.y += uint8(rand.Intn(int(a.height - r.h - r.y)))
 	}
 
 	return r, nil
