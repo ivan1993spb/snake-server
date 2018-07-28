@@ -16,17 +16,20 @@ import (
 const (
 	chanBroadcastBuffer  = 128
 	chanGameEventsBuffer = 8192
-	chanBytesProxyBuffer = 8192
-	chanBytesOutBuffer   = 8192
 
-	chanEncodeGroupMessageBuffer = 8192
+	chanPreparedMessageProxyBuffer = 8192
+	chanPreparedMessageOutBuffer   = 8192
+
+	chanEncodedOutputMessageBuffer = 8192
 
 	sendPreparedMessageTimeout = time.Millisecond * 50
 
-	broadcastOutputMessageBufferMonitoringDelay = time.Second * 10
-	gameOutputMessageBufferMonitoringDelay      = time.Second * 10
-	encodeGroupMessageBufferMonitoringDelay     = time.Second * 10
-	preparedMessageBufferMonitoringDelay        = time.Second * 10
+	broadcastOutputMessageBufferMonitoringDelay = time.Second * 30
+	gameOutputMessageBufferMonitoringDelay      = time.Second * 30
+	encodedOutputMessageBufferMonitoringDelay   = time.Second * 30
+	preparedMessageBufferMonitoringDelay        = time.Second * 30
+
+	minimalConnectionLimit = 1
 )
 
 type ConnectionGroup struct {
@@ -58,21 +61,21 @@ func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, h
 		return nil, errCreateConnectionGroup(err.Error())
 	}
 
-	if connectionLimit > 0 {
-		return &ConnectionGroup{
-			limit:      connectionLimit,
-			counterMux: &sync.RWMutex{},
-			game:       g,
-			broadcast:  broadcast.NewGroupBroadcast(),
-			logger:     logger,
-			chs:        make([]chan *websocket.PreparedMessage, 0),
-			chsMux:     &sync.RWMutex{},
-			stop:       make(chan struct{}),
-			stopper:    &sync.Once{},
-		}, nil
+	if connectionLimit < minimalConnectionLimit {
+		return nil, errCreateConnectionGroup("invalid connection limit")
 	}
 
-	return nil, errCreateConnectionGroup("invalid connection limit")
+	return &ConnectionGroup{
+		limit:      connectionLimit,
+		counterMux: &sync.RWMutex{},
+		game:       g,
+		broadcast:  broadcast.NewGroupBroadcast(),
+		logger:     logger,
+		chs:        make([]chan *websocket.PreparedMessage, 0),
+		chsMux:     &sync.RWMutex{},
+		stop:       make(chan struct{}),
+		stopper:    &sync.Once{},
+	}, nil
 }
 
 func (cg *ConnectionGroup) GetLimit() int {
@@ -145,7 +148,9 @@ func (cg *ConnectionGroup) Handle(connectionWorker *ConnectionWorker) error {
 	chStopHandle := make(chan struct{})
 	defer close(chStopHandle)
 
-	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, cg.proxyCh(chStopHandle, chanBytesOutBuffer)); err != nil {
+	chout := cg.proxyCh(chStopHandle, chanPreparedMessageOutBuffer)
+
+	if err := connectionWorker.Start(cg.stop, cg.game, cg.broadcast, chout); err != nil {
 		return &ErrHandleConnection{
 			Err: err,
 		}
@@ -214,7 +219,7 @@ func (cg *ConnectionGroup) GetObjects() []interface{} {
 }
 
 func (cg *ConnectionGroup) createChan() chan *websocket.PreparedMessage {
-	ch := make(chan *websocket.PreparedMessage, chanBytesProxyBuffer)
+	ch := make(chan *websocket.PreparedMessage, chanPreparedMessageProxyBuffer)
 
 	cg.chsMux.Lock()
 	cg.chs = append(cg.chs, ch)
@@ -389,7 +394,7 @@ func (cg *ConnectionGroup) listenBroadcast(stop <-chan struct{}, chin <-chan bro
 }
 
 func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMessage) <-chan []byte {
-	chout := make(chan []byte, chanEncodeGroupMessageBuffer)
+	chout := make(chan []byte, chanEncodedOutputMessageBuffer)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(chins))
@@ -398,7 +403,7 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 		go func(i int, chin <-chan OutputMessage) {
 			defer wg.Done()
 
-			ticker := time.NewTicker(encodeGroupMessageBufferMonitoringDelay)
+			ticker := time.NewTicker(encodedOutputMessageBufferMonitoringDelay)
 			defer ticker.Stop()
 
 			var count = 0
@@ -425,8 +430,8 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 				case <-ticker.C:
 					cg.logger.WithFields(logrus.Fields{
 						"buffered_messages": len(chout),
-						"buffer_size":       chanEncodeGroupMessageBuffer,
-						"time_frame":        encodeGroupMessageBufferMonitoringDelay,
+						"buffer_size":       chanEncodedOutputMessageBuffer,
+						"time_frame":        encodedOutputMessageBufferMonitoringDelay,
 						"count":             count,
 						"channel":           i,
 					}).Debug("encoded group messages buffer monitoring")
