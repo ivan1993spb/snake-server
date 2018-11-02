@@ -1,7 +1,7 @@
 
 # Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
-Server for online arcade game - snake.
+Snake-Server is server for online arcade game - snake.
 
 ## Table of contents
 
@@ -10,6 +10,7 @@ Server for online arcade game - snake.
     * [Download and install binary](#download-and-install-binary)
     * [Build and install from source](#build-and-install-from-source)
     * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
+    * [Install server with ansible](#install-server-with-ansible)
 - [CLI arguments](#cli-arguments)
 - [Basic usage](#basic-usage)
 - [Clients](#clients)
@@ -25,7 +26,7 @@ Server for online arcade game - snake.
 
 ## Game rules
 
-The player controls snake. The task of the game is to grow the biggest snake. In order to grow up players can eat apples, watermelons, snakes and the remains of dead snakes of other players. If the snake hits a wall, the snake will die, and the player will start again with small snake. If the snake has grown it can eat the smallest snakes.
+A player control a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, the snake will die, and the player will start again with small snake. Once a snake has grown it may eat the smallest snakes.
 
 ## Installation
 
@@ -42,6 +43,7 @@ Or using curl:
 
 Then:
 
+* Rename binary to `snake-server`: `mv snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} snake-server`
 * Make binary file executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
 * Use `snake-server -h` to see usage information
@@ -57,8 +59,8 @@ Or get snake-server of specific version:
 * `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
-* `make`
-* `make install`
+* `make VERSION=${VERSION} BUILD=custom`
+* `make install VERSION=${VERSION} BUILD=custom`
 
 Then:
 
@@ -81,6 +83,10 @@ Add alias for running snake-server container:
 
 * `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
 * `snake-server --help`
+
+### Install server with ansible
+
+**TODO**
 
 ## CLI arguments
 
@@ -131,151 +137,151 @@ All API methods provide JSON format. If errors occurred methods return HTTP stat
 
 #### Request `POST /api/games`
 
-Request creates game and returns JSON game object.
+Request creates a game and returns JSON game object.
 
 ```
 curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
 {
-    "id": 0,
-    "limit": 3,
-    "count": 0,
-    "width": 100,
-    "height": 100
+  "id": 0,
+  "limit": 3,
+  "count": 0,
+  "width": 100,
+  "height": 100
 }
 ```
 
 #### Request `GET /api/games`
 
-Request returns info about all games on server.
+Request returns an information about all games on server.
 
 ```
 curl -s -X GET http://localhost:8080/api/games | jq
 {
-    "games": [
-        {
-            "id": 1,
-            "limit": 10,
-            "count": 0,
-            "width": 100,
-            "height": 100
-        },
-        {
-            "id": 0,
-            "limit": 10,
-            "count": 0,
-            "width": 100,
-            "height": 100
-        }
-    ],
-    "limit": 100,
-    "count": 2
+  "games": [
+    {
+      "id": 1,
+      "limit": 10,
+      "count": 0,
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": 0,
+      "limit": 10,
+      "count": 0,
+      "width": 100,
+      "height": 100
+    }
+  ],
+  "limit": 100,
+  "count": 2
 }
 ```
 
 #### Request `GET /api/games/{id}`
 
-Request returns information about game by id.
+Request returns an information about a game by id.
 
 ```
 curl -s -X GET http://localhost:8080/api/games/0 | jq
 {
-    "id": 0,
-    "limit": 10,
-    "count": 0,
-    "width": 100,
-    "height": 100
+  "id": 0,
+  "limit": 10,
+  "count": 0,
+  "width": 100,
+  "height": 100
 }
 ```
 
 #### Request `DELETE /api/games/{id}`
 
-Request deletes game by id if there is not players in the game.
+Request deletes a game by id if there is not players in the game.
 
 ```
 curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 {
-    "id": 0
+  "id": 0
 }
 ```
 
 #### Request `POST /api/games/{id}/broadcast`
 
-Request sends message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
+Request sends a message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
 
 ```
 curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
 {
-    "success": true
+  "success": true
 }
 ```
 
 #### Request `GET /api/games/{id}/objects`
 
-Request returns all objects on map of game with passed identifier.
+Request returns all objects on map of a game with passed identifier.
 
 ```
 curl -s -X GET http://localhost:8080/api/games/0/objects | jq
 {
-    "objects": [
-        {
-            "uuid": "066167c0-38eb-424e-82fc-942ded486a84",
-            "dots": [
-                [0, 2],
-                [1, 2],
-                [0, 0],
-                [1, 0],
-                [1, 1],
-                [2, 1]
-            ],
-            "type": "wall"
-        },
-        {
-            "uuid": "e91944bc-f31f-4b43-8a6c-2189db3734e5",
-            "dot": [18, 16],
-            "type": "apple"
-        },
-        {
-            "uuid": "680575ca-5ec0-4071-a495-be107b0fd255",
-            "dots": [
-                [9, 17],
-                [10, 17],
-                [9, 18],
-                [10, 18]
-            ],
-            "type": "watermelon"
-        }
-    ]
+  "objects": [
+    {
+      "uuid": "066167c0-38eb-424e-82fc-942ded486a84",
+      "dots": [
+        [0, 2],
+        [1, 2],
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [2, 1]
+      ],
+      "type": "wall"
+    },
+    {
+      "uuid": "e91944bc-f31f-4b43-8a6c-2189db3734e5",
+      "dot": [18, 16],
+      "type": "apple"
+    },
+    {
+      "uuid": "680575ca-5ec0-4071-a495-be107b0fd255",
+      "dots": [
+        [9, 17],
+        [10, 17],
+        [9, 18],
+        [10, 18]
+      ],
+      "type": "watermelon"
+    }
+  ]
 }
 ```
 
 #### Request `GET /api/capacity`
 
-Request returns server capacity. Capacity is the number of opened web-socket connections divided by the number of allowed connections for server instance.
+Request returns server capacity metric. Capacity is a number of opened web-socket connections divided by the number of allowed connections for server instance.
 
 ```
 curl -s -X GET http://localhost:8080/api/capacity | jq
 {
-    "capacity": 0.02
+  "capacity": 0.02
 }
 ```
 
 #### Request `GET /api/info`
 
-Request returns common info about server: author, license, version, build.
+Request returns common information about a server: author, license, version, build.
 
 ```
 curl -s -X GET http://localhost:8080/api/info | jq
 {
-    "author": "Ivan Pushkin",
-    "license": "MIT",
-    "version": "v3.1.1-rc",
-    "build": "85b6b0e"
+  "author": "Ivan Pushkin",
+  "license": "MIT",
+  "version": "v4.0.0",
+  "build": "85b6b0e"
 }
 ```
 
 ### API errors
 
-API methods returns status codes (400, 404, 500, etc.) with errors in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
+API methods return error status codes (400, 404, 500, etc.) with error destcition in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
 
 Example:
 
@@ -306,22 +312,22 @@ curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 
 ## Game Web-Socket messages description
 
-Request `ws://localhost:8080/ws/games/0` connects to game Web-Socket JSON stream by game identificator.
+Request `ws://localhost:8080/ws/games/0` connects to game Web-Socket JSON stream by a game identificator.
 
-On connection establishing handler:
+When connection has established, handler:
 
-* Initializes game session
-* Returns playground size
+* Initializes a game session
+* Returns a playground size
 * Returns all objects on playground
-* Creates snake
-* Returns snake uuid
+* Creates a snake
+* Returns the snake uuid
 * Pushes game events and objects to web-socket stream
 
 There are input and output web-socket messages.
 
 ### Game primitives
 
-Primitives that used to explain game objects:
+Primitives are used to explain game objects:
 
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
@@ -351,8 +357,8 @@ Output message structure:
 
 ```
 {
-    "type": output_message_type,
-    "payload": output_message_payload
+  "type": output_message_type,
+  "payload": output_message_payload
 }
 ```
 
@@ -366,16 +372,16 @@ Examples:
 
 ```
 {
-    "type": "player",
-    "payload": ...
+  "type": "player",
+  "payload": ...
 }
 {
-    "type": "game",
-    "payload": ...
+  "type": "game",
+  "payload": ...
 }
 {
-    "type": "broadcast",
-    "payload": ...
+  "type": "broadcast",
+  "payload": ...
 }
 ```
 
@@ -385,58 +391,58 @@ Output message type: *game*
 
 Game events types:
 
-* *error* - payload contains **string**: error description
-* *create* - payload contains game object that was created
-* *delete* - payload contains game object that was deleted
-* *update* - payload contains game object that was updated
-* *checked* - payload contains game object that was checked by another game object
+* *error* - a payload contains **string**: error description
+* *create* - a payload contains game object that was created
+* *delete* - a payload contains game object that was deleted
+* *update* - a payload contains game object that was updated
+* *checked* - a payload contains game object that was checked by another game object
 
 Examples:
 
 ```
 {
-    "type": "game",
+  "type": "game",
+  "payload": {
+    "type": "create",
     "payload": {
-        "type": "create",
-        "payload": {
-            "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
-            "dots": [[9, 9], [9, 8], [9, 7]],
-            "type": "snake"
-        }
+      "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+      "dots": [[9, 9], [9, 8], [9, 7]],
+      "type": "snake"
     }
+  }
 }
 {
-    "type": "game",
+  "type": "game",
+  "payload": {
+    "type": "update",
     "payload": {
-        "type": "update",
-        "payload": {
-            "uuid": "a4a82fbe-a3d6-4cfa-9e2e-7d7ac1f949b1",
-            "dots": [[19, 6], [19, 7], [19, 8]],
-            "type": "snake"
-        }
+      "uuid": "a4a82fbe-a3d6-4cfa-9e2e-7d7ac1f949b1",
+      "dots": [[19, 6], [19, 7], [19, 8]],
+      "type": "snake"
     }
+  }
 }
 {
-    "type": "game",
+  "type": "game",
+  "payload": {
+    "type": "checked",
     "payload": {
-        "type": "checked",
-        "payload": {
-            "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
-            "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
-            "type": "corpse"
-        }
+      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
+      "type": "corpse"
     }
+  }
 }
 {
-    "type": "game",
+  "type": "game",
+  "payload": {
+    "type": "update",
     "payload": {
-        "type": "update",
-        "payload": {
-            "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
-            "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
-            "type": "corpse"
-        }
+      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
+      "type": "corpse"
     }
+  }
 }
 ```
 
@@ -446,57 +452,57 @@ Output message type: *player*
 
 Player messages types:
 
-* *size* - payload contains playground size **object**: `{"width":10,"height":10}`
-* *snake* - payload contains **string**: snake identifier
-* *notice* - payload contains **string**: a notification
-* *error* - payload contains **string**: error description
-* *countdown* - payload contains **int**: number of seconds for countdown
-* *objects* - payload contains list of all objects on playground. The message contained objects is needed to initialize the map on client side
+* *size* - a payload contains playground size **object**: `{"width":10,"height":10}`
+* *snake* - a payload contains **string**: snake identifier
+* *notice* - a payload contains **string**: a notification
+* *error* - a payload contains **string**: error description
+* *countdown* - a payload contains **int**: number of seconds for countdown
+* *objects* - a payload contains a list of all objects on the playground. The message contained objects is necessary to initialize the map on client side
 
 Examples:
 
 ```
 {
-    "type": "player",
-    "payload": {
-        "type": "notice",
-        "payload": "welcome to snake-server!"
-    }
+  "type": "player",
+  "payload": {
+    "type": "notice",
+    "payload": "welcome to snake-server!"
+  }
 }
 {
-    "type": "player",
+  "type": "player",
+  "payload": {
+    "type": "size",
     "payload": {
-        "type": "size",
-        "payload": {
-            "width":255,
-            "height":255
-        }
+      "width":255,
+      "height":255
     }
+  }
 }
 {
-    "type": "player",
-    "payload": {
-        "type": "objects",
-        "payload": [
-            {
-                "uuid": "e0d5c710-cdc7-43d5-9c4f-5e1e171c5207",
-                "dot": [17, 18],
-                "type": "apple"
-            },
-            {
-                "uuid": "db7b856c-6f8e-4229-aee6-b90cdc575e0e",
-                "dots": [[24, 24], [25, 24], [26, 24]],
-                "type": "corpse"
-            }
-        ]
-    }
+  "type": "player",
+  "payload": {
+    "type": "objects",
+    "payload": [
+      {
+        "uuid": "e0d5c710-cdc7-43d5-9c4f-5e1e171c5207",
+        "dot": [17, 18],
+        "type": "apple"
+      },
+      {
+        "uuid": "db7b856c-6f8e-4229-aee6-b90cdc575e0e",
+        "dots": [[24, 24], [25, 24], [26, 24]],
+        "type": "corpse"
+      }
+    ]
+  }
 }
 {
-    "type": "player",
-    "payload": {
-        "type": "countdown",
-        "payload": 5
-    }
+  "type": "player",
+  "payload": {
+    "type": "countdown",
+    "payload": 5
+  }
 }
 ```
 
@@ -510,8 +516,8 @@ Example:
 
 ```
 {
-    "type": "broadcast",
-    "payload": "hello world!"
+  "type": "broadcast",
+  "payload": "hello world!"
 }
 ```
 
@@ -523,8 +529,8 @@ Input message structure:
 
 ```
 {
-    "type": input_message_type,
-    "payload": input_message_payload
+  "type": input_message_type,
+  "payload": input_message_payload
 }
 ```
 
@@ -550,37 +556,37 @@ Examples:
 
 ```
 {
-    "type": "snake",
-    "payload": "north"
+  "type": "snake",
+  "payload": "north"
 }
 {
-    "type": "snake",
-    "payload": "east"
+  "type": "snake",
+  "payload": "east"
 }
 {
-    "type": "snake",
-    "payload": "south"
+  "type": "snake",
+  "payload": "south"
 }
 {
-    "type": "snake",
-    "payload": "west"
+  "type": "snake",
+  "payload": "west"
 }
 ```
 
 #### Broadcast input message
 
-Broadcast input message contains short message to send to all players in game.
+A broadcast input message contains a short message to be sent to all players in a game.
 
 Examples:
 
 ```
 {
-    "type": "broadcast",
-    "payload": "hello!"
+  "type": "broadcast",
+  "payload": "hello!"
 }
 {
-    "type": "broadcast",
-    "payload": ";)"
+  "type": "broadcast",
+  "payload": ";)"
 }
 ```
 
