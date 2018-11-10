@@ -10,7 +10,7 @@ Snake-Server is server for online arcade game - snake.
     * [Download and install binary](#download-and-install-binary)
     * [Build and install from source](#build-and-install-from-source)
     * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
-    * [Install server with ansible](#install-server-with-ansible)
+    * [Install server with ansible](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
 - [Basic usage](#basic-usage)
 - [Clients](#clients)
