@@ -26,7 +26,7 @@ Snake-Server is server for online arcade game - snake.
 
 ## Game rules
 
-A player control a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, the snake will die, and the player will start again with small snake. Once a snake has grown it may eat the smallest snakes.
+A player controls a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, the snake will die, and the player will start again with small snake. Once a snake has grown it may eat the smallest snakes.
 
 ## Installation
 
