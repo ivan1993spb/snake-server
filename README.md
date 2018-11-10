@@ -26,7 +26,7 @@ Snake-Server is server for online arcade game - snake.
 
 ## Game rules
 
-A player controls a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, the snake will die, and the player will start again with small snake. Once a snake has grown it may eat the smallest snakes.
+A player controls a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, that snake will die, and the player will start again with new small snake. Once a snake has grown it may eat the smallest snakes.
 
 ## Installation
 
@@ -84,9 +84,13 @@ Add alias for running snake-server container:
 * `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
 * `snake-server --help`
 
-### Install server with ansible
+### Deploy the server with ansible playbook
 
-**TODO**
+Snake's playbook reposytory https://github.com/ivan1993spb/snake-ansible
+
+```
+git clone https://github.com/ivan1993spb/snake-ansible.git
+```
 
 ## CLI arguments
 
