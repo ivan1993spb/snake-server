@@ -86,7 +86,7 @@ Add alias for running snake-server container:
 
 ### Deploy the server with ansible playbook
 
-Snake's playbook reposytory - [here](https://github.com/ivan1993spb/snake-ansible).
+Snake's playbook repository - [here](https://github.com/ivan1993spb/snake-ansible).
 
 ```
 git clone https://github.com/ivan1993spb/snake-ansible.git
