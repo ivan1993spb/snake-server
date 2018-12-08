@@ -9,8 +9,8 @@ Snake-Server is the server for online arcade game - snake.
 - [Installation](#installation)
     * [Download and install binary](#download-and-install-binary)
     * [Build and install latest server](#build-and-install-latest-server)
-    * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
+    * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
 - [Basic usage](#basic-usage)
@@ -53,12 +53,29 @@ Then:
 
 In order to build Snake-Server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
 
-The simpliest way to install the latest Snake-Server is to run go-get command to load source code from master branch, build and install snake-server into `${GOPATH}/bin` directory:
+The simpliest way to install the latest Snake-Server is to run go-get command to load the source code from the master branch, build and install snake-server into `${GOPATH}/bin` directory:
 
 ```
 go get -u github.com/ivan1993spb/snake-server
 snake-server -h
 ```
+
+### Pull server image from docker-hub
+
+Firstly you need installed docker: [use fast installation script](https://get.docker.com/)
+
+See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
+
+Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
+
+* Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
+* `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
+* `docker run --rm ivan1993spb/snake-server -h` for usage information
+
+Add alias for running snake-server container:
+
+* `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
+* `snake-server --help`
 
 ### Build and install server of specific version from source code
 
@@ -68,11 +85,11 @@ You may get Snake-Server source code of specific version by curl command:
 * Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 
-Then there are thee options how to build the server from source:
+Then there are three options how to build the server from sources:
 
 * Build the server binary using Go compiler
 * Build the server binary using Docker
-* Build Docker image
+* Build the Docker image
 
 #### Build the server binary using Go compiler
 
@@ -110,23 +127,6 @@ Then:
 
 * Use `docker run --rm ivan1993spb/snake-server -h` to see the usage information
 * `docker run --rm ivan1993spb/snake-server` to start the server
-
-### Pull server image from docker-hub
-
-Firstly you need installed docker: [use fast installation script](https://get.docker.com/)
-
-See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
-
-Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
-
-* Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
-* `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
-* `docker run --rm ivan1993spb/snake-server -h` for usage information
-
-Add alias for running snake-server container:
-
-* `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
-* `snake-server --help`
 
 ### Deploy the server with ansible playbook
 
