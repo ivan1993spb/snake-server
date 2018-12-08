@@ -28,7 +28,9 @@ const (
 	broadcastOutputMessageBufferMonitoringDelay = time.Second * 30
 	gameOutputMessageBufferMonitoringDelay      = time.Second * 30
 	encodedOutputMessageBufferMonitoringDelay   = time.Second * 30
-	preparedMessageBufferMonitoringDelay        = time.Second * 30
+
+	preparedMessageBufferMonitoringDelaySeconds = 30
+	preparedMessageBufferMonitoringDelay        = time.Second * preparedMessageBufferMonitoringDelaySeconds
 
 	minimalConnectionLimit = 1
 )
@@ -491,7 +493,8 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 					"count":             count,
 				}).Debug("prepared messages buffer monitoring")
 
-				atomic.StoreUint32(&cg.rate, count)
+				// Find rate per second
+				atomic.StoreUint32(&cg.rate, count/preparedMessageBufferMonitoringDelaySeconds)
 
 				count = 0
 			}
