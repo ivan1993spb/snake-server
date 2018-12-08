@@ -283,6 +283,17 @@ curl -s -X GET http://localhost:8080/api/info | jq
 }
 ```
 
+#### Request `GET /api/ping`
+
+Request returns pong response from server.
+
+```
+curl -s -X GET localhost:8080/api/ping | jq
+{
+  "pong": 1
+}
+```
+
 ### API errors
 
 API methods return error status codes (400, 404, 500, etc.) with error destcition in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.

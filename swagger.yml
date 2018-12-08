@@ -223,6 +223,16 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/Error'
+  /ping:
+    get:
+      tags:
+        - Server
+      description: Ping-pong request
+      responses:
+        200:
+          description: Pong response
+          schema:
+            $ref: '#/definitions/Pong'
 
 definitions:
 
@@ -353,3 +363,13 @@ definitions:
         description: List of all game objects on map
         type: array
         items: {}
+
+  Pong:
+    type: object
+    description: Pong message from server
+    required:
+      - pong
+    properties:
+      pong:
+        type: integer
+        format: int32
