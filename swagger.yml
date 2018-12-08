@@ -362,7 +362,8 @@ definitions:
       objects:
         description: List of all game objects on map
         type: array
-        items: {}
+        items:
+          type: object
 
   Pong:
     type: object
