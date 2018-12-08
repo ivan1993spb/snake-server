@@ -2,7 +2,7 @@ swagger: "2.0"
 info:
   title: Snake-Server API
   description: "Snake-Server"
-  version: 4.0.0
+  version: 4.0.1
   license:
     name: MIT
   contact:
@@ -284,6 +284,7 @@ definitions:
       - count
       - width
       - height
+      - rate
     properties:
       id:
         description: Game identificator
@@ -303,6 +304,10 @@ definitions:
         format: int32
       height:
         description: Map height
+        type: integer
+        format: int32
+      rate:
+        description: Game rate
         type: integer
         format: int32
 

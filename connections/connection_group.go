@@ -3,6 +3,7 @@ package connections
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -36,6 +37,8 @@ type ConnectionGroup struct {
 	limit      int
 	counter    int
 	counterMux *sync.RWMutex
+
+	rate uint32
 
 	logger logrus.FieldLogger
 
@@ -459,7 +462,7 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 		ticker := time.NewTicker(preparedMessageBufferMonitoringDelay)
 		defer ticker.Stop()
 
-		var count = 0
+		var count uint32 = 0
 
 		for {
 			select {
@@ -488,6 +491,8 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 					"count":             count,
 				}).Debug("prepared messages buffer monitoring")
 
+				atomic.StoreUint32(&cg.rate, count)
+
 				count = 0
 			}
 		}
@@ -498,4 +503,8 @@ func (cg *ConnectionGroup) prepare(stop <-chan struct{}, chin <-chan []byte) <-c
 
 func (cg *ConnectionGroup) BroadcastMessageTimeout(message string, timeout time.Duration) bool {
 	return cg.broadcast.BroadcastMessageTimeout(broadcast.Message(message), timeout)
+}
+
+func (cg *ConnectionGroup) GetRate() uint32 {
+	return atomic.LoadUint32(&cg.rate)
 }

@@ -194,7 +194,8 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/
   "limit": 3,
   "count": 0,
   "width": 100,
-  "height": 100
+  "height": 100,
+  "rate": 0
 }
 ```
 
@@ -211,14 +212,16 @@ curl -s -X GET http://localhost:8080/api/games | jq
       "limit": 10,
       "count": 0,
       "width": 100,
-      "height": 100
+      "height": 100,
+      "rate": 0
     },
     {
       "id": 0,
       "limit": 10,
       "count": 0,
       "width": 100,
-      "height": 100
+      "height": 100,
+      "rate": 0
     }
   ],
   "limit": 100,
@@ -237,7 +240,8 @@ curl -s -X GET http://localhost:8080/api/games/0 | jq
   "limit": 10,
   "count": 0,
   "width": 100,
-  "height": 100
+  "height": 100,
+  "rate": 0
 }
 ```
 
