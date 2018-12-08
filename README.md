@@ -145,6 +145,7 @@ Arguments:
 * `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
 * `--conns-limit` - **int** - opened web-socket connections limit (default: *1000*)
 * `--groups-limit` - **int** - game groups limit for server (default: *100*)
+* `--enable-broadcast` - **bool** - enable broadcasting API method (default: *false*)
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 * `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
