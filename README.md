@@ -1,14 +1,15 @@
 
 # Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
-Snake-Server is server for online arcade game - snake.
+Snake-Server is the server for online arcade game - snake.
 
 ## Table of contents
 
 - [Game rules](#game-rules)
 - [Installation](#installation)
     * [Download and install binary](#download-and-install-binary)
-    * [Build and install from source](#build-and-install-from-source)
+    * [Build and install latest server](#build-and-install-latest-server)
+    * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
     * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
@@ -30,7 +31,7 @@ A player controls a snake. The task of the game is to grow the biggest snake. In
 
 ## Installation
 
-You can download server binary, build server from source or pull server docker image.
+There are many options to get Snake-Server. You can download server binary, build server from source or pull server docker image. See below.
 
 ### Download and install binary
 
@@ -46,26 +47,69 @@ Then:
 * Rename binary to `snake-server`: `mv snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} snake-server`
 * Make binary file executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
-* Use `snake-server -h` to see usage information
+* Use `snake-server -h` to see the usage information
 
-### Build and install from source
+### Build and install latest server
 
-In order to build snake-server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
+In order to build Snake-Server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
 
-Use command `go get -u github.com/ivan1993spb/snake-server` to load latest source code, build and install snake-server to `${GOPATH}/bin`.
+The simpliest way to install the latest Snake-Server is to run go-get command to load source code from master branch, build and install snake-server into `${GOPATH}/bin` directory:
 
-Or get snake-server of specific version:
+```
+go get -u github.com/ivan1993spb/snake-server
+snake-server -h
+```
+
+### Build and install server of specific version from source code
+
+You may get Snake-Server source code of specific version by curl command:
 
 * `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
 * `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+
+Then there are thee options how to build the server from source:
+
+* Build the server binary using Go compiler
+* Build the server binary using Docker
+* Build Docker image
+
+#### Build the server binary using Go compiler
+
+In order to build Snake-Server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
+
+If you have appropriate Go compiler, use:
+
 * `make VERSION=${VERSION} BUILD=custom`
 * `make install VERSION=${VERSION} BUILD=custom`
 
 Then:
 
-* `snake-server` to start server
-* Use `snake-server -h` to see usage information
+* Use `snake-server -h` to see the usage information
+* `snake-server` to start the server
+
+#### Build the server binary using Docker
+
+If you have Docker, use:
+
+* `make go/build VERSION=${VERSION} BUILD=custom`
+* Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
+
+Then:
+
+* Use `snake-server -h` to see the usage information
+* `snake-server` to start the server
+
+#### Build Docker image
+
+In order to build Snake-Server Docker image you need installed [Docker](https://www.docker.com/) (version 17.05+ is required)
+
+Use command `make docker/build` to build image.
+
+Then:
+
+* Use `docker run --rm ivan1993spb/snake-server -h` to see the usage information
+* `docker run --rm ivan1993spb/snake-server` to start the server
 
 ### Pull server image from docker-hub
 
