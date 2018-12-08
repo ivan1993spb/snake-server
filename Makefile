@@ -19,6 +19,9 @@ ARCHITECTURES=386 amd64
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
 
+DEFAULT_GOOS=linux
+DEFAULT_GOARCH=386
+
 default: build
 
 docker/build:
@@ -40,6 +43,11 @@ go/vet:
 go/test:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
 		sh -c "go list ./... | grep -v vendor | xargs go test -v"
+
+go/build:
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) $(IMAGE_GOLANG) \
+		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
 	$(foreach GOOS, $(PLATFORMS),\
