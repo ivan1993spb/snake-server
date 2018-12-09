@@ -31,7 +31,7 @@ A player controls a snake. The task of the game is to grow the biggest snake. In
 
 ## Installation
 
-There are many options to get Snake-Server. You can download server binary, build server from source or pull server docker image. See below.
+There are many options to get Snake-Server. You can download the server binary, build the server from the source or pull the server docker image. See below.
 
 ### Download and install binary
 
@@ -62,11 +62,11 @@ snake-server -h
 
 ### Pull server image from docker-hub
 
-Firstly you need installed docker: [use fast installation script](https://get.docker.com/)
+Firstly, you need installed docker: [use fast installation script](https://get.docker.com/).
 
-See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
+See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server.
 
-Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
+Choose image tag from the [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/).
 
 * Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
 * `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
@@ -167,7 +167,7 @@ Add game for 5 players with map width 40 dots and height 30 dots:
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
-Now web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
+Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
 
 ## Clients
 
@@ -180,7 +180,7 @@ Some samples you can see here:
 
 ## API description
 
-All API methods provide JSON format. If errors occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
+All API methods provide JSON format. If errors are occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
 
 ### API requests
 
@@ -268,6 +268,8 @@ curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
 }
 ```
 
+If request method is disabled, you will get 404 error. See CLI arguments.
+
 #### Request `GET /api/games/{id}/objects`
 
 Request returns all objects on map of a game with passed identifier.
@@ -309,7 +311,7 @@ curl -s -X GET http://localhost:8080/api/games/0/objects | jq
 
 #### Request `GET /api/capacity`
 
-Request returns server capacity metric. Capacity is a number of opened web-socket connections divided by the number of allowed connections for server instance.
+Request returns the server instance capacity metric. Capacity is the number of opened web-socket connections divided by the number of allowed connections for the server instance.
 
 ```
 curl -s -X GET http://localhost:8080/api/capacity | jq
@@ -320,7 +322,7 @@ curl -s -X GET http://localhost:8080/api/capacity | jq
 
 #### Request `GET /api/info`
 
-Request returns common information about a server: author, license, version, build.
+Request returns the common information about the server: author, license, version, build.
 
 ```
 curl -s -X GET http://localhost:8080/api/info | jq
@@ -334,7 +336,7 @@ curl -s -X GET http://localhost:8080/api/info | jq
 
 #### Request `GET /api/ping`
 
-Request returns pong response from server.
+Request returns pong response from the server.
 
 ```
 curl -s -X GET localhost:8080/api/ping | jq
@@ -345,7 +347,7 @@ curl -s -X GET localhost:8080/api/ping | jq
 
 ### API errors
 
-API methods return error status codes (400, 404, 500, etc.) with error destcition in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
+API methods return error status codes (400, 404, 500, etc.) with error description in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
 
 Example:
 
@@ -376,14 +378,14 @@ curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 
 ## Game Web-Socket messages description
 
-Request `ws://localhost:8080/ws/games/0` connects to game Web-Socket JSON stream by a game identificator.
+The request `ws://localhost:8080/ws/games/0` connects to the game Web-Socket JSON stream by game identificator.
 
 When connection has established, handler:
 
-* Initializes a game session
-* Returns a playground size
+* Initializes the game session
+* Returns the playground size
 * Returns all objects on playground
-* Creates a snake
+* Creates the snake
 * Returns the snake uuid
 * Pushes game events and objects to web-socket stream
 
@@ -391,7 +393,7 @@ There are input and output web-socket messages.
 
 ### Game primitives
 
-Primitives are used to explain game objects:
+To explain game objects there is JSON primitives:
 
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
@@ -415,7 +417,7 @@ Objects TODO:
 
 ### Output messages
 
-Output messages - when server sends to client a data.
+Output messages - when server sends to the client a data.
 
 Output message structure:
 
