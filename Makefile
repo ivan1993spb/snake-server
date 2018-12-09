@@ -9,6 +9,9 @@ IMAGE_GOLANG=golang:1.10-alpine3.7
 
 REPO=github.com/ivan1993spb/snake-server
 
+DEFAULT_GOOS=linux
+DEFAULT_GOARCH=386
+
 BINARY_NAME=snake-server
 VERSION=$(shell git describe --tags --abbrev=0)
 BUILD=$(shell git rev-parse --short HEAD)
@@ -18,9 +21,6 @@ ARCHITECTURES=386 amd64
 
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
-
-DEFAULT_GOOS=linux
-DEFAULT_GOARCH=386
 
 default: build
 
