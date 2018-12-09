@@ -2,7 +2,7 @@ swagger: "2.0"
 info:
   title: Snake-Server API
   description: "Snake-Server"
-  version: 4.0.0
+  version: 4.0.1
   license:
     name: MIT
   contact:
@@ -223,6 +223,16 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/Error'
+  /ping:
+    get:
+      tags:
+        - Server
+      description: Ping-pong request
+      responses:
+        200:
+          description: Pong response
+          schema:
+            $ref: '#/definitions/Pong'
 
 definitions:
 
@@ -274,6 +284,7 @@ definitions:
       - count
       - width
       - height
+      - rate
     properties:
       id:
         description: Game identificator
@@ -293,6 +304,10 @@ definitions:
         format: int32
       height:
         description: Map height
+        type: integer
+        format: int32
+      rate:
+        description: Game rate
         type: integer
         format: int32
 
@@ -352,4 +367,15 @@ definitions:
       objects:
         description: List of all game objects on map
         type: array
-        items: {}
+        items:
+          type: object
+
+  Pong:
+    type: object
+    description: Pong message from server
+    required:
+      - pong
+    properties:
+      pong:
+        type: integer
+        format: int32

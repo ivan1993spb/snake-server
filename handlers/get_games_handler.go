@@ -14,11 +14,12 @@ const URLRouteGetGames = "/games"
 const MethodGetGames = http.MethodGet
 
 type responseGetGamesEntity struct {
-	ID     int `json:"id"`
-	Limit  int `json:"limit"`
-	Count  int `json:"count"`
-	Width  int `json:"width"`
-	Height int `json:"height"`
+	ID     int    `json:"id"`
+	Limit  int    `json:"limit"`
+	Count  int    `json:"count"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+	Rate   uint32 `json:"rate"`
 }
 
 type responseGetGamesHandler struct {
@@ -61,6 +62,7 @@ func (h *getGamesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Count:  group.GetCount(),
 			Width:  int(group.GetWorldWidth()),
 			Height: int(group.GetWorldHeight()),
+			Rate:   group.GetRate(),
 		})
 	}
 

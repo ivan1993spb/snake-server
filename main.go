@@ -46,6 +46,8 @@ var (
 
 	flagJSONLog bool
 	logLevel    string
+
+	enableBroadcast bool
 )
 
 const logName = "api"
@@ -67,6 +69,7 @@ func init() {
 	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
 	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
 	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
+	flag.BoolVar(&enableBroadcast, "enable-broadcast", false, "enable broadcasting API method")
 	flag.Usage = usage
 	flag.Parse()
 }
@@ -113,7 +116,12 @@ func main() {
 		"groups_limit": groupsLimit,
 		"seed":         seed,
 		"log_level":    logLevel,
+		"broadcast":    enableBroadcast,
 	}).Info("preparing to start server")
+
+	if enableBroadcast {
+		logger.Warning("broadcasting API method is enabled!")
+	}
 
 	rand.Seed(seed)
 
@@ -138,8 +146,11 @@ func main() {
 	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
+	if enableBroadcast {
+		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
+	}
 	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
 
 	httpMux := http.NewServeMux()
 

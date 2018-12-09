@@ -9,6 +9,9 @@ IMAGE_GOLANG=golang:1.10-alpine3.7
 
 REPO=github.com/ivan1993spb/snake-server
 
+DEFAULT_GOOS=linux
+DEFAULT_GOARCH=386
+
 BINARY_NAME=snake-server
 VERSION=$(shell git describe --tags --abbrev=0)
 BUILD=$(shell git rev-parse --short HEAD)
@@ -40,6 +43,11 @@ go/vet:
 go/test:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
 		sh -c "go list ./... | grep -v vendor | xargs go test -v"
+
+go/build:
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) $(IMAGE_GOLANG) \
+		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
 	$(foreach GOOS, $(PLATFORMS),\

@@ -1,15 +1,16 @@
 
 # Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
-Snake-Server is server for online arcade game - snake.
+Snake-Server is the server for online arcade game - snake.
 
 ## Table of contents
 
 - [Game rules](#game-rules)
 - [Installation](#installation)
     * [Download and install binary](#download-and-install-binary)
-    * [Build and install from source](#build-and-install-from-source)
+    * [Build and install latest server](#build-and-install-latest-server)
     * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
+    * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
 - [Basic usage](#basic-usage)
@@ -30,7 +31,7 @@ A player controls a snake. The task of the game is to grow the biggest snake. In
 
 ## Installation
 
-You can download server binary, build server from source or pull server docker image.
+There are many options to get Snake-Server. You can download the server binary, build the server from the source or pull the server docker image. See below.
 
 ### Download and install binary
 
@@ -46,34 +47,26 @@ Then:
 * Rename binary to `snake-server`: `mv snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} snake-server`
 * Make binary file executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
-* Use `snake-server -h` to see usage information
+* Use `snake-server -h` to see the usage information
 
-### Build and install from source
+### Build and install latest server
 
-In order to build snake-server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
+In order to build Snake-Server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
 
-Use command `go get -u github.com/ivan1993spb/snake-server` to load latest source code, build and install snake-server to `${GOPATH}/bin`.
+The simpliest way to install the latest Snake-Server is to run go-get command to load the source code from the master branch, build and install snake-server into `${GOPATH}/bin` directory:
 
-Or get snake-server of specific version:
-
-* `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
-* Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
-* `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
-* `make VERSION=${VERSION} BUILD=custom`
-* `make install VERSION=${VERSION} BUILD=custom`
-
-Then:
-
-* `snake-server` to start server
-* Use `snake-server -h` to see usage information
+```
+go get -u github.com/ivan1993spb/snake-server
+snake-server -h
+```
 
 ### Pull server image from docker-hub
 
-Firstly you need installed docker: [use fast installation script](https://get.docker.com/)
+Firstly, you need installed docker: [use fast installation script](https://get.docker.com/).
 
-See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server
+See snake-server docker-hub repository: https://hub.docker.com/r/ivan1993spb/snake-server.
 
-Choose image tag from [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/)
+Choose image tag from the [tags list](https://hub.docker.com/r/ivan1993spb/snake-server/tags/).
 
 * Use `docker pull ivan1993spb/snake-server` to pull server image from docker-hub
 * `docker run --rm --net host --name snake-server ivan1993spb/snake-server` to start server
@@ -83,6 +76,57 @@ Add alias for running snake-server container:
 
 * `alias snake-server="docker run --rm -it --net host --name snake-server ivan1993spb/snake-server:latest"`
 * `snake-server --help`
+
+### Build and install server of specific version from source code
+
+You may get Snake-Server source code of specific version by curl command:
+
+* `mkdir -p ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+* Download and extract source code `curl -sL https://github.com/ivan1993spb/snake-server/archive/${VERSION}.tar.gz | tar xvz --strip 1 -C ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+* `cd ${GOPATH}/src/github.com/ivan1993spb/snake-server`
+
+Then there are three options how to build the server from sources:
+
+* Build the server binary using Go compiler
+* Build the server binary using Docker
+* Build the Docker image
+
+#### Build the server binary using Go compiler
+
+In order to build Snake-Server you need installed [Go compiler](https://golang.org/) (version 1.6+ is required).
+
+If you have appropriate Go compiler, use:
+
+* `make VERSION=${VERSION} BUILD=custom`
+* `make install VERSION=${VERSION} BUILD=custom`
+
+Then:
+
+* Use `snake-server -h` to see the usage information
+* `snake-server` to start the server
+
+#### Build the server binary using Docker
+
+If you have Docker, use:
+
+* `make go/build VERSION=${VERSION} BUILD=custom`
+* Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
+
+Then:
+
+* Use `snake-server -h` to see the usage information
+* `snake-server` to start the server
+
+#### Build Docker image
+
+In order to build Snake-Server Docker image you need installed [Docker](https://www.docker.com/) (version 17.05+ is required)
+
+Use command `make docker/build` to build image.
+
+Then:
+
+* Use `docker run --rm ivan1993spb/snake-server -h` to see the usage information
+* `docker run --rm ivan1993spb/snake-server` to start the server
 
 ### Deploy the server with ansible playbook
 
@@ -101,6 +145,7 @@ Arguments:
 * `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
 * `--conns-limit` - **int** - opened web-socket connections limit (default: *1000*)
 * `--groups-limit` - **int** - game groups limit for server (default: *100*)
+* `--enable-broadcast` - **bool** - enable broadcasting API method (default: *false*)
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 * `--seed` - **int** - random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
@@ -122,7 +167,7 @@ Add game for 5 players with map width 40 dots and height 30 dots:
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
-Now web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
+Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
 
 ## Clients
 
@@ -135,7 +180,7 @@ Some samples you can see here:
 
 ## API description
 
-All API methods provide JSON format. If errors occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
+All API methods provide JSON format. If errors are occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
 
 ### API requests
 
@@ -150,7 +195,8 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/
   "limit": 3,
   "count": 0,
   "width": 100,
-  "height": 100
+  "height": 100,
+  "rate": 0
 }
 ```
 
@@ -167,14 +213,16 @@ curl -s -X GET http://localhost:8080/api/games | jq
       "limit": 10,
       "count": 0,
       "width": 100,
-      "height": 100
+      "height": 100,
+      "rate": 0
     },
     {
       "id": 0,
       "limit": 10,
       "count": 0,
       "width": 100,
-      "height": 100
+      "height": 100,
+      "rate": 0
     }
   ],
   "limit": 100,
@@ -193,7 +241,8 @@ curl -s -X GET http://localhost:8080/api/games/0 | jq
   "limit": 10,
   "count": 0,
   "width": 100,
-  "height": 100
+  "height": 100,
+  "rate": 0
 }
 ```
 
@@ -218,6 +267,8 @@ curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
   "success": true
 }
 ```
+
+If request method is disabled, you will get 404 error. See CLI arguments.
 
 #### Request `GET /api/games/{id}/objects`
 
@@ -260,7 +311,7 @@ curl -s -X GET http://localhost:8080/api/games/0/objects | jq
 
 #### Request `GET /api/capacity`
 
-Request returns server capacity metric. Capacity is a number of opened web-socket connections divided by the number of allowed connections for server instance.
+Request returns the server instance capacity metric. Capacity is the number of opened web-socket connections divided by the number of allowed connections for the server instance.
 
 ```
 curl -s -X GET http://localhost:8080/api/capacity | jq
@@ -271,7 +322,7 @@ curl -s -X GET http://localhost:8080/api/capacity | jq
 
 #### Request `GET /api/info`
 
-Request returns common information about a server: author, license, version, build.
+Request returns the common information about the server: author, license, version, build.
 
 ```
 curl -s -X GET http://localhost:8080/api/info | jq
@@ -283,9 +334,20 @@ curl -s -X GET http://localhost:8080/api/info | jq
 }
 ```
 
+#### Request `GET /api/ping`
+
+Request returns pong response from the server.
+
+```
+curl -s -X GET localhost:8080/api/ping | jq
+{
+  "pong": 1
+}
+```
+
 ### API errors
 
-API methods return error status codes (400, 404, 500, etc.) with error destcition in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
+API methods return error status codes (400, 404, 500, etc.) with error description in JSON format: `{"code": error_code , "text": error_text }`. JSON error structure can contains additional fields.
 
 Example:
 
@@ -316,14 +378,14 @@ curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 
 ## Game Web-Socket messages description
 
-Request `ws://localhost:8080/ws/games/0` connects to game Web-Socket JSON stream by a game identificator.
+The request `ws://localhost:8080/ws/games/0` connects to the game Web-Socket JSON stream by game identificator.
 
 When connection has established, handler:
 
-* Initializes a game session
-* Returns a playground size
+* Initializes the game session
+* Returns the playground size
 * Returns all objects on playground
-* Creates a snake
+* Creates the snake
 * Returns the snake uuid
 * Pushes game events and objects to web-socket stream
 
@@ -331,7 +393,7 @@ There are input and output web-socket messages.
 
 ### Game primitives
 
-Primitives are used to explain game objects:
+To explain game objects there is JSON primitives:
 
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
@@ -355,7 +417,7 @@ Objects TODO:
 
 ### Output messages
 
-Output messages - when server sends to client a data.
+Output messages - when server sends to the client a data.
 
 Output message structure:
 

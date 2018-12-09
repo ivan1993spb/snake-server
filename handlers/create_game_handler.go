@@ -32,11 +32,12 @@ var (
 )
 
 type responseCreateGameHandler struct {
-	ID     int   `json:"id"`
-	Limit  int   `json:"limit"`
-	Count  int   `json:"count"`
-	Width  uint8 `json:"width"`
-	Height uint8 `json:"height"`
+	ID     int    `json:"id"`
+	Limit  int    `json:"limit"`
+	Count  int    `json:"count"`
+	Width  uint8  `json:"width"`
+	Height uint8  `json:"height"`
+	Rate   uint32 `json:"rate"`
 }
 
 type responseCreateGameHandlerError struct {
@@ -168,6 +169,7 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Count:  0,
 		Width:  uint8(mapWidth),
 		Height: uint8(mapHeight),
+		Rate:   0,
 	})
 }
 
