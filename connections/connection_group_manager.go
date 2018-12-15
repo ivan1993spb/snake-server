@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const firstGroupId = 1
+
 type ConnectionGroupManager struct {
 	groups      map[int]*ConnectionGroup
 	groupsMutex *sync.RWMutex
@@ -61,7 +63,7 @@ func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
 	}
 
 	if group.GetLimit() > m.connsLimit-m.connsCount {
-		if m.connsLimit-m.connsCount == 0 {
+		if m.connsLimit-m.connsCount < 1 {
 			return 0, ErrConnsLimitReached
 		}
 		group.SetLimit(m.connsLimit - m.connsCount)
@@ -69,7 +71,7 @@ func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
 
 	m.connsCount += group.GetLimit()
 
-	for id := 0; id <= len(m.groups); id++ {
+	for id := firstGroupId; id <= len(m.groups)+firstGroupId; id++ {
 		if _, occupied := m.groups[id]; !occupied {
 			m.groups[id] = group
 			return id, nil

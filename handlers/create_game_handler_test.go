@@ -47,7 +47,7 @@ func Test_CreateGameHandler_ServeHTTP_CreatesGroup(t *testing.T) {
 	require.Equal(t, http.StatusCreated, recorder.Code)
 
 	require.Len(t, groupManager.Groups(), 1)
-	group, err := groupManager.Get(0)
+	group, err := groupManager.Get(1)
 	require.Nil(t, err)
 	require.NotNil(t, group)
 	require.Equal(t, 10, group.GetLimit())
