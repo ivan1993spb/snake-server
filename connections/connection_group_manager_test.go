@@ -293,3 +293,43 @@ func Test_ConnectionGroupManager_Delete_DeleteNotFoundGroup(t *testing.T) {
 
 	require.Equal(t, ErrDeleteNotFoundGroup, err)
 }
+
+func Test_ConnectionGroupManager_Delete_MethodDeletesGroupSuccessfully(t *testing.T) {
+	const (
+		groupLimit = 10
+		connsLimit = 100
+		groupID    = 2
+	)
+
+	logger, hook := test.NewNullLogger()
+	defer hook.Reset()
+
+	group := &ConnectionGroup{
+		limit:      10,
+		counterMux: &sync.RWMutex{},
+		game:       nil,
+		broadcast:  nil,
+		logger:     logger,
+		chs:        nil,
+		chsMux:     nil,
+		stop:       nil,
+		stopper:    nil,
+	}
+
+	m := &ConnectionGroupManager{
+		groups: map[int]*ConnectionGroup{
+			groupID: group,
+		},
+		groupsMutex: &sync.RWMutex{},
+		groupLimit:  groupLimit,
+		connsLimit:  connsLimit,
+		connsCount:  10,
+		logger:      logger,
+	}
+
+	err := m.Delete(group)
+
+	require.Nil(t, err)
+	require.Zero(t, m.connsCount)
+	require.Empty(t, m.groups)
+}
