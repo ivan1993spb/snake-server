@@ -55,6 +55,12 @@ var (
 )
 
 func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
+	// TODO: Fix method to receive group and required conn limit.
+
+	// TODO: Fix method to return (id int, count int, err error), where
+	// id is group identifier, count is reserved connection count for the
+	// group, and err is error if occurred.
+
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
