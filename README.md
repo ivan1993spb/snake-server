@@ -23,6 +23,7 @@ Snake-Server is the server for online arcade game - snake.
     * [Game objects](#game-objects)
     * [Output messages](#output-messages)
     * [Input messages](#input-messages)
+- [TODO](#todo)
 - [License](#license)
 
 ## Game rules
@@ -410,11 +411,6 @@ Game objects:
 * Wall: `{"type": "wall", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
 * Watermelon: `{"type": "watermelon", "uuid": string , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
 
-Objects TODO:
-
-* Mouse: `{"type": "mouse", "uuid": string , dot: [x, y], "dir": "north"}`
-* ...
-
 ### Output messages
 
 Output messages - when server sends to the client a data.
@@ -655,6 +651,14 @@ Examples:
   "payload": ";)"
 }
 ```
+
+## TODO
+
+* Create more tests.
+* Create an object for mouse: `{"type": "mouse", "uuid": string , dot: [x, y], "dir": "north"}`.
+* Create a core layer to invoke methods from API handlers.
+* Create ffjson to API handlers.
+* Create CLI flag to set up max limit value of gamers in a game.
 
 ## License
 
