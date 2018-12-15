@@ -148,3 +148,59 @@ func Test_ConnectionGroupManager_Add_GetErrConnsLimitReached(t *testing.T) {
 	require.Zero(t, id)
 	require.Equal(t, ErrConnsLimitReached, err)
 }
+
+func Test_ConnectionGroupManager_Add_AddOneGroupGetValidID(t *testing.T) {
+	const groupLimit = 10
+	const connsLimit = 100
+
+	logger, hook := test.NewNullLogger()
+	defer hook.Reset()
+
+	m := &ConnectionGroupManager{
+		groups: map[int]*ConnectionGroup{
+			1: {
+				limit:      10,
+				counterMux: &sync.RWMutex{},
+				game:       nil,
+				broadcast:  nil,
+				logger:     logger,
+				chs:        nil,
+				chsMux:     nil,
+				stop:       nil,
+				stopper:    nil,
+			},
+			2: {
+				limit:      10,
+				counterMux: &sync.RWMutex{},
+				game:       nil,
+				broadcast:  nil,
+				logger:     logger,
+				chs:        nil,
+				chsMux:     nil,
+				stop:       nil,
+				stopper:    nil,
+			},
+		},
+		groupsMutex: &sync.RWMutex{},
+		groupLimit:  groupLimit,
+		connsLimit:  connsLimit,
+		connsCount:  20,
+		logger:      logger,
+	}
+
+	id, err := m.Add(&ConnectionGroup{
+		limit:      10,
+		counterMux: &sync.RWMutex{},
+		game:       nil,
+		broadcast:  nil,
+		logger:     logger,
+		chs:        nil,
+		chsMux:     nil,
+		stop:       nil,
+		stopper:    nil,
+	})
+
+	require.Equal(t, 3, id)
+	require.Equal(t, 30, m.connsCount)
+	require.Nil(t, err)
+}
