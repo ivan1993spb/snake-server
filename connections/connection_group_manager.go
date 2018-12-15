@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const firstGroupId = 1
+
 type ConnectionGroupManager struct {
 	groups      map[int]*ConnectionGroup
 	groupsMutex *sync.RWMutex
@@ -53,6 +55,12 @@ var (
 )
 
 func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
+	// TODO: Fix method to receive group and required conn limit.
+
+	// TODO: Fix method to return (id int, count int, err error), where
+	// id is group identifier, count is reserved connection count for the
+	// group, and err is error if occurred.
+
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
@@ -61,7 +69,7 @@ func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
 	}
 
 	if group.GetLimit() > m.connsLimit-m.connsCount {
-		if m.connsLimit-m.connsCount == 0 {
+		if m.connsLimit-m.connsCount < 1 {
 			return 0, ErrConnsLimitReached
 		}
 		group.SetLimit(m.connsLimit - m.connsCount)
@@ -69,7 +77,7 @@ func (m *ConnectionGroupManager) Add(group *ConnectionGroup) (int, error) {
 
 	m.connsCount += group.GetLimit()
 
-	for id := 0; id <= len(m.groups); id++ {
+	for id := firstGroupId; id <= len(m.groups)+firstGroupId; id++ {
 		if _, occupied := m.groups[id]; !occupied {
 			m.groups[id] = group
 			return id, nil
@@ -91,9 +99,12 @@ var (
 )
 
 func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
+	// TODO: Return (err error, id int).
+
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
+	// TODO: Move that checking in the core module.
 	if !group.IsEmpty() {
 		return ErrDeleteNotEmptyGroup
 	}
