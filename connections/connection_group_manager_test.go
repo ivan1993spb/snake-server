@@ -262,3 +262,34 @@ func Test_ConnectionGroupManager_Add_InsertOneGroupGetValidID(t *testing.T) {
 	require.Equal(t, 30, m.connsCount)
 	require.Nil(t, err)
 }
+
+func Test_ConnectionGroupManager_Delete_DeleteNotFoundGroup(t *testing.T) {
+	const groupLimit = 10
+	const connsLimit = 100
+
+	logger, hook := test.NewNullLogger()
+	defer hook.Reset()
+
+	m := &ConnectionGroupManager{
+		groups:      map[int]*ConnectionGroup{},
+		groupsMutex: &sync.RWMutex{},
+		groupLimit:  groupLimit,
+		connsLimit:  connsLimit,
+		connsCount:  0,
+		logger:      logger,
+	}
+
+	err := m.Delete(&ConnectionGroup{
+		limit:      10,
+		counterMux: &sync.RWMutex{},
+		game:       nil,
+		broadcast:  nil,
+		logger:     logger,
+		chs:        nil,
+		chsMux:     nil,
+		stop:       nil,
+		stopper:    nil,
+	})
+
+	require.Equal(t, ErrDeleteNotFoundGroup, err)
+}
