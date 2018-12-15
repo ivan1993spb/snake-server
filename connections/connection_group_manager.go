@@ -102,6 +102,7 @@ func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
+	// TODO: Move that checking in the core module.
 	if !group.IsEmpty() {
 		return ErrDeleteNotEmptyGroup
 	}
