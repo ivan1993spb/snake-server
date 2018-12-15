@@ -20,6 +20,7 @@ func Test_ConnectionGroupManager_Add_GeneratesValidIDs(t *testing.T) {
 		groupsMutex: &sync.RWMutex{},
 		groupLimit:  groupLimit,
 		connsLimit:  connsLimit,
+		connsCount:  0,
 		logger:      logger,
 	}
 
@@ -35,6 +36,7 @@ func Test_ConnectionGroupManager_Add_GeneratesValidIDs(t *testing.T) {
 			stop:       nil,
 			stopper:    nil,
 		})
+		require.Equal(t, m.connsCount, (1+i)*(connsLimit/groupLimit), "unexpected conns count")
 		require.Equal(t, i+firstGroupId, id, "unexpected group id")
 		require.Nil(t, err, "unexpected error")
 	}
