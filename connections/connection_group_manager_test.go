@@ -333,3 +333,47 @@ func Test_ConnectionGroupManager_Delete_MethodDeletesGroupSuccessfully(t *testin
 	require.Zero(t, m.connsCount)
 	require.Empty(t, m.groups)
 }
+
+func Test_ConnectionGroupManager_GroupCount_ReturnsValidGroupCount(t *testing.T) {
+	const groupLimit = 10
+	const connsLimit = 100
+
+	logger, hook := test.NewNullLogger()
+	defer hook.Reset()
+
+	m := &ConnectionGroupManager{
+		groups: map[int]*ConnectionGroup{
+			1: {
+				limit:      10,
+				counterMux: &sync.RWMutex{},
+				game:       nil,
+				broadcast:  nil,
+				logger:     logger,
+				chs:        nil,
+				chsMux:     nil,
+				stop:       nil,
+				stopper:    nil,
+			},
+			3: {
+				limit:      10,
+				counterMux: &sync.RWMutex{},
+				game:       nil,
+				broadcast:  nil,
+				logger:     logger,
+				chs:        nil,
+				chsMux:     nil,
+				stop:       nil,
+				stopper:    nil,
+			},
+		},
+		groupsMutex: &sync.RWMutex{},
+		groupLimit:  groupLimit,
+		connsLimit:  connsLimit,
+		connsCount:  20,
+		logger:      logger,
+	}
+
+	actualCount := m.GroupCount()
+
+	require.Equal(t, 2, actualCount)
+}
