@@ -99,6 +99,8 @@ var (
 )
 
 func (m *ConnectionGroupManager) Delete(group *ConnectionGroup) error {
+	// TODO: Return (err error, id int).
+
 	m.groupsMutex.Lock()
 	defer m.groupsMutex.Unlock()
 
