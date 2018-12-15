@@ -191,7 +191,7 @@ Request creates a game and returns JSON game object.
 ```
 curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
 {
-  "id": 0,
+  "id": 1,
   "limit": 3,
   "count": 0,
   "width": 100,
@@ -217,7 +217,7 @@ curl -s -X GET http://localhost:8080/api/games | jq
       "rate": 0
     },
     {
-      "id": 0,
+      "id": 2,
       "limit": 10,
       "count": 0,
       "width": 100,
@@ -235,9 +235,9 @@ curl -s -X GET http://localhost:8080/api/games | jq
 Request returns an information about a game by id.
 
 ```
-curl -s -X GET http://localhost:8080/api/games/0 | jq
+curl -s -X GET http://localhost:8080/api/games/1 | jq
 {
-  "id": 0,
+  "id": 1,
   "limit": 10,
   "count": 0,
   "width": 100,
@@ -251,9 +251,9 @@ curl -s -X GET http://localhost:8080/api/games/0 | jq
 Request deletes a game by id if there is not players in the game.
 
 ```
-curl -s -X DELETE http://localhost:8080/api/games/0 | jq
+curl -s -X DELETE http://localhost:8080/api/games/1 | jq
 {
-  "id": 0
+  "id": 1
 }
 ```
 
@@ -262,7 +262,7 @@ curl -s -X DELETE http://localhost:8080/api/games/0 | jq
 Request sends a message to all players in selected game. Returns `true` on success. **Request body size is limited: maximum 128 bytes**
 
 ```
-curl -s -X POST -d message=text http://localhost:8080/api/games/0/broadcast | jq
+curl -s -X POST -d message=text http://localhost:8080/api/games/1/broadcast | jq
 {
   "success": true
 }
@@ -275,7 +275,7 @@ If request method is disabled, you will get 404 error. See CLI arguments.
 Request returns all objects on map of a game with passed identifier.
 
 ```
-curl -s -X GET http://localhost:8080/api/games/0/objects | jq
+curl -s -X GET http://localhost:8080/api/games/1/objects | jq
 {
   "objects": [
     {
@@ -352,7 +352,7 @@ API methods return error status codes (400, 404, 500, etc.) with error descripti
 Example:
 
 ```
-curl -s -X GET http://localhost:8080/api/games/0 -v | jq
+curl -s -X GET http://localhost:8080/api/games/1 -v | jq
 *   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 8080 (#0)
 > GET /api/games/0 HTTP/1.1
@@ -372,13 +372,13 @@ curl -s -X GET http://localhost:8080/api/games/0 -v | jq
 {
   "code": 404,
   "text": "game not found",
-  "id": 0
+  "id": 1
 }
 ```
 
 ## Game Web-Socket messages description
 
-The request `ws://localhost:8080/ws/games/0` connects to the game Web-Socket JSON stream by game identificator.
+The request `ws://localhost:8080/ws/games/1` connects to the game Web-Socket JSON stream by game identificator.
 
 When connection has established, handler:
 
