@@ -112,6 +112,12 @@ func main() {
 	}).Info("welcome to snake-server!")
 
 	logger.WithFields(logrus.Fields{
+		"go_version": runtime.Version(),
+		"go_os":      runtime.GOOS,
+		"go_arch":    runtime.GOARCH,
+	}).Info("golang info")
+
+	logger.WithFields(logrus.Fields{
 		"conns_limit":  connsLimit,
 		"groups_limit": groupsLimit,
 		"seed":         seed,
