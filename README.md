@@ -23,7 +23,6 @@ Snake-Server is the server for online arcade game - snake.
     * [Game objects](#game-objects)
     * [Output messages](#output-messages)
     * [Input messages](#input-messages)
-- [TODO](#todo)
 - [License](#license)
 
 ## Game rules
@@ -56,7 +55,7 @@ In order to build Snake-Server you need installed [Go compiler](https://golang.o
 
 The simpliest way to install the latest Snake-Server is to run go-get command to load the source code from the master branch, build and install snake-server into `${GOPATH}/bin` directory:
 
-```
+```bash
 go get -u github.com/ivan1993spb/snake-server
 snake-server -h
 ```
@@ -133,7 +132,7 @@ Then:
 
 Snake's playbook repository - [here](https://github.com/ivan1993spb/snake-ansible).
 
-```
+```bash
 git clone https://github.com/ivan1993spb/snake-ansible.git
 ```
 
@@ -158,13 +157,13 @@ Arguments:
 
 Start snake-server:
 
-```
+```bash
 snake-server
 ```
 
 Add game for 5 players with map width 40 dots and height 30 dots:
 
-```
+```bash
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
@@ -405,11 +404,46 @@ To explain game objects there is JSON primitives:
 
 Game objects:
 
-* Apple: `{"type": "apple", "uuid": string , "dot": [x, y]}`
-* Corpse: `{"type": "corpse", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
-* Snake: `{"type": "snake", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
-* Wall: `{"type": "wall", "uuid": string , "dots": [[x, y], [x, y], [x, y]]}`
-* Watermelon: `{"type": "watermelon", "uuid": string , "dots": [[x, y], [x, y], [x, y], [x, y]]}`
+* Snake:
+  ```json
+  {
+    "type": "snake",
+    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "dots": [[4, 3], [3, 3], [2, 3]]
+  }
+  ```
+* Apple:
+  ```json
+  {
+    "type": "apple",
+    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "dot": [3, 2]
+  }
+  ```
+* Corpse:
+  ```json
+  {
+    "type": "corpse",
+    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "dots": [[3, 2], [3, 1], [3, 0]]
+  }
+  ```
+* Watermelon:
+  ```json
+  {
+    "type": "watermelon",
+    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "dots": [[4, 4], [4, 5], [5, 4], [5, 5]]
+  }
+  ```
+* Wall:
+  ```json
+  {
+    "type": "wall",
+    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "dots": [[4, 2], [2, 1], [2, 3]]
+  }
+  ```
 
 ### Output messages
 
@@ -461,7 +495,7 @@ Game events types:
 
 Examples:
 
-```
+```json
 {
   "type": "game",
   "payload": {
@@ -523,7 +557,7 @@ Player messages types:
 
 Examples:
 
-```
+```json
 {
   "type": "player",
   "payload": {
@@ -576,7 +610,7 @@ Payload of output message of type *broadcast* contains **string** - a group noti
 
 Example:
 
-```
+```json
 {
   "type": "broadcast",
   "payload": "hello world!"
@@ -616,7 +650,7 @@ Accepted commands:
 
 Examples:
 
-```
+```json
 {
   "type": "snake",
   "payload": "north"
@@ -641,7 +675,7 @@ A broadcast input message contains a short message to be sent to all players in 
 
 Examples:
 
-```
+```json
 {
   "type": "broadcast",
   "payload": "hello!"
@@ -654,11 +688,29 @@ Examples:
 
 ## TODO
 
-* Create more tests.
-* Create an object for mouse: `{"type": "mouse", "uuid": string , dot: [x, y], "dir": "north"}`.
+* Create more tests
+* Create an object for mouse:
+  ```json
+    {
+      "type": "mouse",
+      "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+      "dot": [3, 2],
+      "dir": "north"
+    }
+  ```
 * Create a core layer to invoke methods from API handlers.
 * Create ffjson to API handlers.
 * Create CLI flag to set up max limit value of gamers in a game.
+* Create a queue of the commands to the snake.
+  Create queue in Snake object:
+  ```golang
+  commandQueue chan snake.Command
+  ```
+  Collect and implement commands:
+  ```json
+  ["north", "east", "north", "north", "north", "east"]
+  ```
+* Create embedded lightweight javascript client
 
 ## License
 
