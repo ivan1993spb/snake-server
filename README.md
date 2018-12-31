@@ -691,12 +691,12 @@ Examples:
 * Create more tests
 * Create an object for mouse:
   ```json
-    {
-      "type": "mouse",
-      "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
-      "dot": [3, 2],
-      "dir": "north"
-    }
+  {
+    "type": "mouse",
+    "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+    "dot": [3, 2],
+    "dir": "north"
+  }
   ```
 * Create a core layer to invoke methods from API handlers.
 * Create ffjson to API handlers.
@@ -711,6 +711,7 @@ Examples:
   ["north", "east", "north", "north", "north", "east"]
   ```
 * Create embedded lightweight javascript client
+* Create log message with list of addresses to listen and serve:
 
 ## License
 
