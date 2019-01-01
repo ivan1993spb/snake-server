@@ -161,13 +161,26 @@ Start snake-server:
 snake-server
 ```
 
-Add game for 5 players with map width 40 dots and height 30 dots:
+Add a game for 5 players with map width 40 dots and height 30 dots:
 
 ```bash
 curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
 ```
 
-Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/0`
+Result:
+
+```json
+{
+  "id": 1,
+  "limit": 5,
+  "count": 0,
+  "width": 40,
+  "height": 30,
+  "rate": 0
+}
+```
+
+Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/1`
 
 ## Clients
 
