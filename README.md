@@ -725,6 +725,11 @@ Examples:
   ```
 * Create embedded lightweight javascript client
 * Create log message with list of addresses to listen and serve:
+* Create guarded API with a secret kay (token):
+  For API methods:
+  - Broadcast
+* Create cache N seconds for API method `GET /api/games/{id}/objects`.
+  Use headers to notice client about cache.
 
 ## License
 
