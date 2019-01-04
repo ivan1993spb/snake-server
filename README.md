@@ -729,7 +729,8 @@ Examples:
   For API methods:
   - Broadcast
 * Create cache N seconds for API method `GET /api/games/{id}/objects`.
-  Use headers to notice client about cache.
+  - Use headers to notice client about caching
+  - Create field `time` to returned json object
 
 ## License
 
