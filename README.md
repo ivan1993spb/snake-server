@@ -189,7 +189,6 @@ You are welcome to create your own client using described API.
 Some samples you can see here:
 
 * Python client repo: https://github.com/ivan1993spb/snake-client
-* JS client repo: https://github.com/ivan1993spb/ivan1993spb.github.io
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
 
 ## API description
