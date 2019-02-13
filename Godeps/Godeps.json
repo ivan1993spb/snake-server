@@ -12,6 +12,11 @@
 			"Rev": "ecdeabc65495df2dec95d7c4a4c3e021903035e5"
 		},
 		{
+			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
+			"Comment": "v1.0.0-2-g38087fe",
+			"Rev": "38087fe4dafb822e541b3f7955075cc1c30bd294"
+		},
+		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.4.0-13-gac112f7",
 			"Rev": "ac112f7d75a0714af1bd86ab17749b31f7809640"

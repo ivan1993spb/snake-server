@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 
+	"github.com/ivan1993spb/snake-server/client"
 	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/handlers"
 	"github.com/ivan1993spb/snake-server/middlewares"
@@ -138,6 +139,7 @@ func main() {
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
+	rootRouter.PathPrefix(client.URLRouteClient).Handler(client.NewHandler())
 	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
 
 	// Web-Socket routes
