@@ -13,7 +13,7 @@ import (
 
 const wallTypeLabel = "wall"
 
-const wallMinBreakForce = 1000
+const wallMinBreakForce = 10000
 
 // ffjson: skip
 type Wall struct {
@@ -74,7 +74,7 @@ func (e errWallBreak) Error() string {
 	return "wall break error: " + string(e)
 }
 
-func (w *Wall) Break(dot engine.Dot, force float32) (success bool, err error) {
+func (w *Wall) Break(dot engine.Dot, force float64) (success bool, err error) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 

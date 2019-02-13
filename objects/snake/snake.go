@@ -27,8 +27,7 @@ const (
 
 	snakeMaxInteractionRetries = 5
 
-	snakeForceBaby  = 1
-	snakeForceAdult = 2
+	hitStrengthExp = 2
 
 	snakeHitAward = 3
 )
@@ -161,12 +160,12 @@ func (e errSnakeHit) Error() string {
 	return "snake hit error: " + string(e)
 }
 
-func (s *Snake) Hit(dot engine.Dot, force float32) (success bool, err error) {
+func (s *Snake) Hit(dot engine.Dot, force float64) (success bool, err error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if s.location.Contains(dot) {
-		if force > s.unsafeGetForce() {
+		if force >= math.Pow(s.unsafeGetForce(), hitStrengthExp) {
 			newLocation := s.location.Delete(dot)
 			if err := s.world.UpdateObject(s, s.location, newLocation); err != nil {
 				return false, errSnakeHit(err.Error())
@@ -187,14 +186,11 @@ func (s *Snake) Hit(dot engine.Dot, force float32) (success bool, err error) {
 	return false, errSnakeHit("snake does not contain dot")
 }
 
-func (s *Snake) unsafeGetForce() float32 {
-	if s.length > snakeStartLength {
-		return snakeForceAdult
-	}
-	return snakeForceBaby
+func (s *Snake) unsafeGetForce() float64 {
+	return float64(s.length)
 }
 
-func (s *Snake) getForce() float32 {
+func (s *Snake) getForce() float64 {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return s.unsafeGetForce()
