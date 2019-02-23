@@ -6,6 +6,7 @@ Snake-Server is the server for online arcade game - snake.
 ## Table of contents
 
 - [Game rules](#game-rules)
+- [Basic usage](#basic-usage)
 - [Installation](#installation)
     * [Download and install binary](#download-and-install-binary)
     * [Build and install latest server](#build-and-install-latest-server)
@@ -13,7 +14,6 @@ Snake-Server is the server for online arcade game - snake.
     * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
-- [Basic usage](#basic-usage)
 - [Clients](#clients)
 - [API description](#api-description)
     * [API requests](#api-requests)
@@ -28,6 +28,16 @@ Snake-Server is the server for online arcade game - snake.
 ## Game rules
 
 A player controls a snake. The task of the game is to grow the biggest snake. In order to achieve the goal players may eat apples, watermelons, small snakes and remains of dead snakes of other players. If a snake hits a wall the snake dies and the player starts again with a new small snake. A snake may eat another snake if it's length greater or equal to the square of length of the second one.
+
+## Basic usage
+
+Start snake-server:
+
+```bash
+snake-server --enable-web
+```
+
+Open in a browser http://localhost:8080/.
 
 ## Installation
 
@@ -154,35 +164,6 @@ Arguments:
 * `--tls-enable` - **bool** - flag: enable TLS
 * `--tls-key` - **string** - path to key file
 
-## Basic usage
-
-Start snake-server:
-
-```bash
-snake-server
-```
-
-Add a game for 5 players with map width 40 dots and height 30 dots:
-
-```bash
-curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
-```
-
-Result:
-
-```json
-{
-  "id": 1,
-  "limit": 5,
-  "count": 0,
-  "width": 40,
-  "height": 30,
-  "rate": 0
-}
-```
-
-Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/1`
-
 ## Clients
 
 There is an embedded JavaScript client for the server. You may enable the client using cli flag `--enable-web`.
@@ -284,7 +265,7 @@ curl -s -X POST -d message=text http://localhost:8080/api/games/1/broadcast | jq
 }
 ```
 
-If request method is disabled, you will get 404 error. See CLI arguments.
+If request method is disabled, you will get 404 error. See [CLI arguments](#cli-arguments).
 
 #### Request `GET /api/games/{id}/objects`
 
