@@ -295,7 +295,7 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
 {
   "objects": [
     {
-      "uuid": "066167c0-38eb-424e-82fc-942ded486a84",
+      "id": 99,
       "dots": [
         [0, 2],
         [1, 2],
@@ -307,12 +307,12 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
       "type": "wall"
     },
     {
-      "uuid": "e91944bc-f31f-4b43-8a6c-2189db3734e5",
+      "id": 124,
       "dot": [18, 16],
       "type": "apple"
     },
     {
-      "uuid": "680575ca-5ec0-4071-a495-be107b0fd255",
+      "id": 312,
       "dots": [
         [9, 17],
         [10, 17],
@@ -402,7 +402,7 @@ When connection has established, handler:
 * Returns the playground size
 * Returns all objects on playground
 * Creates the snake
-* Returns the snake uuid
+* Returns the snake identifier
 * Pushes game events and objects to web-socket stream
 
 There are input and output web-socket messages.
@@ -424,7 +424,7 @@ Game objects:
   ```json
   {
     "type": "snake",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 12,
     "dots": [[4, 3], [3, 3], [2, 3]]
   }
   ```
@@ -432,7 +432,7 @@ Game objects:
   ```json
   {
     "type": "apple",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 123,
     "dot": [3, 2]
   }
   ```
@@ -440,7 +440,7 @@ Game objects:
   ```json
   {
     "type": "corpse",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 142,
     "dots": [[3, 2], [3, 1], [3, 0]]
   }
   ```
@@ -448,7 +448,7 @@ Game objects:
   ```json
   {
     "type": "watermelon",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 123,
     "dots": [[4, 4], [4, 5], [5, 4], [5, 5]]
   }
   ```
@@ -456,7 +456,7 @@ Game objects:
   ```json
   {
     "type": "wall",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 351,
     "dots": [[4, 2], [2, 1], [2, 3]]
   }
   ```
@@ -477,7 +477,7 @@ Output message structure:
 Output message can be type of:
 
 * *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of game objects on playground
-* *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
+* *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, the snake identifier, etc.
 * *broadcast* - message payload contains a group broadcast messages. Payload of output message of type *broadcast* contains **string** message
 
 Examples:
@@ -517,7 +517,7 @@ Examples:
   "payload": {
     "type": "create",
     "payload": {
-      "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+      "id": 41,
       "dots": [[9, 9], [9, 8], [9, 7]],
       "type": "snake"
     }
@@ -528,7 +528,7 @@ Examples:
   "payload": {
     "type": "update",
     "payload": {
-      "uuid": "a4a82fbe-a3d6-4cfa-9e2e-7d7ac1f949b1",
+      "id": 123,
       "dots": [[19, 6], [19, 7], [19, 8]],
       "type": "snake"
     }
@@ -539,7 +539,7 @@ Examples:
   "payload": {
     "type": "checked",
     "payload": {
-      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "id": 421,
       "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
       "type": "corpse"
     }
@@ -550,7 +550,7 @@ Examples:
   "payload": {
     "type": "update",
     "payload": {
-      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "id": 142,
       "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
       "type": "corpse"
     }
@@ -597,12 +597,12 @@ Examples:
     "type": "objects",
     "payload": [
       {
-        "uuid": "e0d5c710-cdc7-43d5-9c4f-5e1e171c5207",
+        "id": 21,
         "dot": [17, 18],
         "type": "apple"
       },
       {
-        "uuid": "db7b856c-6f8e-4229-aee6-b90cdc575e0e",
+        "id": 63,
         "dots": [[24, 24], [25, 24], [26, 24]],
         "type": "corpse"
       }
