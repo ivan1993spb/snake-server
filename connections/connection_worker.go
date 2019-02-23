@@ -29,9 +29,9 @@ const (
 	sendInputMessageTimeout  = time.Millisecond * 5
 	sendOutputMessageTimeout = time.Millisecond * 25
 
-	broadcastDelay = time.Second * 30
+	broadcastDelay = time.Second * 15
 
-	ignoredBroadcastsCountToDisconnect = 100
+	ignoredBroadcastsCountToDisconnect = 40
 )
 
 type ConnectionWorker struct {
