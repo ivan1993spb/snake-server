@@ -6,6 +6,7 @@ Snake-Server is the server for online arcade game - snake.
 ## Table of contents
 
 - [Game rules](#game-rules)
+- [Basic usage](#basic-usage)
 - [Installation](#installation)
     * [Download and install binary](#download-and-install-binary)
     * [Build and install latest server](#build-and-install-latest-server)
@@ -13,7 +14,6 @@ Snake-Server is the server for online arcade game - snake.
     * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
     * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
-- [Basic usage](#basic-usage)
 - [Clients](#clients)
 - [API description](#api-description)
     * [API requests](#api-requests)
@@ -27,7 +27,22 @@ Snake-Server is the server for online arcade game - snake.
 
 ## Game rules
 
-A player controls a snake. The task of the game is to grow the biggest snake. In order to do that players may eat apples, watermelons, smallest snakes and remains of dead snakes of other players. If a snake hits a wall, that snake will die, and the player will start again with new small snake. Once a snake has grown it may eat the smallest snakes.
+A player controls a snake. The task of the game is to grow the biggest snake. In order to achieve the goal players may eat apples, watermelons, small snakes and remains of dead snakes of other players. If a snake hits a wall the snake dies and the player starts again with a new small snake. A snake may eat another snake if it's length greater or equal to the square of length of the second one.
+
+## Basic usage
+
+Start snake-server:
+
+* Using binary:
+  ```bash
+  snake-server --enable-web
+  ```
+* Or docker:
+  ```
+  docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
+  ```
+
+Open in a browser http://localhost:8080/.
 
 ## Installation
 
@@ -145,6 +160,7 @@ Arguments:
 * `--address` - **string** - address to serve (default: *:8080*). For example: *:8080*, *localhost:7070*
 * `--conns-limit` - **int** - opened web-socket connections limit (default: *1000*)
 * `--groups-limit` - **int** - game groups limit for server (default: *100*)
+* `--enable-web` - **bool** - enable web client (default: *false*)
 * `--enable-broadcast` - **bool** - enable broadcasting API method (default: *false*)
 * `--log-json` - **bool** - set this flag to use JSON log format (default: *false*)
 * `--log-level` - **string** - set log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
@@ -153,43 +169,16 @@ Arguments:
 * `--tls-enable` - **bool** - flag: enable TLS
 * `--tls-key` - **string** - path to key file
 
-## Basic usage
-
-Start snake-server:
-
-```bash
-snake-server
-```
-
-Add a game for 5 players with map width 40 dots and height 30 dots:
-
-```bash
-curl -s -X POST -d limit=5 -d width=40 -d height=30 http://localhost:8080/api/games
-```
-
-Result:
-
-```json
-{
-  "id": 1,
-  "limit": 5,
-  "count": 0,
-  "width": 40,
-  "height": 30,
-  "rate": 0
-}
-```
-
-Now the web-socket connection handler ready to serve players on url `ws://localhost:8080/ws/games/1`
-
 ## Clients
+
+There is an embedded JavaScript client for the server. You may enable the client using cli flag `--enable-web`.
 
 You are welcome to create your own client using described API.
 
 Some samples you can see here:
 
-* Python client repo: https://github.com/ivan1993spb/snake-client
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
+* Python client repo: https://github.com/ivan1993spb/snake-client
 
 ## API description
 
@@ -281,7 +270,7 @@ curl -s -X POST -d message=text http://localhost:8080/api/games/1/broadcast | jq
 }
 ```
 
-If request method is disabled, you will get 404 error. See CLI arguments.
+If request method is disabled, you will get 404 error. See [CLI arguments](#cli-arguments).
 
 #### Request `GET /api/games/{id}/objects`
 
@@ -292,7 +281,7 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
 {
   "objects": [
     {
-      "uuid": "066167c0-38eb-424e-82fc-942ded486a84",
+      "id": 99,
       "dots": [
         [0, 2],
         [1, 2],
@@ -304,12 +293,12 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
       "type": "wall"
     },
     {
-      "uuid": "e91944bc-f31f-4b43-8a6c-2189db3734e5",
+      "id": 124,
       "dot": [18, 16],
       "type": "apple"
     },
     {
-      "uuid": "680575ca-5ec0-4071-a495-be107b0fd255",
+      "id": 312,
       "dots": [
         [9, 17],
         [10, 17],
@@ -399,7 +388,7 @@ When connection has established, handler:
 * Returns the playground size
 * Returns all objects on playground
 * Creates the snake
-* Returns the snake uuid
+* Returns the snake identifier
 * Pushes game events and objects to web-socket stream
 
 There are input and output web-socket messages.
@@ -421,7 +410,7 @@ Game objects:
   ```json
   {
     "type": "snake",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 12,
     "dots": [[4, 3], [3, 3], [2, 3]]
   }
   ```
@@ -429,7 +418,7 @@ Game objects:
   ```json
   {
     "type": "apple",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 123,
     "dot": [3, 2]
   }
   ```
@@ -437,7 +426,7 @@ Game objects:
   ```json
   {
     "type": "corpse",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 142,
     "dots": [[3, 2], [3, 1], [3, 0]]
   }
   ```
@@ -445,7 +434,7 @@ Game objects:
   ```json
   {
     "type": "watermelon",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 123,
     "dots": [[4, 4], [4, 5], [5, 4], [5, 5]]
   }
   ```
@@ -453,7 +442,7 @@ Game objects:
   ```json
   {
     "type": "wall",
-    "uuid": "a065eabe-101f-48ba-8b23-d8d5ded7957c",
+    "id": 351,
     "dots": [[4, 2], [2, 1], [2, 3]]
   }
   ```
@@ -474,7 +463,7 @@ Output message structure:
 Output message can be type of:
 
 * *game* - message payload contains a game events. Game events has type and payload: `{"type": game_event_type, "payload": game_event_payload}`. Game events contains information about creation, updation, deletion of game objects on playground
-* *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, snake uuid, etc.
+* *player* - message payload contains a player specified info. Player messages has type and payload: `{"type": player_message_type, "payload": player_message_payload}`. Player messages contains user specific game information: user notifications, errors, the snake identifier, etc.
 * *broadcast* - message payload contains a group broadcast messages. Payload of output message of type *broadcast* contains **string** message
 
 Examples:
@@ -514,7 +503,7 @@ Examples:
   "payload": {
     "type": "create",
     "payload": {
-      "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
+      "id": 41,
       "dots": [[9, 9], [9, 8], [9, 7]],
       "type": "snake"
     }
@@ -525,7 +514,7 @@ Examples:
   "payload": {
     "type": "update",
     "payload": {
-      "uuid": "a4a82fbe-a3d6-4cfa-9e2e-7d7ac1f949b1",
+      "id": 123,
       "dots": [[19, 6], [19, 7], [19, 8]],
       "type": "snake"
     }
@@ -536,7 +525,7 @@ Examples:
   "payload": {
     "type": "checked",
     "payload": {
-      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "id": 421,
       "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
       "type": "corpse"
     }
@@ -547,7 +536,7 @@ Examples:
   "payload": {
     "type": "update",
     "payload": {
-      "uuid": "110fd923-8167-4475-a9d5-b8cd41a60f9e",
+      "id": 142,
       "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
       "type": "corpse"
     }
@@ -594,12 +583,12 @@ Examples:
     "type": "objects",
     "payload": [
       {
-        "uuid": "e0d5c710-cdc7-43d5-9c4f-5e1e171c5207",
+        "id": 21,
         "dot": [17, 18],
         "type": "apple"
       },
       {
-        "uuid": "db7b856c-6f8e-4229-aee6-b90cdc575e0e",
+        "id": 63,
         "dots": [[24, 24], [25, 24], [26, 24]],
         "type": "corpse"
       }
@@ -698,39 +687,6 @@ Examples:
   "payload": ";)"
 }
 ```
-
-## TODO
-
-* Create more tests
-* Create an object for mouse:
-  ```json
-  {
-    "type": "mouse",
-    "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
-    "dot": [3, 2],
-    "dir": "north"
-  }
-  ```
-* Create a core layer to invoke methods from API handlers.
-* Create ffjson to API handlers.
-* Create CLI flag to set up max limit value of gamers in a game.
-* Create a queue of the commands to the snake.
-  Create queue in Snake object:
-  ```golang
-  commandQueue chan snake.Command
-  ```
-  Collect and implement commands:
-  ```json
-  ["north", "east", "north", "north", "north", "east"]
-  ```
-* Create embedded lightweight javascript client
-* Create log message with list of addresses to listen and serve:
-* Create guarded API with a secret kay (token):
-  For API methods:
-  - Broadcast
-* Create cache N seconds for API method `GET /api/games/{id}/objects`.
-  - Use headers to notice client about caching
-  - Create field `time` to returned json object
 
 ## License
 

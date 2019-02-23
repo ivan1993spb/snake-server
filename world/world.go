@@ -24,6 +24,8 @@ type World struct {
 	stopGlobal  chan struct{}
 	flagStarted bool
 	startedMux  *sync.Mutex
+
+	identifierRegistry *IdentifierRegistry
 }
 
 func NewWorld(width, height uint8) (*World, error) {
@@ -41,6 +43,8 @@ func NewWorld(width, height uint8) (*World, error) {
 
 		flagStarted: false,
 		startedMux:  &sync.Mutex{},
+
+		identifierRegistry: NewIdentifierRegistry(),
 	}, nil
 }
 
@@ -373,4 +377,12 @@ func (w *World) Height() uint8 {
 
 func (w *World) GetObjects() []interface{} {
 	return w.pg.GetObjects()
+}
+
+func (w *World) ObtainIdentifier() Identifier {
+	return w.identifierRegistry.Obtain()
+}
+
+func (w *World) ReleaseIdentifier(id Identifier) {
+	w.identifierRegistry.Release(id)
 }

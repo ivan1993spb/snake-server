@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pquerna/ffjson/ffjson"
-	"github.com/satori/go.uuid"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -32,7 +31,7 @@ const watermelonNutritionalValue = 5
 
 // ffjson: skip
 type Watermelon struct {
-	uuid     string
+	id       world.Identifier
 	world    *world.World
 	location engine.Location
 	mux      *sync.RWMutex
@@ -46,8 +45,8 @@ func (e ErrCreateWatermelon) Error() string {
 
 func NewWatermelon(world *world.World) (*Watermelon, error) {
 	watermelon := &Watermelon{
-		uuid: uuid.Must(uuid.NewV4()).String(),
-		mux:  &sync.RWMutex{},
+		id:  world.ObtainIdentifier(),
+		mux: &sync.RWMutex{},
 	}
 
 	watermelon.mux.Lock()
@@ -55,6 +54,7 @@ func NewWatermelon(world *world.World) (*Watermelon, error) {
 
 	location, err := world.CreateObjectRandomRect(watermelon, watermelonWidth, watermelonHeight)
 	if err != nil {
+		world.ReleaseIdentifier(watermelon.id)
 		return nil, ErrCreateWatermelon(err.Error())
 	}
 
@@ -94,6 +94,8 @@ func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 			}
 		}
 
+		w.world.ReleaseIdentifier(w.id)
+
 		if err := w.world.DeleteObject(w, w.location); err != nil {
 			return 0, false, errWatermelonBite(err.Error())
 		}
@@ -110,17 +112,17 @@ func (w *Watermelon) MarshalJSON() ([]byte, error) {
 	w.mux.RLock()
 	defer w.mux.RUnlock()
 	return ffjson.Marshal(&watermelon{
-		UUID: w.uuid,
+		ID:   w.id,
 		Dots: w.location,
 		Type: watermelonTypeLabel,
 	})
 }
 
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 // ffjson: nodecoder
 type watermelon struct {
-	UUID string       `json:"uuid"`
-	Dots []engine.Dot `json:"dots,omitempty"`
-	Type string       `json:"type"`
+	ID   world.Identifier `json:"id"`
+	Dots []engine.Dot     `json:"dots,omitempty"`
+	Type string           `json:"type"`
 }

@@ -28,6 +28,10 @@ const (
 
 	sendInputMessageTimeout  = time.Millisecond * 5
 	sendOutputMessageTimeout = time.Millisecond * 25
+
+	broadcastDelay = time.Second * 15
+
+	ignoredBroadcastsCountToDisconnect = 40
 )
 
 type ConnectionWorker struct {
@@ -75,7 +79,7 @@ func (cw *ConnectionWorker) Start(stop <-chan struct{}, game *game.Game, broadca
 	chInputMessages := cw.decode(chInputBytes, chStop)
 	cw.broadcastInputMessage(chInputMessages, chStop)
 	chCommands := cw.listenSnakeCommands(chStop, cw.input(chStop, chanInputMessagesSnakeBuffer))
-	cw.listenPlayerBroadcasts(chStop, cw.input(chStop, chanInputMessagesBroadcastBuffer), broadcast)
+	cw.listenPlayerBroadcasts(chStop, cw.input(chStop, chanInputMessagesBroadcastBuffer), broadcast, broadcastDelay)
 
 	p := player.NewPlayer(cw.logger, game.World())
 
@@ -294,8 +298,13 @@ func (cw *ConnectionWorker) listenSnakeCommands(stop <-chan struct{}, chin <-cha
 	return chout
 }
 
-func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-chan InputMessage, b *broadcast.GroupBroadcast) {
+func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-chan InputMessage, b *broadcast.GroupBroadcast, delay time.Duration) {
 	go func() {
+		var (
+			lastBroadcastTime time.Time
+			ignored           int
+		)
+
 		for {
 			select {
 			case message, ok := <-chin:
@@ -304,7 +313,21 @@ func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-
 				}
 
 				if message.Type == InputMessageTypeBroadcast {
-					b.BroadcastMessage(broadcast.Message(message.Payload))
+					if time.Since(lastBroadcastTime) > delay {
+						b.BroadcastMessage(broadcast.Message(message.Payload))
+						lastBroadcastTime = time.Now()
+						ignored = 0
+					} else {
+						ignored += 1
+						cw.logger.Warn("ignore broadcast: delay")
+
+						if ignored > ignoredBroadcastsCountToDisconnect {
+							cw.logger.Warn("ignored broadcasts limit reached")
+							if err := cw.conn.Close(); err != nil {
+								cw.logger.WithError(err).Error("close connection error")
+							}
+						}
+					}
 				}
 			case <-stop:
 				return

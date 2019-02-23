@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/pquerna/ffjson/ffjson"
-	"github.com/satori/go.uuid"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -15,7 +14,7 @@ const appleTypeLabel = "apple"
 
 // ffjson: skip
 type Apple struct {
-	uuid  string
+	id    world.Identifier
 	world *world.World
 	dot   engine.Dot
 	mux   *sync.RWMutex
@@ -32,8 +31,8 @@ func (e errCreateApple) Error() string {
 // NewApple creates and locates new apple
 func NewApple(world *world.World) (*Apple, error) {
 	apple := &Apple{
-		uuid: uuid.Must(uuid.NewV4()).String(),
-		mux:  &sync.RWMutex{},
+		id:  world.ObtainIdentifier(),
+		mux: &sync.RWMutex{},
 	}
 
 	apple.mux.Lock()
@@ -41,10 +40,14 @@ func NewApple(world *world.World) (*Apple, error) {
 
 	location, err := world.CreateObjectRandomDot(apple)
 	if err != nil {
+		world.ReleaseIdentifier(apple.id)
+
 		return nil, errCreateApple(err.Error())
 	}
 
 	if location.Empty() {
+		world.ReleaseIdentifier(apple.id)
+
 		if err := world.DeleteObject(apple, location); err != nil {
 			return nil, errCreateApple("no location located and cannot delete apple")
 		}
@@ -74,6 +77,7 @@ func (a *Apple) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	defer a.mux.RUnlock()
 
 	if a.dot.Equals(dot) {
+		a.world.ReleaseIdentifier(a.id)
 		if err := a.world.DeleteObject(a, engine.Location{a.dot}); err != nil {
 			return 0, false, errAppleBite(err.Error())
 		}
@@ -87,17 +91,17 @@ func (a *Apple) MarshalJSON() ([]byte, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	return ffjson.Marshal(&apple{
-		UUID: a.uuid,
+		ID:   a.id,
 		Dot:  a.dot,
 		Type: appleTypeLabel,
 	})
 }
 
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 // ffjson: nodecoder
 type apple struct {
-	UUID string     `json:"uuid"`
-	Dot  engine.Dot `json:"dot"`
-	Type string     `json:"type"`
+	ID   world.Identifier `json:"id"`
+	Dot  engine.Dot       `json:"dot"`
+	Type string           `json:"type"`
 }

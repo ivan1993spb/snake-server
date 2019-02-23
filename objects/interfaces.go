@@ -13,12 +13,12 @@ type Food interface {
 type Alive interface {
 	// Hits object on dot dot with force force and returns success flag - true
 	// if dot free and error err if error occurred
-	Hit(dot engine.Dot, force float32) (success bool, err error)
+	Hit(dot engine.Dot, force float64) (success bool, err error)
 }
 
 // Object interface describes methods that must be implemented all not alive objects
 type Object interface {
 	// Breaks object on dot dot with force force, returns success flag true if dot
 	// free and error err if error occurred
-	Break(dot engine.Dot, force float32) (success bool, err error)
+	Break(dot engine.Dot, force float64) (success bool, err error)
 }

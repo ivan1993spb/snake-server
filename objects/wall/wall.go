@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/pquerna/ffjson/ffjson"
-	"github.com/satori/go.uuid"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -13,11 +12,11 @@ import (
 
 const wallTypeLabel = "wall"
 
-const wallMinBreakForce = 1000
+const wallMinBreakForce = 10000
 
 // ffjson: skip
 type Wall struct {
-	uuid     string
+	id       world.Identifier
 	world    *world.World
 	location engine.Location
 	mux      *sync.RWMutex
@@ -31,13 +30,14 @@ func (e ErrCreateWall) Error() string {
 
 func NewWall(world *world.World, dm *engine.DotsMask) (*Wall, error) {
 	wall := &Wall{
-		uuid:  uuid.Must(uuid.NewV4()).String(),
+		id:    world.ObtainIdentifier(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
 
 	location, err := world.CreateObjectRandomByDotsMask(wall, dm)
 	if err != nil {
+		world.ReleaseIdentifier(wall.id)
 		return nil, ErrCreateWall(err.Error())
 	}
 
@@ -50,7 +50,7 @@ func NewWall(world *world.World, dm *engine.DotsMask) (*Wall, error) {
 
 func NewWallLocation(world *world.World, location engine.Location) (*Wall, error) {
 	wall := &Wall{
-		uuid:  uuid.Must(uuid.NewV4()).String(),
+		id:    world.ObtainIdentifier(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
@@ -60,6 +60,7 @@ func NewWallLocation(world *world.World, location engine.Location) (*Wall, error
 
 	location, err := world.CreateObjectAvailableDots(wall, location)
 	if err != nil {
+		world.ReleaseIdentifier(wall.id)
 		return nil, ErrCreateWall(err.Error())
 	}
 
@@ -74,7 +75,7 @@ func (e errWallBreak) Error() string {
 	return "wall break error: " + string(e)
 }
 
-func (w *Wall) Break(dot engine.Dot, force float32) (success bool, err error) {
+func (w *Wall) Break(dot engine.Dot, force float64) (success bool, err error) {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
@@ -92,6 +93,8 @@ func (w *Wall) Break(dot engine.Dot, force float32) (success bool, err error) {
 				w.location = location
 			}
 		} else {
+			w.world.ReleaseIdentifier(w.id)
+
 			if err := w.world.DeleteObject(w, w.location); err != nil {
 				return false, errWallBreak(err.Error())
 			}
@@ -115,17 +118,17 @@ func (w *Wall) MarshalJSON() ([]byte, error) {
 	w.mux.RLock()
 	defer w.mux.RUnlock()
 	return ffjson.Marshal(&wall{
-		UUID: w.uuid,
+		ID:   w.id,
 		Dots: w.location,
 		Type: wallTypeLabel,
 	})
 }
 
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 // ffjson: nodecoder
 type wall struct {
-	UUID string          `json:"uuid"`
-	Dots engine.Location `json:"dots,omitempty"`
-	Type string          `json:"type"`
+	ID   world.Identifier `json:"id"`
+	Dots engine.Location  `json:"dots,omitempty"`
+	Type string           `json:"type"`
 }

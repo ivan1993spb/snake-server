@@ -1,15 +1,11 @@
 language: go
 sudo: false
 go:
-  - 1.6.0
-  - 1.7.0
-  - 1.8.0
-  - 1.9.0
-  - 1.10.0
-  - 1.11.0
+  - 1.11.x
 env:
   global:
     - GOARCH=amd64
 script:
-  - go list ./... | grep -v vendor | xargs go vet
+  # TODO: Create lint
+  #- go list ./... | grep -v vendor | xargs go vet
   - go list ./... | grep -v vendor | xargs go test -v
