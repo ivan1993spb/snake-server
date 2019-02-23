@@ -33,9 +33,14 @@ A player controls a snake. The task of the game is to grow the biggest snake. In
 
 Start snake-server:
 
-```bash
-snake-server --enable-web
-```
+* Using binary:
+  ```bash
+  snake-server --enable-web
+  ```
+* Or docker:
+  ```
+  docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
+  ```
 
 Open in a browser http://localhost:8080/.
 
