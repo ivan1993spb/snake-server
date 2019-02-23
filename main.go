@@ -49,6 +49,8 @@ var (
 	logLevel    string
 
 	enableBroadcast bool
+
+	enableWeb bool
 )
 
 const logName = "api"
@@ -71,6 +73,7 @@ func init() {
 	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
 	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
 	flag.BoolVar(&enableBroadcast, "enable-broadcast", false, "enable broadcasting API method")
+	flag.BoolVar(&enableWeb, "enable-web", false, "enable web client")
 	flag.Usage = usage
 	flag.Parse()
 }
@@ -124,6 +127,7 @@ func main() {
 		"seed":         seed,
 		"log_level":    logLevel,
 		"broadcast":    enableBroadcast,
+		"web":          enableWeb,
 	}).Info("preparing to start server")
 
 	if enableBroadcast {
@@ -138,8 +142,12 @@ func main() {
 	}
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
-	rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
-	rootRouter.PathPrefix(client.URLRouteClient).Handler(client.NewHandler())
+	if enableWeb {
+		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
+		rootRouter.PathPrefix(client.URLRouteClient).Handler(client.NewHandler())
+	} else {
+		rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
+	}
 	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
 
 	// Web-Socket routes
