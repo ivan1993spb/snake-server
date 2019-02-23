@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pquerna/ffjson/ffjson"
-	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -23,7 +22,7 @@ const corpseTypeLabel = "corpse"
 // Snakes can eat corpses
 // ffjson: skip
 type Corpse struct {
-	uuid     string
+	id       world.Identifier
 	world    *world.World
 	location engine.Location
 	mux      *sync.RWMutex
@@ -44,7 +43,7 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 	}
 
 	corpse := &Corpse{
-		uuid:    uuid.Must(uuid.NewV4()).String(),
+		id:      world.ObtainIdentifier(),
 		world:   world,
 		mux:     &sync.RWMutex{},
 		stop:    make(chan struct{}),
@@ -56,10 +55,12 @@ func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
 
 	location, err := world.CreateObjectAvailableDots(corpse, location)
 	if err != nil {
+		world.ReleaseIdentifier(corpse.id)
 		return nil, errCreateCorpse(err.Error())
 	}
 
 	if location.Empty() {
+		world.ReleaseIdentifier(corpse.id)
 		if err := world.DeleteObject(corpse, location); err != nil {
 			return nil, errCreateCorpse("no location located and cannot delete corpse")
 		}
@@ -105,6 +106,7 @@ func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 
 		c.stopper.Do(func() {
 			close(c.stop)
+			c.world.ReleaseIdentifier(c.id)
 			err = c.world.DeleteObject(c, c.location)
 		})
 
@@ -134,6 +136,7 @@ func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 
 			c.stopper.Do(func() {
 				close(c.stop)
+				c.world.ReleaseIdentifier(c.id)
 				err = c.world.DeleteObject(c, c.location)
 			})
 
@@ -154,17 +157,17 @@ func (c *Corpse) MarshalJSON() ([]byte, error) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 	return ffjson.Marshal(&corpse{
-		UUID: c.uuid,
+		ID:   c.id,
 		Dots: c.location,
 		Type: corpseTypeLabel,
 	})
 }
 
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 // ffjson: nodecoder
 type corpse struct {
-	UUID string          `json:"uuid"`
-	Dots engine.Location `json:"dots,omitempty"`
-	Type string          `json:"type"`
+	ID   world.Identifier `json:"id"`
+	Dots engine.Location  `json:"dots,omitempty"`
+	Type string           `json:"type"`
 }

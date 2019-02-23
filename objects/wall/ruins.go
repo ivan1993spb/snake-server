@@ -3,8 +3,6 @@ package wall
 import (
 	"sync"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
 )
@@ -70,7 +68,7 @@ func NewWallRuins(world *world.World) (*Wall, error) {
 	}
 
 	wall := &Wall{
-		uuid:  uuid.Must(uuid.NewV4()).String(),
+		id:    world.ObtainIdentifier(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
@@ -79,6 +77,7 @@ func NewWallRuins(world *world.World) (*Wall, error) {
 	defer wall.mux.Unlock()
 
 	if resultLocation, err := world.CreateObjectAvailableDots(wall, wallLocation); err != nil {
+		world.ReleaseIdentifier(wall.id)
 		return nil, ErrCreateWallRuins(err.Error())
 	} else {
 		wall.location = resultLocation

@@ -1,6 +1,8 @@
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 package player
+
+import "github.com/ivan1993spb/snake-server/world"
 
 type MessageType uint8
 
@@ -67,12 +69,12 @@ func NewMessageSize(w, h uint8) Message {
 	}
 }
 
-type MessageSnake string
+type MessageSnake world.Identifier
 
-func NewMessageSnake(uuid string) Message {
+func NewMessageSnake(id world.Identifier) Message {
 	return Message{
 		Type:    MessageTypeSnake,
-		Payload: MessageSnake(uuid),
+		Payload: MessageSnake(id),
 	}
 }
 

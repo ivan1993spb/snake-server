@@ -72,7 +72,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 			}
 			snakeStop := s.Run(localStopper, p.logger)
 
-			chout <- NewMessageSnake(s.GetUUID())
+			chout <- NewMessageSnake(s.GetID())
 
 			wg.Add(1)
 			go func() {

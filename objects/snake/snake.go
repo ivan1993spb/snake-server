@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pquerna/ffjson/ffjson"
-	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -51,7 +50,7 @@ var snakeCommands = map[Command]engine.Direction{
 // Snake object
 // ffjson: skip
 type Snake struct {
-	uuid string
+	id world.Identifier
 
 	world *world.World
 
@@ -69,7 +68,7 @@ type Snake struct {
 // NewSnake creates new snake
 func NewSnake(world *world.World) (*Snake, error) {
 	snake := &Snake{
-		uuid:      uuid.Must(uuid.NewV4()).String(),
+		id:        world.ObtainIdentifier(),
 		world:     world,
 		location:  make(engine.Location, snakeStartLength),
 		length:    snakeStartLength,
@@ -80,6 +79,7 @@ func NewSnake(world *world.World) (*Snake, error) {
 	}
 
 	if err := snake.initLocate(); err != nil {
+		world.ReleaseIdentifier(snake.id)
 		return nil, fmt.Errorf("cannot create snake: %s", err)
 	}
 
@@ -121,10 +121,10 @@ func (s *Snake) initLocate() error {
 	return nil
 }
 
-func (s *Snake) GetUUID() string {
+func (s *Snake) GetID() world.Identifier {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return s.uuid
+	return s.id
 }
 
 func (s *Snake) String() string {
@@ -136,6 +136,8 @@ func (s *Snake) String() string {
 func (s *Snake) die() error {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
+
+	s.world.ReleaseIdentifier(s.id)
 
 	if err := s.world.DeleteObject(s, s.location); err != nil {
 		return fmt.Errorf("die snake error: %s", err)
@@ -198,7 +200,7 @@ func (s *Snake) getForce() float64 {
 
 func (s *Snake) Run(stop <-chan struct{}, logger logrus.FieldLogger) <-chan struct{} {
 	snakeStop := make(chan struct{})
-	logger = logger.WithField("uuid", s.uuid)
+	logger = logger.WithField("id", s.id)
 
 	go func() {
 		var ticker = time.NewTicker(s.calculateDelay())
@@ -414,17 +416,17 @@ func (s *Snake) MarshalJSON() ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return ffjson.Marshal(&snake{
-		UUID: s.uuid,
+		ID:   s.id,
 		Dots: s.location,
 		Type: snakeTypeLabel,
 	})
 }
 
-//go:generate ffjson $GOFILE
+//go:generate ffjson -force-regenerate $GOFILE
 
 // ffjson: nodecoder
 type snake struct {
-	UUID string       `json:"uuid"`
-	Dots []engine.Dot `json:"dots,omitempty"`
-	Type string       `json:"type"`
+	ID   world.Identifier `json:"id"`
+	Dots []engine.Dot     `json:"dots,omitempty"`
+	Type string           `json:"type"`
 }
