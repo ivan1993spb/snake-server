@@ -1,5 +1,4 @@
-// Use command for bindata generation:
-// go-bindata-assetfs -nometadata -pkg client -o ./client/bindata.go client/dist/...
+//go:generate go-bindata-assetfs -nometadata -pkg client dist/...
 
 package client
 
@@ -10,18 +9,18 @@ import (
 	"github.com/elazarl/go-bindata-assetfs"
 )
 
-const pathToClient = "client/dist"
+const pathToClient = "dist"
 
 func adjustPath(path string) string {
 	return strings.TrimPrefix(path, URLRouteClient)
 }
 
-type assetFS struct {
+type relativeAssetFS struct {
 	assetFS *assetfs.AssetFS
 }
 
-func newAssetFS() *assetFS {
-	return &assetFS{
+func newAssetFS() *relativeAssetFS {
+	return &relativeAssetFS{
 		assetFS: &assetfs.AssetFS{
 			Asset:     Asset,
 			AssetDir:  AssetDir,
@@ -31,6 +30,6 @@ func newAssetFS() *assetFS {
 	}
 }
 
-func (fs *assetFS) Open(name string) (http.File, error) {
+func (fs *relativeAssetFS) Open(name string) (http.File, error) {
 	return fs.assetFS.Open(adjustPath(name))
 }
