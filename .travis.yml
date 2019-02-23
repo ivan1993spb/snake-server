@@ -6,5 +6,6 @@ env:
   global:
     - GOARCH=amd64
 script:
-  - go list ./... | grep -v vendor | xargs go vet
+  # TODO: Create lint
+  #- go list ./... | grep -v vendor | xargs go vet
   - go list ./... | grep -v vendor | xargs go test -v
