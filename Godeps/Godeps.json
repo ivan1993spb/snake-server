@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/ivan1993spb/snake-server",
 	"GoVersion": "go1.8",
-	"GodepVersion": "v79",
+	"GodepVersion": "v80",
 	"Packages": [
 		"./..."
 	],
@@ -51,11 +51,6 @@
 			"ImportPath": "github.com/rs/cors",
 			"Comment": "v1.4.0-1-g694cf2a",
 			"Rev": "694cf2ad010fcf91ee35161f5bfdad8f42ed1b9a"
-		},
-		{
-			"ImportPath": "github.com/satori/go.uuid",
-			"Comment": "v1.2.0-4-g36e9d2e",
-			"Rev": "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 		},
 		{
 			"ImportPath": "github.com/sirupsen/logrus",
