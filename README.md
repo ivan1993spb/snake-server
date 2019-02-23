@@ -185,12 +185,14 @@ Now the web-socket connection handler ready to serve players on url `ws://localh
 
 ## Clients
 
+There is an embedded JavaScript client for the server. You may enable the client using cli flag `--enable-web`.
+
 You are welcome to create your own client using described API.
 
 Some samples you can see here:
 
-* Python client repo: https://github.com/ivan1993spb/snake-client
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
+* Python client repo: https://github.com/ivan1993spb/snake-client
 
 ## API description
 
@@ -703,15 +705,6 @@ Examples:
 ## TODO
 
 * Create more tests
-* Create an object for mouse:
-  ```json
-  {
-    "type": "mouse",
-    "uuid": "b065eade-101f-48ba-8b23-d8d5ded7957c",
-    "dot": [3, 2],
-    "dir": "north"
-  }
-  ```
 * Create a core layer to invoke methods from API handlers.
 * Create ffjson to API handlers.
 * Create CLI flag to set up max limit value of gamers in a game.
@@ -724,14 +717,10 @@ Examples:
   ```json
   ["north", "east", "north", "north", "north", "east"]
   ```
-* Create embedded lightweight javascript client
 * Create log message with list of addresses to listen and serve:
 * Create guarded API with a secret kay (token):
   For API methods:
   - Broadcast
-* Create cache N seconds for API method `GET /api/games/{id}/objects`.
-  - Use headers to notice client about caching
-  - Create field `time` to returned json object
 
 ## License
 
