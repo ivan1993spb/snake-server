@@ -702,26 +702,6 @@ Examples:
 }
 ```
 
-## TODO
-
-* Create more tests
-* Create a core layer to invoke methods from API handlers.
-* Create ffjson to API handlers.
-* Create CLI flag to set up max limit value of gamers in a game.
-* Create a queue of the commands to the snake.
-  Create queue in Snake object:
-  ```golang
-  commandQueue chan snake.Command
-  ```
-  Collect and implement commands:
-  ```json
-  ["north", "east", "north", "north", "north", "east"]
-  ```
-* Create log message with list of addresses to listen and serve:
-* Create guarded API with a secret kay (token):
-  For API methods:
-  - Broadcast
-
 ## License
 
 See [LICENSE](LICENSE).
