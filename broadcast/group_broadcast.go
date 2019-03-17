@@ -66,26 +66,30 @@ func (gb *GroupBroadcast) Start(stop <-chan struct{}) {
 	}
 	gb.flagStarted = true
 
-	go func() {
-		select {
-		case <-stop:
-		}
-		gb.stop()
-	}()
+	go gb.listenStopChan(stop)
 
-	go func() {
-		for {
-			select {
-			case message, ok := <-gb.chMain:
-				if !ok {
-					return
-				}
-				gb.broadcast(message)
-			case <-gb.chStop:
+	go gb.listenBroadcastMessage()
+}
+
+func (gb *GroupBroadcast) listenBroadcastMessage() {
+	for {
+		select {
+		case message, ok := <-gb.chMain:
+			if !ok {
 				return
 			}
+			gb.broadcast(message)
+		case <-gb.chStop:
+			return
 		}
-	}()
+	}
+}
+
+func (gb *GroupBroadcast) listenStopChan(stop <-chan struct{}) {
+	select {
+	case <-stop:
+	}
+	gb.stop()
 }
 
 func (gb *GroupBroadcast) broadcast(message Message) {
