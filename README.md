@@ -33,7 +33,7 @@ Snake-Server is the server for online arcade game - snake.
 * If a snake hits a wall the snake dies and the player starts again with a new small snake.
 * A snake may eat another snake if it's length greater or equal to the square of length of the second one.
 
-Screenshot:
+Demo:
 
 ![Client screenshot](demo.gif)
 
