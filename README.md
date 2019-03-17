@@ -35,7 +35,7 @@ Snake-Server is the server for online arcade game - snake.
 
 Screenshot:
 
-![Client screenshot](screenshot-client.png)
+![Client screenshot](demo.gif)
 
 ## Basic usage
 
