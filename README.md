@@ -192,7 +192,7 @@ Some samples you can see here:
 
 All API methods provide JSON format. If errors are occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
 
-Use header `X-Snake-Client` to specify client version and build hash. For example:
+Use header `X-Snake-Client` to specify client name, version and build hash. For example:
 
 ```
 X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
