@@ -12,7 +12,9 @@ import (
 
 const chanWatermelonObserverEventsBuffer = 64
 
-const addWatermelonDelay = time.Minute
+const addWatermelonDelay = time.Second * 15
+
+const addWatermelonsDuringTickLimit = 2
 
 const oneWatermelonArea = 200
 
@@ -50,11 +52,14 @@ func (WatermelonObserver) Observe(stop <-chan struct{}, w *world.World, logger l
 		for {
 			select {
 			case <-ticker.C:
-				for atomic.LoadInt32(&watermelonCount) < maxWatermelonCount {
+				var watermelonsAddedDuringTick = 0
+
+				for atomic.LoadInt32(&watermelonCount) < maxWatermelonCount && watermelonsAddedDuringTick < addWatermelonsDuringTickLimit {
 					if _, err := watermelon.NewWatermelon(w); err != nil {
 						logger.WithError(err).Error("cannot create watermelon")
 					} else {
 						atomic.AddInt32(&watermelonCount, 1)
+						watermelonsAddedDuringTick++
 					}
 				}
 			case <-stop:
