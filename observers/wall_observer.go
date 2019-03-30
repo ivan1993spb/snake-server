@@ -1,6 +1,8 @@
 package observers
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -28,13 +30,12 @@ var ruins = []*engine.DotsMask{
 	engine.DotsMaskBigHome,
 }
 
-func calcRuinsCount(size uint16) uint16 {
-	return uint16(float32(size) * ruinsFactor)
-}
-
 type WallObserver struct {
 	world  world.Interface
 	logger logrus.FieldLogger
+	area   engine.Area
+
+	ruinsCount uint16
 }
 
 func NewWallObserver(w world.Interface, logger logrus.FieldLogger) Observer {
@@ -45,43 +46,72 @@ func NewWallObserver(w world.Interface, logger logrus.FieldLogger) Observer {
 }
 
 func (wo *WallObserver) Observe(stop <-chan struct{}) {
-	go func() {
-		area, err := engine.NewArea(wo.world.Width(), wo.world.Height())
-		if err != nil {
-			wo.logger.WithError(err).Error("cannot create area in wall observer")
-			return
+	go wo.run(stop)
+}
+
+func (wo *WallObserver) run(stop <-chan struct{}) {
+	if err := wo.init(); err != nil {
+		wo.logger.WithError(err).Error("error in wall observer")
+		return
+	}
+
+	wo.addWalls()
+}
+
+func (wo *WallObserver) init() error {
+	area, err := engine.NewArea(wo.world.Width(), wo.world.Height())
+	if err != nil {
+		return fmt.Errorf("cannot create area: %s", err)
+	}
+
+	wo.area = area
+	wo.ruinsCount = wo.calcRuinsCount(wo.area.Size())
+
+	return nil
+}
+
+func (wo *WallObserver) calcRuinsCount(size uint16) uint16 {
+	return uint16(float32(size) * ruinsFactor)
+}
+
+func (wo *WallObserver) addWalls() {
+	var counter uint16
+
+	for counter < wo.ruinsCount {
+		for i := 0; i < len(ruins); i++ {
+			// Pass one of the ruins and maximum dots count to occupy by new wall
+			counter += wo.addWallFromMask(ruins[i], wo.ruinsCount-counter)
 		}
+	}
+}
 
-		size := area.Size()
-		ruinsCount := calcRuinsCount(size)
-		var counter uint16
+func (wo *WallObserver) addWallFromMask(mask *engine.DotsMask, dotsLimit uint16) (dotsResult uint16) {
+	mask = mask.TurnRandom()
 
-		for counter < ruinsCount {
-			for i := 0; i < len(ruins); i++ {
-				mask := ruins[i].TurnRandom()
+	if wo.area.Width() < mask.Width() || wo.area.Height() < mask.Height() {
+		return
+	}
 
-				if area.Width() >= mask.Width() && area.Height() >= mask.Height() {
-					rect, err := area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
-					if err != nil {
-						continue
-					}
+	rect, err := wo.area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
+	if err != nil {
+		return
+	}
 
-					location := mask.Location(rect.X(), rect.Y())
-					if location.DotCount() > ruinsCount-counter {
-						location = location[:ruinsCount-counter]
-					}
+	location := mask.Location(rect.X(), rect.Y())
+	if location.DotCount() > dotsLimit {
+		location = location[:dotsLimit]
+	}
 
-					if wo.world.LocationOccupied(location) {
-						continue
-					}
+	if wo.world.LocationOccupied(location) {
+		return
+	}
 
-					if _, err := wall.NewWallLocation(wo.world, location); err != nil {
-						wo.logger.WithError(err).Error("error on wall creation")
-					} else {
-						counter += location.DotCount()
-					}
-				}
-			}
-		}
-	}()
+	if _, err := wall.NewWallLocation(wo.world, location); err != nil {
+		wo.logger.WithError(err).Error("error on wall creation")
+		return
+	}
+
+	dotsResult = location.DotCount()
+
+	return
 }
