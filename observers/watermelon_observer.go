@@ -40,8 +40,9 @@ func (wo *WatermelonObserver) Observe(stop <-chan struct{}) {
 func (wo *WatermelonObserver) run(stop <-chan struct{}) {
 	wo.init()
 
-	go wo.listen(stop)
 	go wo.schedule(stop)
+
+	wo.listen(stop)
 }
 
 func (wo *WatermelonObserver) init() {
