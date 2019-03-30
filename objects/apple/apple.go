@@ -15,7 +15,7 @@ const appleTypeLabel = "apple"
 // ffjson: skip
 type Apple struct {
 	id    world.Identifier
-	world *world.World
+	world world.Interface
 	dot   engine.Dot
 	mux   *sync.RWMutex
 }
@@ -29,7 +29,7 @@ func (e errCreateApple) Error() string {
 }
 
 // NewApple creates and locates new apple
-func NewApple(world *world.World) (*Apple, error) {
+func NewApple(world world.Interface) (*Apple, error) {
 	apple := &Apple{
 		id:  world.ObtainIdentifier(),
 		mux: &sync.RWMutex{},

@@ -37,7 +37,7 @@ func (e ErrCreateWallRuins) Error() string {
 	return "cannot create wall ruins: " + string(e)
 }
 
-func NewWallRuins(world *world.World) (*Wall, error) {
+func NewWallRuins(world world.Interface) (*Wall, error) {
 	area, err := engine.NewArea(world.Width(), world.Height())
 	if err != nil {
 		return nil, ErrCreateWallRuins(err.Error())

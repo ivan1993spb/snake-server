@@ -17,11 +17,11 @@ const chanMessageBuffer = 128
 const chanErrorBuffer = 32
 
 type Player struct {
-	world  *world.World
+	world  world.Interface
 	logger logrus.FieldLogger
 }
 
-func NewPlayer(logger logrus.FieldLogger, world *world.World) *Player {
+func NewPlayer(logger logrus.FieldLogger, world world.Interface) *Player {
 	return &Player{
 		logger: logger,
 		world:  world,

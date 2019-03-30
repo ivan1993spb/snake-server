@@ -17,7 +17,7 @@ const wallMinBreakForce = 10000
 // ffjson: skip
 type Wall struct {
 	id       world.Identifier
-	world    *world.World
+	world    world.Interface
 	location engine.Location
 	mux      *sync.RWMutex
 }
@@ -28,7 +28,7 @@ func (e ErrCreateWall) Error() string {
 	return "cannot create wall: " + string(e)
 }
 
-func NewWall(world *world.World, dm *engine.DotsMask) (*Wall, error) {
+func NewWall(world world.Interface, dm *engine.DotsMask) (*Wall, error) {
 	wall := &Wall{
 		id:    world.ObtainIdentifier(),
 		world: world,
@@ -48,7 +48,7 @@ func NewWall(world *world.World, dm *engine.DotsMask) (*Wall, error) {
 	return wall, nil
 }
 
-func NewWallLocation(world *world.World, location engine.Location) (*Wall, error) {
+func NewWallLocation(world world.Interface, location engine.Location) (*Wall, error) {
 	wall := &Wall{
 		id:    world.ObtainIdentifier(),
 		world: world,

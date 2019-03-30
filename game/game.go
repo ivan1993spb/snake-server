@@ -10,7 +10,7 @@ import (
 )
 
 type Game struct {
-	world  *world.World
+	world  world.Interface
 	logger logrus.FieldLogger
 }
 
@@ -44,7 +44,7 @@ func (g *Game) Start(stop <-chan struct{}) {
 	observers.WatermelonObserver{}.Observe(stop, g.world, g.logger)
 }
 
-func (g *Game) World() *world.World {
+func (g *Game) World() world.Interface {
 	return g.world
 }
 

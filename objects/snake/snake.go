@@ -52,7 +52,7 @@ var snakeCommands = map[Command]engine.Direction{
 type Snake struct {
 	id world.Identifier
 
-	world *world.World
+	world world.Interface
 
 	location engine.Location
 	length   uint16
@@ -66,7 +66,7 @@ type Snake struct {
 }
 
 // NewSnake creates new snake
-func NewSnake(world *world.World) (*Snake, error) {
+func NewSnake(world world.Interface) (*Snake, error) {
 	snake := &Snake{
 		id:        world.ObtainIdentifier(),
 		world:     world,

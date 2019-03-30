@@ -10,7 +10,7 @@ const chanLoggerObserverEventsBuffer = 64
 
 type LoggerObserver struct{}
 
-func (LoggerObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+func (LoggerObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
 	go func() {
 		for event := range w.Events(stop, chanLoggerObserverEventsBuffer) {
 			switch event.Type {

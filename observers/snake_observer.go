@@ -12,7 +12,7 @@ const chanSnakeObserverEventsBuffer = 64
 
 type SnakeObserver struct{}
 
-func (SnakeObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+func (SnakeObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
 	go func() {
 		for event := range w.Events(stop, chanSnakeObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {

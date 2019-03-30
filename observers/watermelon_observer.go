@@ -20,7 +20,7 @@ const oneWatermelonArea = 200
 
 type WatermelonObserver struct{}
 
-func (WatermelonObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+func (WatermelonObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
 	var size = int32(w.Size())
 	var maxWatermelonCount = size / oneWatermelonArea
 

@@ -34,7 +34,7 @@ func calcRuinsCount(size uint16) uint16 {
 
 type WallObserver struct{}
 
-func (WallObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+func (WallObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
 	go func() {
 		area, err := engine.NewArea(w.Width(), w.Height())
 		if err != nil {

@@ -32,7 +32,7 @@ const watermelonNutritionalValue = 5
 // ffjson: skip
 type Watermelon struct {
 	id       world.Identifier
-	world    *world.World
+	world    world.Interface
 	location engine.Location
 	mux      *sync.RWMutex
 }
@@ -43,7 +43,7 @@ func (e ErrCreateWatermelon) Error() string {
 	return "cannot create watermelon: " + string(e)
 }
 
-func NewWatermelon(world *world.World) (*Watermelon, error) {
+func NewWatermelon(world world.Interface) (*Watermelon, error) {
 	watermelon := &Watermelon{
 		id:  world.ObtainIdentifier(),
 		mux: &sync.RWMutex{},

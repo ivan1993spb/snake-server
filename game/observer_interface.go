@@ -7,5 +7,5 @@ import (
 )
 
 type ObserverInterface interface {
-	Observe(stop <-chan struct{}, world *world.World, logger logrus.FieldLogger)
+	Observe(stop <-chan struct{}, world world.Interface, logger logrus.FieldLogger)
 }

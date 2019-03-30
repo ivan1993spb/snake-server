@@ -15,7 +15,7 @@ const oneAppleArea = 50
 
 type AppleObserver struct{}
 
-func (AppleObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
+func (AppleObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
 	go func() {
 		appleCount := defaultAppleCount
 		size := w.Size()
