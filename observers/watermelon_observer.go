@@ -40,9 +40,11 @@ func (wo *WatermelonObserver) Observe(stop <-chan struct{}) {
 func (wo *WatermelonObserver) run(stop <-chan struct{}) {
 	wo.init()
 
-	go wo.schedule(stop)
+	if wo.maxWatermelonCount > 0 {
+		go wo.schedule(stop)
 
-	wo.listen(stop)
+		wo.listen(stop)
+	}
 }
 
 func (wo *WatermelonObserver) init() {
