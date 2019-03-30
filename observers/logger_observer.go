@@ -8,18 +8,28 @@ import (
 
 const chanLoggerObserverEventsBuffer = 64
 
-type LoggerObserver struct{}
+type LoggerObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (LoggerObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
+func NewLoggerObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &LoggerObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (lo *LoggerObserver) Observe(stop <-chan struct{}) {
 	go func() {
-		for event := range w.Events(stop, chanLoggerObserverEventsBuffer) {
+		for event := range lo.world.Events(stop, chanLoggerObserverEventsBuffer) {
 			switch event.Type {
 			case world.EventTypeError:
 				if err, ok := event.Payload.(error); ok {
-					logger.WithError(err).Error("world error")
+					lo.logger.WithError(err).Error("world error")
 				}
 			case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
-				logger.WithFields(logrus.Fields{
+				lo.logger.WithFields(logrus.Fields{
 					"payload": event.Payload,
 					"type":    event.Type,
 				}).Debug("world event")

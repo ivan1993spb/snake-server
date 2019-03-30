@@ -10,23 +10,33 @@ import (
 
 const chanSnakeObserverEventsBuffer = 64
 
-type SnakeObserver struct{}
+type SnakeObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (SnakeObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
+func NewSnakeObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &SnakeObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (so *SnakeObserver) Observe(stop <-chan struct{}) {
 	go func() {
-		for event := range w.Events(stop, chanSnakeObserverEventsBuffer) {
+		for event := range so.world.Events(stop, chanSnakeObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {
 				if s, ok := event.Payload.(*snake.Snake); ok {
 					location := s.GetLocation().Copy()
 					if location.Empty() {
-						logger.Warn("snake dies and returns empty location")
+						so.logger.Warn("snake dies and returns empty location")
 						continue
 					}
 
-					if c, err := corpse.NewCorpse(w, location); err != nil {
-						logger.WithError(err).Error("cannot create corpse")
+					if c, err := corpse.NewCorpse(so.world, location); err != nil {
+						so.logger.WithError(err).Error("cannot create corpse")
 					} else {
-						c.Run(stop, logger)
+						c.Run(stop, so.logger)
 					}
 				}
 			}

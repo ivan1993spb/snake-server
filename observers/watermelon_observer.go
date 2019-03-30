@@ -18,13 +18,23 @@ const addWatermelonsDuringTickLimit = 2
 
 const oneWatermelonArea = 200
 
-type WatermelonObserver struct{}
+type WatermelonObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (WatermelonObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
-	var size = int32(w.Size())
+func NewWatermelonObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &WatermelonObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (wo *WatermelonObserver) Observe(stop <-chan struct{}) {
+	var size = int32(wo.world.Size())
 	var maxWatermelonCount = size / oneWatermelonArea
 
-	logger.WithFields(logrus.Fields{
+	wo.logger.WithFields(logrus.Fields{
 		"map_size":         size,
 		"watermelon_count": maxWatermelonCount,
 	}).Debug("watermelon observer")
@@ -36,7 +46,7 @@ func (WatermelonObserver) Observe(stop <-chan struct{}, w world.Interface, logge
 	var watermelonCount int32 = 0
 
 	go func() {
-		for event := range w.Events(stop, chanWatermelonObserverEventsBuffer) {
+		for event := range wo.world.Events(stop, chanWatermelonObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {
 				if _, ok := event.Payload.(*watermelon.Watermelon); ok {
 					atomic.AddInt32(&watermelonCount, -1)
@@ -55,8 +65,8 @@ func (WatermelonObserver) Observe(stop <-chan struct{}, w world.Interface, logge
 				var watermelonsAddedDuringTick = 0
 
 				for atomic.LoadInt32(&watermelonCount) < maxWatermelonCount && watermelonsAddedDuringTick < addWatermelonsDuringTickLimit {
-					if _, err := watermelon.NewWatermelon(w); err != nil {
-						logger.WithError(err).Error("cannot create watermelon")
+					if _, err := watermelon.NewWatermelon(wo.world); err != nil {
+						wo.logger.WithError(err).Error("cannot create watermelon")
 					} else {
 						atomic.AddInt32(&watermelonCount, 1)
 						watermelonsAddedDuringTick++

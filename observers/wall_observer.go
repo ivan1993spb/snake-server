@@ -32,13 +32,23 @@ func calcRuinsCount(size uint16) uint16 {
 	return uint16(float32(size) * ruinsFactor)
 }
 
-type WallObserver struct{}
+type WallObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (WallObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
+func NewWallObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &WallObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (wo *WallObserver) Observe(stop <-chan struct{}) {
 	go func() {
-		area, err := engine.NewArea(w.Width(), w.Height())
+		area, err := engine.NewArea(wo.world.Width(), wo.world.Height())
 		if err != nil {
-			logger.WithError(err).Error("cannot create area in wall observer")
+			wo.logger.WithError(err).Error("cannot create area in wall observer")
 			return
 		}
 
@@ -61,12 +71,12 @@ func (WallObserver) Observe(stop <-chan struct{}, w world.Interface, logger logr
 						location = location[:ruinsCount-counter]
 					}
 
-					if w.LocationOccupied(location) {
+					if wo.world.LocationOccupied(location) {
 						continue
 					}
 
-					if _, err := wall.NewWallLocation(w, location); err != nil {
-						logger.WithError(err).Error("error on wall creation")
+					if _, err := wall.NewWallLocation(wo.world, location); err != nil {
+						wo.logger.WithError(err).Error("error on wall creation")
 					} else {
 						counter += location.DotCount()
 					}

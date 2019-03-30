@@ -13,30 +13,40 @@ const defaultAppleCount = 1
 
 const oneAppleArea = 50
 
-type AppleObserver struct{}
+type AppleObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (AppleObserver) Observe(stop <-chan struct{}, w world.Interface, logger logrus.FieldLogger) {
+func NewAppleObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &AppleObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (ao *AppleObserver) Observe(stop <-chan struct{}) {
 	go func() {
 		appleCount := defaultAppleCount
-		size := w.Size()
+		size := ao.world.Size()
 
 		if size > oneAppleArea {
 			appleCount = int(size / oneAppleArea)
 		}
 
-		logger.Debugf("apple count for size %d = %d", size, appleCount)
+		ao.logger.Debugf("apple count for size %d = %d", size, appleCount)
 
 		for i := 0; i < appleCount; i++ {
-			if _, err := apple.NewApple(w); err != nil {
-				logger.WithError(err).Error("cannot create apple")
+			if _, err := apple.NewApple(ao.world); err != nil {
+				ao.logger.WithError(err).Error("cannot create apple")
 			}
 		}
 
-		for event := range w.Events(stop, chanAppleObserverEventsBuffer) {
+		for event := range ao.world.Events(stop, chanAppleObserverEventsBuffer) {
 			if event.Type == world.EventTypeObjectDelete {
 				if _, ok := event.Payload.(*apple.Apple); ok {
-					if _, err := apple.NewApple(w); err != nil {
-						logger.WithError(err).Error("cannot create apple")
+					if _, err := apple.NewApple(ao.world); err != nil {
+						ao.logger.WithError(err).Error("cannot create apple")
 					}
 				}
 			}
