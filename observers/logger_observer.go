@@ -21,19 +21,29 @@ func NewLoggerObserver(w world.Interface, logger logrus.FieldLogger) Observer {
 }
 
 func (lo *LoggerObserver) Observe(stop <-chan struct{}) {
-	go func() {
-		for event := range lo.world.Events(stop, chanLoggerObserverEventsBuffer) {
-			switch event.Type {
-			case world.EventTypeError:
-				if err, ok := event.Payload.(error); ok {
-					lo.logger.WithError(err).Error("world error")
-				}
-			case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
-				lo.logger.WithFields(logrus.Fields{
-					"payload": event.Payload,
-					"type":    event.Type,
-				}).Debug("world event")
-			}
+	go lo.run(stop)
+}
+
+func (lo *LoggerObserver) run(stop <-chan struct{}) {
+	lo.listen(stop)
+}
+
+func (lo *LoggerObserver) listen(stop <-chan struct{}) {
+	for event := range lo.world.Events(stop, chanLoggerObserverEventsBuffer) {
+		lo.handleEvent(event)
+	}
+}
+
+func (lo *LoggerObserver) handleEvent(event world.Event) {
+	switch event.Type {
+	case world.EventTypeError:
+		if err, ok := event.Payload.(error); ok {
+			lo.logger.WithError(err).Error("world error")
 		}
-	}()
+	case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
+		lo.logger.WithFields(logrus.Fields{
+			"payload": event.Payload,
+			"type":    event.Type,
+		}).Debug("world event")
+	}
 }
