@@ -23,7 +23,7 @@ const corpseTypeLabel = "corpse"
 // ffjson: skip
 type Corpse struct {
 	id       world.Identifier
-	world    *world.World
+	world    world.Interface
 	location engine.Location
 	mux      *sync.RWMutex
 	stop     chan struct{}
@@ -37,7 +37,7 @@ func (e errCreateCorpse) Error() string {
 }
 
 // Corpse are created when a snake dies
-func NewCorpse(world *world.World, location engine.Location) (*Corpse, error) {
+func NewCorpse(world world.Interface, location engine.Location) (*Corpse, error) {
 	if location.Empty() {
 		return nil, errCreateCorpse("location is empty")
 	}

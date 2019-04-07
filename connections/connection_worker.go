@@ -322,6 +322,7 @@ func (cw *ConnectionWorker) listenPlayerBroadcasts(stop <-chan struct{}, chin <-
 						cw.logger.Warn("ignore broadcast: delay")
 
 						if ignored > ignoredBroadcastsCountToDisconnect {
+							// TODO: Send an error message to the connection before closing
 							cw.logger.Warn("ignored broadcasts limit reached")
 							if err := cw.conn.Close(); err != nil {
 								cw.logger.WithError(err).Error("close connection error")

@@ -1,5 +1,5 @@
 
-# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server/all.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
+# Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server) [![Swagger Validator](https://img.shields.io/swagger/valid/2.0/https/raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml.svg)](https://raw.githubusercontent.com/ivan1993spb/snake-server/master/swagger.yml) [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
 Snake-Server is the server for online arcade game - snake.
 
@@ -8,21 +8,21 @@ Snake-Server is the server for online arcade game - snake.
 - [Game rules](#game-rules)
 - [Basic usage](#basic-usage)
 - [Installation](#installation)
-    * [Download and install binary](#download-and-install-binary)
-    * [Build and install latest server](#build-and-install-latest-server)
-    * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
-    * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
-    * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
+  * [Download and install binary](#download-and-install-binary)
+  * [Build and install latest server](#build-and-install-latest-server)
+  * [Pull server image from docker-hub](#pull-server-image-from-docker-hub)
+  * [Build and install server of specific version from source code](#build-and-install-server-of-specific-version-from-source-code)
+  * [Deploy the server with ansible playbook](#deploy-the-server-with-ansible-playbook)
 - [CLI arguments](#cli-arguments)
 - [Clients](#clients)
 - [API description](#api-description)
-    * [API requests](#api-requests)
-    * [API errors](#api-errors)
+  * [API requests](#api-requests)
+  * [API errors](#api-errors)
 - [Game Web-Socket messages description](#game-web-socket-messages-description)
-    * [Game primitives](#game-primitives)
-    * [Game objects](#game-objects)
-    * [Output messages](#output-messages)
-    * [Input messages](#input-messages)
+  * [Game primitives](#game-primitives)
+  * [Game objects](#game-objects)
+  * [Output messages](#output-messages)
+  * [Input messages](#input-messages)
 - [License](#license)
 
 ## Game rules
@@ -191,6 +191,12 @@ Some samples you can see here:
 ## API description
 
 All API methods provide JSON format. If errors are occurred methods return HTTP statuses and JSON formatted error objects. See [swagger.yml](swagger.yml) for details. Also, see API curl examples below.
+
+Use header `X-Snake-Client` to specify client name, version and build hash. For example:
+
+```
+X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
+```
 
 ### API requests
 

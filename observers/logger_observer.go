@@ -8,22 +8,45 @@ import (
 
 const chanLoggerObserverEventsBuffer = 64
 
-type LoggerObserver struct{}
+type LoggerObserver struct {
+	world  world.Interface
+	logger logrus.FieldLogger
+}
 
-func (LoggerObserver) Observe(stop <-chan struct{}, w *world.World, logger logrus.FieldLogger) {
-	go func() {
-		for event := range w.Events(stop, chanLoggerObserverEventsBuffer) {
-			switch event.Type {
-			case world.EventTypeError:
-				if err, ok := event.Payload.(error); ok {
-					logger.WithError(err).Error("world error")
-				}
-			case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
-				logger.WithFields(logrus.Fields{
-					"payload": event.Payload,
-					"type":    event.Type,
-				}).Debug("world event")
-			}
+func NewLoggerObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+	return &LoggerObserver{
+		world:  w,
+		logger: logger,
+	}
+}
+
+func (lo *LoggerObserver) Observe(stop <-chan struct{}) {
+	go lo.run(stop)
+}
+
+func (lo *LoggerObserver) run(stop <-chan struct{}) {
+	lo.listen(stop)
+}
+
+func (lo *LoggerObserver) listen(stop <-chan struct{}) {
+	for event := range lo.world.Events(stop, chanLoggerObserverEventsBuffer) {
+		lo.handleEvent(event)
+	}
+}
+
+func (lo *LoggerObserver) handleEvent(event world.Event) {
+	switch event.Type {
+	case world.EventTypeError:
+		if err, ok := event.Payload.(error); ok {
+			lo.logger.WithError(err).Error("world error")
 		}
-	}()
+	case world.EventTypeObjectCreate, world.EventTypeObjectDelete,
+		world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
+		lo.logger.WithFields(logrus.Fields{
+			"payload": event.Payload,
+			"type":    event.Type,
+		}).Debug("world event")
+	default:
+		lo.logger.WithField("world_event_type", event.Type).Warn("undefined event type")
+	}
 }

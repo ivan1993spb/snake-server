@@ -10,7 +10,7 @@ import (
 )
 
 type Game struct {
-	world  *world.World
+	world  world.Interface
 	logger logrus.FieldLogger
 }
 
@@ -37,14 +37,14 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
-	observers.LoggerObserver{}.Observe(stop, g.world, g.logger)
-	observers.WallObserver{}.Observe(stop, g.world, g.logger)
-	observers.AppleObserver{}.Observe(stop, g.world, g.logger)
-	observers.SnakeObserver{}.Observe(stop, g.world, g.logger)
-	observers.WatermelonObserver{}.Observe(stop, g.world, g.logger)
+	observers.NewLoggerObserver(g.world, g.logger).Observe(stop)
+	observers.NewWallObserver(g.world, g.logger).Observe(stop)
+	observers.NewAppleObserver(g.world, g.logger).Observe(stop)
+	observers.NewSnakeObserver(g.world, g.logger).Observe(stop)
+	observers.NewWatermelonObserver(g.world, g.logger).Observe(stop)
 }
 
-func (g *Game) World() *world.World {
+func (g *Game) World() world.Interface {
 	return g.world
 }
 
