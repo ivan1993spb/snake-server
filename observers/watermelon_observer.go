@@ -106,6 +106,7 @@ func (wo *WatermelonObserver) addWatermelons() {
 			return
 		}
 
+		// TODO: Create abstraction layer for adding of objects.
 		if _, err := watermelon.NewWatermelon(wo.world); err != nil {
 			wo.logger.WithError(err).Error("cannot create watermelon")
 			return

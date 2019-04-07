@@ -38,6 +38,7 @@ func (ao *AppleObserver) run(stop <-chan struct{}) {
 
 func (ao *AppleObserver) init() {
 	for i := 0; i < ao.calcAppleCount(); i++ {
+		// TODO: Create abstraction layer for adding of objects.
 		if _, err := apple.NewApple(ao.world); err != nil {
 			ao.logger.WithError(err).Error("cannot create apple")
 		}
@@ -74,6 +75,7 @@ func (ao *AppleObserver) handleEvent(event world.Event) error {
 		return nil
 	}
 
+	// TODO: Create abstraction layer for adding of objects.
 	if _, err := apple.NewApple(ao.world); err != nil {
 		return fmt.Errorf("cannot create apple: %s", err)
 	}

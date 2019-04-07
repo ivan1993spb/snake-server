@@ -48,6 +48,7 @@ func (so *SnakeObserver) handleEvent(event world.Event, stop <-chan struct{}) {
 			return
 		}
 
+		// TODO: Create abstraction layer for adding of objects.
 		if c, err := corpse.NewCorpse(so.world, location); err != nil {
 			so.logger.WithError(err).Error("cannot create corpse")
 		} else {

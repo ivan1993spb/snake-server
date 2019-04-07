@@ -106,6 +106,7 @@ func (wo *WallObserver) addWallFromMask(mask *engine.DotsMask, dotsLimit uint16)
 		return
 	}
 
+	// TODO: Create abstraction layer for adding of objects.
 	if _, err := wall.NewWallLocation(wo.world, location); err != nil {
 		wo.logger.WithError(err).Error("error on wall creation")
 		return

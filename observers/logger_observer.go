@@ -40,10 +40,13 @@ func (lo *LoggerObserver) handleEvent(event world.Event) {
 		if err, ok := event.Payload.(error); ok {
 			lo.logger.WithError(err).Error("world error")
 		}
-	case world.EventTypeObjectCreate, world.EventTypeObjectDelete, world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
+	case world.EventTypeObjectCreate, world.EventTypeObjectDelete,
+		world.EventTypeObjectUpdate, world.EventTypeObjectChecked:
 		lo.logger.WithFields(logrus.Fields{
 			"payload": event.Payload,
 			"type":    event.Type,
 		}).Debug("world event")
+	default:
+		lo.logger.WithField("world_event_type", event.Type).Warn("undefined event type")
 	}
 }
