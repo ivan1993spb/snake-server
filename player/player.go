@@ -64,14 +64,15 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 
 			chout <- NewMessageNotice("start")
 
-			p.emptyInputChan(localStopper, chin)
-
 			s, err := snake.NewSnake(p.world)
 			if err != nil {
 				chout <- NewMessageError("cannot create snake")
 				p.logger.Errorln("cannot create snake to player:", err)
 				continue
 			}
+
+			p.emptyInputChan(localStopper, chin)
+
 			snakeStop := s.Run(localStopper, p.logger)
 
 			chout <- NewMessageSnake(s.GetID())
