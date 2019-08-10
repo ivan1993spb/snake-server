@@ -1,5 +1,5 @@
 
-EXECUTABLES=git go find docker
+EXECUTABLES=git go find docker tar
 
 _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
@@ -50,13 +50,25 @@ go/build:
 		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
-	$(foreach GOOS, $(PLATFORMS),\
-		$(foreach GOARCH, $(ARCHITECTURES), $(shell docker run --rm \
-			-v $(PWD):/go/src/$(REPO) \
-			-w /go/src/$(REPO) \
-			-e GOOS=$(GOOS) \
-			-e GOARCH=$(GOARCH) \
-			$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH))))
+	$(foreach GOOS, $(PLATFORMS), \
+		$(foreach GOARCH, $(ARCHITECTURES), \
+			$(shell docker run --rm \
+				-v $(PWD):/go/src/$(REPO) \
+				-w /go/src/$(REPO) \
+				-e GOOS=$(GOOS) \
+				-e GOARCH=$(GOARCH) \
+				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+		) \
+	)
+
+	$(foreach GOOS, $(PLATFORMS), \
+		$(foreach GOARCH, $(ARCHITECTURES), \
+			$(shell tar -zcf \
+				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz \
+				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+		) \
+	)
+
 	@echo -n
 
 build:
