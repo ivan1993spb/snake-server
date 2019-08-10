@@ -65,6 +65,7 @@ go/crosscompile:
 		$(foreach GOARCH, $(ARCHITECTURES), \
 			$(shell tar -zcf \
 				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz \
+				--transform="flags=r;s|-$(VERSION)-$(GOOS)-$(GOARCH)||" \
 				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)

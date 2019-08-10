@@ -67,7 +67,6 @@ Or using curl:
 
 Then:
 
-* Rename binary to `snake-server`: `mv snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE} snake-server`
 * Make binary file executable with `chmod +x snake-server`
 * Move snake-server to `/usr/local/bin/`: `mv snake-server /usr/local/bin/`
 * Use `snake-server -h` to see the usage information
