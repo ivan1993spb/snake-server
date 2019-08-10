@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,19 @@ func Test_NewDotsMask(t *testing.T) {
 		{1, 1, 1, 1, 1},
 		{1},
 	}, dm4.mask)
+}
+
+func Test_NewDotsMask_TheBiggestMask(t *testing.T) {
+	rawMap := make([][]uint8, math.MaxUint8+1)
+	for i := range rawMap {
+		rawMap[i] = make([]uint8, math.MaxUint8+1)
+		for j := range rawMap[i] {
+			rawMap[i][j] = 1
+		}
+	}
+
+	dm := NewDotsMask(rawMap)
+	require.Equal(t, rawMap, dm.mask)
 }
 
 func Test_NewZeroDotsMask(t *testing.T) {
@@ -384,6 +398,76 @@ func Test_LocationToDotsMask(t *testing.T) {
 		Dot{
 			X: 5,
 			Y: 5,
+		},
+	}
+	require.Equal(t, dm1, LocationToDotsMask(location1))
+}
+
+func Test_LocationToDotsMask_Second(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{
+			{1, 0},
+			{0, 1},
+		},
+	}
+	location1 := Location{
+		Dot{
+			X: 5,
+			Y: 4,
+		},
+		Dot{
+			X: 4,
+			Y: 3,
+		},
+	}
+	require.Equal(t, dm1, LocationToDotsMask(location1))
+}
+
+func Test_LocationToDotsMask_ReturnsOnePointMaskForOneDotLocation(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{
+			{1},
+		},
+	}
+	location1 := Location{
+		Dot{
+			X: 4,
+			Y: 3,
+		},
+	}
+	require.Equal(t, dm1, LocationToDotsMask(location1))
+}
+
+func Test_LocationToDotsMask_ReturnsEmptyMaskForEmptyLocation(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{},
+	}
+	location1 := Location{}
+	require.Equal(t, dm1, LocationToDotsMask(location1))
+}
+
+func Test_LocationToDotsMask_ReturnsOnePointMaskForLocationWithTheSameDots(t *testing.T) {
+	dm1 := &DotsMask{
+		mask: [][]uint8{
+			{1},
+		},
+	}
+	location1 := Location{
+		Dot{
+			X: 4,
+			Y: 3,
+		},
+		Dot{
+			X: 4,
+			Y: 3,
+		},
+		Dot{
+			X: 4,
+			Y: 3,
+		},
+		Dot{
+			X: 4,
+			Y: 3,
 		},
 	}
 	require.Equal(t, dm1, LocationToDotsMask(location1))
