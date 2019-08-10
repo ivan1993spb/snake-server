@@ -164,7 +164,7 @@ func LocationToDotsMask(location Location) *DotsMask {
 		}
 	}
 
-	firstDot := location.Dot(1)
+	firstDot := location.Dot(0)
 	leftX := firstDot.X
 	rightX := firstDot.X
 	topY := firstDot.Y
