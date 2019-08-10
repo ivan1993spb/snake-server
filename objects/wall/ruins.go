@@ -121,16 +121,16 @@ func Ruins(w world.Interface) ([]*Wall, error) {
 	return walls, nil
 }
 
-func addWallFromMask(w world.Interface, area engine.Area, mask *engine.DotsMask, dotsLimit uint16) (wall *Wall, dotsResult uint16, err error) {
+func addWallFromMask(w world.Interface, area engine.Area, mask *engine.DotsMask, dotsLimit uint16) (*Wall, uint16, error) {
 	mask = mask.TurnRandom()
 
 	if area.Width() < mask.Width() || area.Height() < mask.Height() {
-		return
+		return nil, 0, nil
 	}
 
 	rect, err := area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
 	if err != nil {
-		return
+		return nil, 0, fmt.Errorf("cannot get random rect: %s", err)
 	}
 
 	location := mask.Location(rect.X(), rect.Y())
@@ -139,16 +139,16 @@ func addWallFromMask(w world.Interface, area engine.Area, mask *engine.DotsMask,
 	}
 
 	if w.LocationOccupied(location) {
-		return
+		return nil, 0, nil
 	}
 
-	wall, err = NewWallLocation(w, location)
+	wall, err := NewWallLocation(w, location)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("cannot create wall: %s", err)
 	}
 
-	dotsResult = location.DotCount()
+	dotsResult := location.DotCount()
 
-	return
+	return wall, dotsResult, nil
 }
