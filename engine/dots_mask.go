@@ -129,6 +129,10 @@ var DotsMaskBigHome = NewDotsMask([][]uint8{
 })
 
 func NewDotsMask(mask [][]uint8) *DotsMask {
+	if len(mask) > math.MaxUint8 {
+		mask = mask[:math.MaxUint8+1]
+	}
+
 	copyMask := make([][]uint8, len(mask))
 
 	for i, row := range mask {
