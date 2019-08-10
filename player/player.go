@@ -139,6 +139,7 @@ func (p *Player) emptyInputChan(stop <-chan struct{}, chin <-chan string) {
 			case <-stop:
 				return
 			default:
+				return
 			}
 		} else {
 			return
