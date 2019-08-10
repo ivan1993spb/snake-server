@@ -1,13 +1,14 @@
 package wall
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const ruinsFactor = 0.20
+const ruinsFactor = 0.15
 
 var dotsMaskOne = engine.NewDotsMask([][]uint8{{1}})
 
@@ -84,4 +85,70 @@ func NewWallRuins(world world.Interface) (*Wall, error) {
 	}
 
 	return wall, nil
+}
+
+type ErrRuins string
+
+func (e ErrRuins) Error() string {
+	return "ruins error: " + string(e)
+}
+
+func Ruins(w world.Interface) ([]*Wall, error) {
+	area, err := engine.NewArea(w.Width(), w.Height())
+	if err != nil {
+		return nil, ErrRuins("cannot create area: " + err.Error())
+	}
+
+	ruinsCount := uint16(float32(area.Size()) * ruinsFactor)
+
+	walls := make([]*Wall, 0)
+
+	var counter uint16
+
+	for counter < ruinsCount {
+		for i := 0; i < len(ruins); i++ {
+			// Pass one of the ruins and maximum dots count to occupy by new wall
+			wall, dotsResult, err := addWallFromMask(w, area, ruins[i], ruinsCount-counter)
+			if err != nil {
+				return walls, err
+			}
+
+			counter += dotsResult
+			walls = append(walls, wall)
+		}
+	}
+
+	return walls, nil
+}
+
+func addWallFromMask(w world.Interface, area engine.Area, mask *engine.DotsMask, dotsLimit uint16) (wall *Wall, dotsResult uint16, err error) {
+	mask = mask.TurnRandom()
+
+	if area.Width() < mask.Width() || area.Height() < mask.Height() {
+		return
+	}
+
+	rect, err := area.NewRandomRect(mask.Width(), mask.Height(), 0, 0)
+	if err != nil {
+		return
+	}
+
+	location := mask.Location(rect.X(), rect.Y())
+	if location.DotCount() > dotsLimit {
+		location = location[:dotsLimit]
+	}
+
+	if w.LocationOccupied(location) {
+		return
+	}
+
+	wall, err = NewWallLocation(w, location)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("cannot create wall: %s", err)
+	}
+
+	dotsResult = location.DotCount()
+
+	return
 }
