@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/rand"
 	"strconv"
 )
@@ -250,4 +251,8 @@ func (a Area) MarshalJSON() ([]byte, error) {
 	buff.WriteString(strconv.Itoa(int(a.height)))
 	buff.WriteByte(']')
 	return buff.Bytes(), nil
+}
+
+func (a Area) String() string {
+	return fmt.Sprintf("[Area: width=%d; height=%d]", a.width, a.height)
 }
