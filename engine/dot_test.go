@@ -75,3 +75,23 @@ func Test_Dot_MarshalJSON(t *testing.T) {
 		require.Equal(t, test.json, actualJSON, "test %d", i)
 	}
 }
+
+func Test_Dot_DistanceTo_CalculatesDistance(t *testing.T) {
+	tests := []struct {
+		first            Dot
+		second           Dot
+		expectedDistance uint16
+	}{
+		{Dot{0, 0}, Dot{0, 0}, 0},
+		{Dot{10, 0}, Dot{0, 0}, 10},
+		{Dot{0, 11}, Dot{0, 0}, 11},
+		{Dot{1, 11}, Dot{0, 0}, 12},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expectedDistance, test.first.DistanceTo(test.second),
+			"from the first dot to the second, test %d", i)
+		require.Equal(t, test.expectedDistance, test.second.DistanceTo(test.first),
+			"from the second dot to the first test %d", i)
+	}
+}
