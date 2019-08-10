@@ -64,6 +64,8 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 
 			chout <- NewMessageNotice("start")
 
+			p.emptyInputChan(localStopper, chin)
+
 			s, err := snake.NewSnake(p.world)
 			if err != nil {
 				chout <- NewMessageError("cannot create snake")
@@ -127,4 +129,19 @@ func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, 
 	}()
 
 	return errch
+}
+
+func (p *Player) emptyInputChan(stop <-chan struct{}, chin <-chan string) {
+	for {
+		if len(chin) > 0 {
+			select {
+			case <-chin:
+			case <-stop:
+				return
+			default:
+			}
+		} else {
+			return
+		}
+	}
 }
