@@ -19,7 +19,7 @@ type relativeAssetFS struct {
 	assetFS *assetfs.AssetFS
 }
 
-func newRelateveAssetFS() *relativeAssetFS {
+func newRelativeAssetFS() *relativeAssetFS {
 	return &relativeAssetFS{
 		assetFS: &assetfs.AssetFS{
 			Asset:     Asset,
