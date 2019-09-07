@@ -109,3 +109,53 @@ func Test_Location_Delete_DeletesDot(t *testing.T) {
 		require.Equal(t, test.expected, test.location.Delete(test.dot), fmt.Sprintf("number: %d", i))
 	}
 }
+
+func Test_Location_Difference(t *testing.T) {
+	tests := []struct {
+		first  Location
+		second Location
+
+		expectedFirstToSecond Location
+		expectedSecondToFirst Location
+	}{
+		{
+			first:  Location{Dot{0, 0}, Dot{0, 1}, Dot{0, 2}},
+			second: Location{Dot{0, 0}, Dot{0, 1}, Dot{0, 2}},
+
+			expectedFirstToSecond: nil,
+			expectedSecondToFirst: nil,
+		},
+		{
+			first:  Location{Dot{0, 0}, Dot{0, 1}, Dot{0, 2}},
+			second: Location{Dot{1, 0}, Dot{0, 1}, Dot{0, 2}},
+
+			expectedFirstToSecond: Location{Dot{0, 0}, Dot{1, 0}},
+			expectedSecondToFirst: Location{Dot{1, 0}, Dot{0, 0}},
+		},
+		{
+			first:  Location{Dot{0, 0}, Dot{0, 1}, Dot{0, 2}},
+			second: Location{Dot{1, 0}, Dot{0, 1}, Dot{0, 2}},
+
+			expectedFirstToSecond: Location{Dot{0, 0}, Dot{1, 0}},
+			expectedSecondToFirst: Location{Dot{1, 0}, Dot{0, 0}},
+		},
+		{
+			first:  Location{Dot{1, 0}, Dot{1, 1}, Dot{1, 2}},
+			second: Location{Dot{1, 0}, Dot{0, 1}, Dot{0, 2}},
+
+			expectedFirstToSecond: Location{
+				Dot{1, 1}, Dot{1, 2}, Dot{0, 1}, Dot{0, 2},
+			},
+			expectedSecondToFirst: Location{
+				Dot{0, 1}, Dot{0, 2}, Dot{1, 1}, Dot{1, 2},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expectedFirstToSecond, test.first.Difference(test.second),
+			fmt.Sprintf("first to second number: %d", i))
+		require.Equal(t, test.expectedSecondToFirst, test.second.Difference(test.first),
+			fmt.Sprintf("second to first number: %d", i))
+	}
+}
