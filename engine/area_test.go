@@ -54,6 +54,26 @@ func Test_Area_Navigate_SquareArea100x100(t *testing.T) {
 
 		{Dot{99, 0}, DirectionEast, 1, Dot{0, 0}, nil},
 		{Dot{0, 99}, DirectionSouth, 1, Dot{0, 0}, nil},
+
+		{Dot{0, 99}, DirectionSouth, 150, Dot{0, 49}, nil},
+		{Dot{0, 99}, DirectionNorth, 150, Dot{0, 49}, nil},
+		{Dot{0, 0}, DirectionEast, 150, Dot{50, 0}, nil},
+		{Dot{0, 0}, DirectionWest, 150, Dot{50, 0}, nil},
+
+		{Dot{30, 30}, DirectionWest, 5, Dot{25, 30}, nil},
+
+		// Error case: invalid direction
+		{Dot{0, 0}, 21, 150, Dot{}, &ErrNavigation{
+			Err: &ErrInvalidDirection{
+				Direction: 21,
+			},
+		}},
+		// Error case: area doesn't contains dot
+		{Dot{250, 25}, DirectionWest, 150, Dot{}, &ErrNavigation{
+			Err: &ErrAreaNotContainsDot{
+				Dot: Dot{250, 25},
+			},
+		}},
 	}
 
 	area := Area{
