@@ -166,3 +166,33 @@ func Test_Rect_Height_ReturnsRectHeight(t *testing.T) {
 		require.Equal(t, test.rect.h, test.rect.Height(), fmt.Sprintf("number: %d", i))
 	}
 }
+
+func Test_Rect_X_ReturnsRectX(t *testing.T) {
+	tests := []struct {
+		rect Rect
+	}{
+		{Rect{3, 23, 10, 3}},
+		{Rect{32, 1, 22, 4}},
+		{Rect{1, 32, 123, 5}},
+		{Rect{42, 231, 0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.rect.x, test.rect.X(), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Rect_Y_ReturnsRectY(t *testing.T) {
+	tests := []struct {
+		rect Rect
+	}{
+		{Rect{213, 231, 10, 3}},
+		{Rect{23, 32, 22, 4}},
+		{Rect{123, 132, 123, 5}},
+		{Rect{22, 3, 0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.rect.y, test.rect.Y(), fmt.Sprintf("number: %d", i))
+	}
+}
