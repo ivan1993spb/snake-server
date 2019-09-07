@@ -218,3 +218,61 @@ func Test_Area_ContainsRect(t *testing.T) {
 		require.Equal(t, test.expected, test.area.ContainsRect(test.rect), fmt.Sprintf("number: %d", i))
 	}
 }
+
+func Test_Area_Dots_ReturnsAllDotsOfTheArea(t *testing.T) {
+	tests := []struct {
+		area Area
+		dots []Dot
+	}{
+		{Area{1, 1}, []Dot{
+			{0, 0}}},
+		{Area{2, 2}, []Dot{
+			{0, 0}, {0, 1},
+			{1, 0}, {1, 1},
+		}},
+		{Area{8, 2}, []Dot{
+			{0, 0}, {0, 1},
+			{1, 0}, {1, 1},
+			{2, 0}, {2, 1},
+			{3, 0}, {3, 1},
+			{4, 0}, {4, 1},
+			{5, 0}, {5, 1},
+			{6, 0}, {6, 1},
+			{7, 0}, {7, 1},
+		}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.dots, test.area.Dots(), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Area_Width_ReturnsAreaWidth(t *testing.T) {
+	tests := []struct {
+		area Area
+	}{
+		{Area{10, 3}},
+		{Area{22, 4}},
+		{Area{123, 5}},
+		{Area{0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.area.width, test.area.Width(), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Area_Height_ReturnsAreaHeight(t *testing.T) {
+	tests := []struct {
+		area Area
+	}{
+		{Area{10, 3}},
+		{Area{22, 4}},
+		{Area{123, 5}},
+		{Area{0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.area.height, test.area.Height(), fmt.Sprintf("number: %d", i))
+	}
+}
