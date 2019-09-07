@@ -5,7 +5,9 @@ _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
 
 IMAGE=ivan1993spb/snake-server
-IMAGE_GOLANG=golang:1.10-alpine3.7
+
+IMAGE_GOLANG=golang:1.12-alpine3.10
+IMAGE_ALPINE=alpine:3.10
 
 REPO=github.com/ivan1993spb/snake-server
 
@@ -25,7 +27,9 @@ BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
 default: build
 
 docker/build:
-	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) .
+	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) \
+		--build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
+		--build-arg IMAGE_ALPINE=$(IMAGE_ALPINE) .
 	@docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
 	@echo "Build $(BUILD) tagged $(IMAGE):$(VERSION)"
 	@echo "Build $(BUILD) tagged $(IMAGE):latest"
@@ -37,16 +41,17 @@ docker/push:
 	@docker push $(IMAGE):latest
 
 go/vet:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
-		sh -c "go list ./... | grep -v vendor | xargs go vet"
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet ./...
 
 go/test:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
-		sh -c "go list ./... | grep -v vendor | xargs go test -v"
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go test -v -cover ./...
 
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) $(IMAGE_GOLANG) \
+		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
 		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
@@ -57,6 +62,7 @@ go/crosscompile:
 				-w /go/src/$(REPO) \
 				-e GOOS=$(GOOS) \
 				-e GOARCH=$(GOARCH) \
+				-e CGO_ENABLED=0 \
 				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)
