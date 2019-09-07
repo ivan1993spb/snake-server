@@ -238,3 +238,24 @@ func Test_NewRect_CreatesRectCorrectly(t *testing.T) {
 	require.True(t, 3 == r.w)
 	require.True(t, 4 == r.h)
 }
+
+func Test_Rect_ContainsDot(t *testing.T) {
+	tests := []struct {
+		rect     Rect
+		dot      Dot
+		expected bool
+	}{
+		{Rect{0, 0, 100, 100}, Dot{20, 21}, true},
+		{Rect{0, 0, 100, 100}, Dot{200, 21}, false},
+		{Rect{1, 1, 100, 100}, Dot{0, 0}, false},
+		{Rect{1, 46, 123, 45}, Dot{0, 0}, false},
+		{Rect{33, 46, 123, 45}, Dot{43, 65}, true},
+		{Rect{123, 123, 2, 2}, Dot{123, 123}, true},
+		{Rect{123, 123, 2, 2}, Dot{124, 124}, true},
+		{Rect{123, 123, 2, 1}, Dot{124, 124}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.rect.ContainsDot(test.dot), fmt.Sprintf("number: %d", i))
+	}
+}
