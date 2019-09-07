@@ -129,35 +129,35 @@ func Test_Area_MarshalJSON(t *testing.T) {
 	}{
 		{
 			Area{10, 10},
-			[]byte("[10,10]"),
+			[]byte(`{"width":10,"height":10}`),
 		},
 		{
 			Area{255, 255},
-			[]byte("[255,255]"),
+			[]byte(`{"width":255,"height":255}`),
 		},
 		{
 			Area{0, 0},
-			[]byte("[0,0]"),
+			[]byte(`{"width":0,"height":0}`),
 		},
 		{
 			Area{0, 1},
-			[]byte("[0,1]"),
+			[]byte(`{"width":0,"height":1}`),
 		},
 		{
 			Area{2, 1},
-			[]byte("[2,1]"),
+			[]byte(`{"width":2,"height":1}`),
 		},
 		{
 			Area{255, 1},
-			[]byte("[255,1]"),
+			[]byte(`{"width":255,"height":1}`),
 		},
 		{
 			Area{255, 100},
-			[]byte("[255,100]"),
+			[]byte(`{"width":255,"height":100}`),
 		},
 		{
 			Area{0, 255},
-			[]byte("[0,255]"),
+			[]byte(`{"width":0,"height":255}`),
 		},
 	}
 

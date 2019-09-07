@@ -240,16 +240,16 @@ func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	}
 }
 
-const areaExpectedSerializedSize = 10
+const areaExpectedSerializedSize = 26
 
 // Implementing json.Marshaler interface
 func (a Area) MarshalJSON() ([]byte, error) {
 	buff := bytes.NewBuffer(make([]byte, 0, areaExpectedSerializedSize))
-	buff.WriteByte('[')
+	buff.WriteString(`{"width":`)
 	buff.WriteString(strconv.Itoa(int(a.width)))
-	buff.WriteByte(',')
+	buff.WriteString(`,"height":`)
 	buff.WriteString(strconv.Itoa(int(a.height)))
-	buff.WriteByte(']')
+	buff.WriteByte('}')
 	return buff.Bytes(), nil
 }
 
