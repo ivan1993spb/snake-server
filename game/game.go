@@ -42,6 +42,7 @@ func (g *Game) Start(stop <-chan struct{}) {
 	observers.NewAppleObserver(g.world, g.logger).Observe(stop)
 	observers.NewSnakeObserver(g.world, g.logger).Observe(stop)
 	observers.NewWatermelonObserver(g.world, g.logger).Observe(stop)
+	observers.NewMouseObserver(g.world, g.logger).Observe(stop)
 }
 
 func (g *Game) World() world.Interface {
