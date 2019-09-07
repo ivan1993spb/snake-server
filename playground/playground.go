@@ -454,6 +454,10 @@ func (pg *Playground) Height() uint8 {
 	return pg.area.Height()
 }
 
+func (pg *Playground) Area() engine.Area {
+	return pg.area
+}
+
 func (pg *Playground) unsafeGetObjects() []interface{} {
 	objects := make([]interface{}, len(pg.objects))
 	copy(objects, pg.objects)
