@@ -21,6 +21,7 @@ type Interface interface {
 	Size() uint16
 	Width() uint8
 	Height() uint8
+	Area() engine.Area
 	GetObjects() []interface{}
 	ObtainIdentifier() Identifier
 	ReleaseIdentifier(id Identifier)

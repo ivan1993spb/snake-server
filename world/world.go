@@ -375,6 +375,10 @@ func (w *World) Height() uint8 {
 	return w.pg.Height()
 }
 
+func (w *World) Area() engine.Area {
+	return w.pg.Area()
+}
+
 func (w *World) GetObjects() []interface{} {
 	return w.pg.GetObjects()
 }
