@@ -43,7 +43,7 @@ func NewCorpse(world world.Interface, location engine.Location) (*Corpse, error)
 	}
 
 	corpse := &Corpse{
-		id:      world.ObtainIdentifier(),
+		id:      world.IdentifierRegistry().Obtain(),
 		world:   world,
 		mux:     &sync.RWMutex{},
 		stop:    make(chan struct{}),
@@ -55,12 +55,12 @@ func NewCorpse(world world.Interface, location engine.Location) (*Corpse, error)
 
 	location, err := world.CreateObjectAvailableDots(corpse, location)
 	if err != nil {
-		world.ReleaseIdentifier(corpse.id)
+		world.IdentifierRegistry().Release(corpse.id)
 		return nil, errCreateCorpse(err.Error())
 	}
 
 	if location.Empty() {
-		world.ReleaseIdentifier(corpse.id)
+		world.IdentifierRegistry().Release(corpse.id)
 		if err := world.DeleteObject(corpse, location); err != nil {
 			return nil, errCreateCorpse("no location located and cannot delete corpse")
 		}
@@ -106,7 +106,7 @@ func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 
 		c.stopper.Do(func() {
 			close(c.stop)
-			c.world.ReleaseIdentifier(c.id)
+			c.world.IdentifierRegistry().Release(c.id)
 			err = c.world.DeleteObject(c, c.location)
 		})
 
@@ -136,7 +136,7 @@ func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 
 			c.stopper.Do(func() {
 				close(c.stop)
-				c.world.ReleaseIdentifier(c.id)
+				c.world.IdentifierRegistry().Release(c.id)
 				err = c.world.DeleteObject(c, c.location)
 			})
 

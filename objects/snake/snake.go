@@ -68,7 +68,7 @@ type Snake struct {
 // NewSnake creates new snake
 func NewSnake(world world.Interface) (*Snake, error) {
 	snake := &Snake{
-		id:        world.ObtainIdentifier(),
+		id:        world.IdentifierRegistry().Obtain(),
 		world:     world,
 		location:  make(engine.Location, snakeStartLength),
 		length:    snakeStartLength,
@@ -79,7 +79,7 @@ func NewSnake(world world.Interface) (*Snake, error) {
 	}
 
 	if err := snake.initLocate(); err != nil {
-		world.ReleaseIdentifier(snake.id)
+		world.IdentifierRegistry().Release(snake.id)
 		return nil, fmt.Errorf("cannot create snake: %s", err)
 	}
 
@@ -137,7 +137,7 @@ func (s *Snake) die() error {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 
-	s.world.ReleaseIdentifier(s.id)
+	s.world.IdentifierRegistry().Release(s.id)
 
 	if err := s.world.DeleteObject(s, s.location); err != nil {
 		return fmt.Errorf("die snake error: %s", err)

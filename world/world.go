@@ -367,10 +367,6 @@ func (w *World) GetObjects() []interface{} {
 	return w.pg.GetObjects()
 }
 
-func (w *World) ObtainIdentifier() Identifier {
-	return w.identifierRegistry.Obtain()
-}
-
-func (w *World) ReleaseIdentifier(id Identifier) {
-	w.identifierRegistry.Release(id)
+func (w *World) IdentifierRegistry() *IdentifierRegistry {
+	return w.identifierRegistry
 }

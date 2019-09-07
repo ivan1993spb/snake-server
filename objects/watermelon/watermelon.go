@@ -45,7 +45,7 @@ func (e ErrCreateWatermelon) Error() string {
 
 func NewWatermelon(world world.Interface) (*Watermelon, error) {
 	watermelon := &Watermelon{
-		id:  world.ObtainIdentifier(),
+		id:  world.IdentifierRegistry().Obtain(),
 		mux: &sync.RWMutex{},
 	}
 
@@ -54,7 +54,7 @@ func NewWatermelon(world world.Interface) (*Watermelon, error) {
 
 	location, err := world.CreateObjectRandomRect(watermelon, watermelonWidth, watermelonHeight)
 	if err != nil {
-		world.ReleaseIdentifier(watermelon.id)
+		world.IdentifierRegistry().Release(watermelon.id)
 		return nil, ErrCreateWatermelon(err.Error())
 	}
 
@@ -94,7 +94,7 @@ func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 			}
 		}
 
-		w.world.ReleaseIdentifier(w.id)
+		w.world.IdentifierRegistry().Release(w.id)
 
 		if err := w.world.DeleteObject(w, w.location); err != nil {
 			return 0, false, errWatermelonBite(err.Error())

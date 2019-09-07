@@ -19,6 +19,5 @@ type Interface interface {
 	LocationOccupied(location engine.Location) bool
 	Area() engine.Area
 	GetObjects() []interface{}
-	ObtainIdentifier() Identifier
-	ReleaseIdentifier(id Identifier)
+	IdentifierRegistry() *IdentifierRegistry
 }

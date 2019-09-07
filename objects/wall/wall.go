@@ -30,14 +30,14 @@ func (e ErrCreateWall) Error() string {
 
 func NewWall(world world.Interface, dm *engine.DotsMask) (*Wall, error) {
 	wall := &Wall{
-		id:    world.ObtainIdentifier(),
+		id:    world.IdentifierRegistry().Obtain(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
 
 	location, err := world.CreateObjectRandomByDotsMask(wall, dm)
 	if err != nil {
-		world.ReleaseIdentifier(wall.id)
+		world.IdentifierRegistry().Release(wall.id)
 		return nil, ErrCreateWall(err.Error())
 	}
 
@@ -50,7 +50,7 @@ func NewWall(world world.Interface, dm *engine.DotsMask) (*Wall, error) {
 
 func NewWallLocation(world world.Interface, location engine.Location) (*Wall, error) {
 	wall := &Wall{
-		id:    world.ObtainIdentifier(),
+		id:    world.IdentifierRegistry().Obtain(),
 		world: world,
 		mux:   &sync.RWMutex{},
 	}
@@ -60,7 +60,7 @@ func NewWallLocation(world world.Interface, location engine.Location) (*Wall, er
 
 	location, err := world.CreateObjectAvailableDots(wall, location)
 	if err != nil {
-		world.ReleaseIdentifier(wall.id)
+		world.IdentifierRegistry().Release(wall.id)
 		return nil, ErrCreateWall(err.Error())
 	}
 
@@ -93,7 +93,7 @@ func (w *Wall) Break(dot engine.Dot, force float64) (success bool, err error) {
 				w.location = location
 			}
 		} else {
-			w.world.ReleaseIdentifier(w.id)
+			w.world.IdentifierRegistry().Release(w.id)
 
 			if err := w.world.DeleteObject(w, w.location); err != nil {
 				return false, errWallBreak(err.Error())
