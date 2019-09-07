@@ -230,3 +230,11 @@ func Test_Rect_Dots_ReturnsDotList(t *testing.T) {
 		require.Equal(t, test.dots, test.rect.Dots(), fmt.Sprintf("number: %d", i))
 	}
 }
+
+func Test_NewRect_CreatesRectCorrectly(t *testing.T) {
+	r := NewRect(1, 2, 3, 4)
+	require.True(t, 1 == r.x)
+	require.True(t, 2 == r.y)
+	require.True(t, 3 == r.w)
+	require.True(t, 4 == r.h)
+}
