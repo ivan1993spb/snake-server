@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -133,5 +134,35 @@ func Test_Rect_MarshalJSON(t *testing.T) {
 		actualJSON, err := test.rect.MarshalJSON()
 		require.Nil(t, err, "test %d", i)
 		require.Equal(t, test.json, actualJSON, "test %d", i)
+	}
+}
+
+func Test_Rect_Width_ReturnsRectWidth(t *testing.T) {
+	tests := []struct {
+		rect Rect
+	}{
+		{Rect{0, 0, 10, 3}},
+		{Rect{0, 0, 22, 4}},
+		{Rect{0, 0, 123, 5}},
+		{Rect{0, 0, 0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.rect.w, test.rect.Width(), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Rect_Height_ReturnsRectHeight(t *testing.T) {
+	tests := []struct {
+		rect Rect
+	}{
+		{Rect{0, 0, 10, 3}},
+		{Rect{0, 0, 22, 4}},
+		{Rect{0, 0, 123, 5}},
+		{Rect{0, 0, 0, 233}},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.rect.h, test.rect.Height(), fmt.Sprintf("number: %d", i))
 	}
 }
