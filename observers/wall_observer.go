@@ -28,11 +28,7 @@ func (wo *WallObserver) run(stop <-chan struct{}) {
 }
 
 func (wo *WallObserver) generateRuins() {
-	ruinsGenerator, err := wall.NewRuinsGenerator(wo.world)
-	if err != nil {
-		wo.logger.WithError(err).Error("cannot create ruins generator")
-		return
-	}
+	ruinsGenerator := wall.NewRuinsGenerator(wo.world)
 
 	for !ruinsGenerator.Done() {
 		if err := ruinsGenerator.Err(); err != nil {

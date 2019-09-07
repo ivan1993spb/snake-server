@@ -57,18 +57,15 @@ func (e ErrCreateRuinsGenerator) Error() string {
 	return "cannot create ruins generator: " + string(e)
 }
 
-func NewRuinsGenerator(w world.Interface) (*RuinsGenerator, error) {
-	area, err := engine.NewArea(w.Width(), w.Height())
-	if err != nil {
-		return nil, ErrCreateRuinsGenerator("cannot create area: " + err.Error())
-	}
+func NewRuinsGenerator(w world.Interface) *RuinsGenerator {
+	area := w.Area()
 
 	return &RuinsGenerator{
 		world: w,
 		area:  area,
 
 		ruinsAreaLimit: calcRuinsAreaLimit(area.Size()),
-	}, nil
+	}
 }
 
 func (rg *RuinsGenerator) Done() bool {

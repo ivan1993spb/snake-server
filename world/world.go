@@ -359,14 +359,6 @@ func (w *World) LocationOccupied(location engine.Location) bool {
 	return w.pg.LocationOccupied(location)
 }
 
-func (w *World) Width() uint8 {
-	return w.pg.Width()
-}
-
-func (w *World) Height() uint8 {
-	return w.pg.Height()
-}
-
 func (w *World) Area() engine.Area {
 	return w.pg.Area()
 }

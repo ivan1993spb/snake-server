@@ -47,7 +47,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 		defer wg.Done()
 
 		chout <- NewMessageNotice("welcome to snake-server!")
-		chout <- NewMessageSize(p.world.Width(), p.world.Height())
+		chout <- NewMessageSize(p.world.Area().Width(), p.world.Area().Height())
 		chout <- NewMessageObjects(p.world.GetObjects())
 
 		for {
