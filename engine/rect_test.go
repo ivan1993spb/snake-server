@@ -259,3 +259,27 @@ func Test_Rect_ContainsDot(t *testing.T) {
 		require.Equal(t, test.expected, test.rect.ContainsDot(test.dot), fmt.Sprintf("number: %d", i))
 	}
 }
+
+func Test_Rect_Equals(t *testing.T) {
+	tests := []struct {
+		first    Rect
+		second   Rect
+		expected bool
+	}{
+		{Rect{0, 1, 100, 100}, Rect{0, 0, 100, 100}, false},
+		{Rect{0, 1, 100, 100}, Rect{0, 0, 100, 100}, false},
+		{Rect{1, 1, 100, 100}, Rect{1, 1, 100, 100}, true},
+		{Rect{1, 46, 123, 45}, Rect{1, 46, 123, 45}, true},
+		{Rect{33, 46, 123, 44}, Rect{33, 46, 123, 45}, false},
+		{Rect{}, Rect{123, 123, 2, 2}, false},
+		{Rect{}, Rect{}, true},
+		{Rect{123, 123, 3, 1}, Rect{123, 123, 2, 1}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.first.Equals(test.second),
+			fmt.Sprintf("first to second number: %d", i))
+		require.Equal(t, test.expected, test.second.Equals(test.first),
+			fmt.Sprintf("second to first number: %d", i))
+	}
+}
