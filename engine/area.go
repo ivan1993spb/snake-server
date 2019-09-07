@@ -94,7 +94,7 @@ func (a Area) ContainsDot(dot Dot) bool {
 }
 
 func (a Area) ContainsRect(rect Rect) bool {
-	return a.width > rect.w+rect.x && a.height > rect.h+rect.y
+	return a.width >= rect.w+rect.x && a.height >= rect.h+rect.y
 }
 
 func (a Area) ContainsLocation(location Location) bool {
