@@ -283,3 +283,28 @@ func Test_Rect_Equals(t *testing.T) {
 			fmt.Sprintf("second to first number: %d", i))
 	}
 }
+
+func Test_Rect_ContainsRect(t *testing.T) {
+	tests := []struct {
+		big      Rect
+		small    Rect
+		expected bool
+	}{
+		{Rect{0, 1, 100, 100}, Rect{0, 0, 100, 100}, false},
+		{Rect{0, 1, 100, 100}, Rect{30, 30, 5, 5}, true},
+		{Rect{1, 1, 100, 100}, Rect{1, 1, 100, 100}, true},
+		{Rect{1, 46, 123, 45}, Rect{20, 55, 30, 12}, true},
+		{Rect{33, 46, 123, 44}, Rect{33, 46, 123, 45}, false},
+		{Rect{}, Rect{123, 123, 2, 2}, false},
+		{Rect{}, Rect{}, true},
+		{Rect{123, 123, 3, 1}, Rect{123, 123, 2, 1}, true},
+		{Rect{123, 123, 2, 2}, Rect{124, 123, 2, 2}, false},
+		{Rect{123, 123, 2, 2}, Rect{122, 123, 2, 2}, false},
+		{Rect{123, 123, 2, 2}, Rect{123, 122, 2, 2}, false},
+		{Rect{123, 123, 2, 2}, Rect{123, 124, 2, 2}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.big.ContainsRect(test.small), fmt.Sprintf("number: %d", i))
+	}
+}
