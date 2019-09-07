@@ -167,3 +167,54 @@ func Test_Area_MarshalJSON(t *testing.T) {
 		require.Equal(t, test.json, actualJSON, "test %d", i)
 	}
 }
+
+func Test_Area_ContainsDot(t *testing.T) {
+	tests := []struct {
+		area     Area
+		dot      Dot
+		expected bool
+	}{
+		{Area{1, 1}, Dot{}, true},
+		{Area{1, 1}, Dot{1, 1}, false},
+		{Area{50, 100}, Dot{34, 12}, true},
+		{Area{100, 100}, Dot{101, 101}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.area.ContainsDot(test.dot), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Area_ContainsLocation(t *testing.T) {
+	tests := []struct {
+		area     Area
+		location Location
+		expected bool
+	}{
+		{Area{1, 1}, Location{{0, 0}}, true},
+		{Area{1, 1}, Location{{1, 1}}, false},
+		{Area{50, 100}, Location{{}, {}, {}}, true},
+		{Area{100, 100}, Location{{1, 1}, {2, 10}, {100, 100}}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.area.ContainsLocation(test.location), fmt.Sprintf("number: %d", i))
+	}
+}
+
+func Test_Area_ContainsRect(t *testing.T) {
+	tests := []struct {
+		area     Area
+		rect     Rect
+		expected bool
+	}{
+		{Area{1, 1}, Rect{0, 0, 1, 1}, true},
+		{Area{1, 1}, Rect{1, 1, 10, 1}, false},
+		{Area{50, 100}, Rect{10, 3, 20, 24}, true},
+		{Area{100, 100}, Rect{50, 43, 120, 32}, false},
+	}
+
+	for i, test := range tests {
+		require.Equal(t, test.expected, test.area.ContainsRect(test.rect), fmt.Sprintf("number: %d", i))
+	}
+}
