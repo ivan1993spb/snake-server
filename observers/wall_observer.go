@@ -24,12 +24,12 @@ func (wo *WallObserver) Observe(stop <-chan struct{}) {
 }
 
 func (wo *WallObserver) run(stop <-chan struct{}) {
-	wo.addRuins()
+	wo.generateRuins()
 }
 
-func (wo *WallObserver) addRuins() {
+func (wo *WallObserver) generateRuins() {
 	// TODO: Create abstraction layer for adding of objects.
-	if _, err := wall.Ruins(wo.world); err != nil {
+	if _, err := wall.GenerateRuins(wo.world); err != nil {
 		wo.logger.WithError(err).Error("error on ruins creation")
 	}
 }
