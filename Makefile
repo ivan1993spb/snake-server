@@ -85,5 +85,9 @@ install:
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
 
+coverprofile:
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out
+
 go/generate:
 	@go list ./... | grep -v vendor | xargs go generate -v
