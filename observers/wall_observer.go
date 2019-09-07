@@ -28,8 +28,20 @@ func (wo *WallObserver) run(stop <-chan struct{}) {
 }
 
 func (wo *WallObserver) generateRuins() {
-	// TODO: Create abstraction layer for adding of objects.
-	if _, err := wall.GenerateRuins(wo.world); err != nil {
-		wo.logger.WithError(err).Error("error on ruins creation")
+	ruinsGenerator, err := wall.NewRuinsGenerator(wo.world)
+	if err != nil {
+		wo.logger.WithError(err).Error("cannot create ruins generator")
+		return
+	}
+
+	for !ruinsGenerator.Done() {
+		if err := ruinsGenerator.Err(); err != nil {
+			wo.logger.WithError(err).Error("error on ruins generation: interrupted")
+			break
+		}
+
+		if _, err := ruinsGenerator.GenerateWall(); err != nil {
+			wo.logger.WithError(err).Error("error on ruins generation")
+		}
 	}
 }
