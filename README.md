@@ -186,6 +186,7 @@ Some samples you can see here:
 
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
 * Python client repo: https://github.com/ivan1993spb/snake-client
+* PyGame client repo: https://github.com/ivan1993spb/snake-desktop-client
 
 ## API description
 
