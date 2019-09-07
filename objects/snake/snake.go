@@ -346,7 +346,7 @@ func (s *Snake) getNextHeadDot() (engine.Dot, error) {
 	defer s.mux.RUnlock()
 
 	if len(s.location) > 0 {
-		return s.world.Navigate(s.location[0], s.direction, 1)
+		return s.world.Area().Navigate(s.location[0], s.direction, 1)
 	}
 
 	return engine.Dot{}, errors.New("cannot get next head dots: empty location")
