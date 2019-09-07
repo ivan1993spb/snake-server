@@ -443,6 +443,15 @@ Game objects:
     "dots": [[3, 2], [3, 1], [3, 0]]
   }
   ```
+* Mouse:
+  ```json
+  {
+    "type": "mouse",
+    "id": 123,
+    "dot": [3, 2],
+    "direction": "south"
+  }
+  ```
 * Watermelon:
   ```json
   {
