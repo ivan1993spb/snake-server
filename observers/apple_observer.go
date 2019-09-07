@@ -55,7 +55,7 @@ func (ao *AppleObserver) listen(stop <-chan struct{}) {
 
 func (ao *AppleObserver) calcAppleCount() int {
 	appleCount := defaultAppleCount
-	size := ao.world.Size()
+	size := ao.world.Area().Size()
 
 	if size > oneAppleArea {
 		appleCount = int(size / oneAppleArea)

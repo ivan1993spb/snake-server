@@ -438,10 +438,6 @@ func (pg *Playground) LocationOccupied(location engine.Location) bool {
 	return pg.cMap.HasAll(location.Hash())
 }
 
-func (pg *Playground) Size() uint16 {
-	return pg.area.Size()
-}
-
 func (pg *Playground) Width() uint8 {
 	return pg.area.Width()
 }

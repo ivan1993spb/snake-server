@@ -59,7 +59,7 @@ func (wo *WatermelonObserver) init() {
 
 // calcMaxWatermelonCount returns max possible watermelon count
 func (wo *WatermelonObserver) calcMaxWatermelonCount() int32 {
-	var size = int32(wo.world.Size())
+	var size = int32(wo.world.Area().Size())
 	var maxWatermelonCount = size / oneWatermelonArea
 	return maxWatermelonCount
 }
