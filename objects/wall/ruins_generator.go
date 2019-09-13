@@ -7,7 +7,18 @@ import (
 	"github.com/ivan1993spb/snake-server/world"
 )
 
-const ruinsFactor = 0.15
+const (
+	ruinsFactorAreaTiny     = 0
+	ruinsFactorAreaSmall    = 0.09
+	ruinsFactorAreaMedium   = 0.12
+	ruinsFactorAreaLarge    = 0.15
+	ruinsFactorAreaEnormous = 0.16
+
+	sizeAreaTiny   = 15 * 15
+	sizeAreaSmall  = 50 * 50
+	sizeAreaMedium = 100 * 100
+	sizeAreaLarge  = 150 * 150
+)
 
 const (
 	findLocationSuccessiveErrorLimit    = 16
@@ -33,8 +44,24 @@ var masks = []*engine.DotsMask{
 	engine.DotsMaskBigHome,
 }
 
+func getRuinsFactor(size uint16) float32 {
+	if size <= sizeAreaTiny {
+		return ruinsFactorAreaTiny
+	}
+	if size <= sizeAreaSmall {
+		return ruinsFactorAreaSmall
+	}
+	if size <= sizeAreaMedium {
+		return ruinsFactorAreaMedium
+	}
+	if size <= sizeAreaLarge {
+		return ruinsFactorAreaLarge
+	}
+	return ruinsFactorAreaEnormous
+}
+
 func calcRuinsAreaLimit(size uint16) uint16 {
-	return uint16(float32(size) * ruinsFactor)
+	return uint16(float32(size) * getRuinsFactor(size))
 }
 
 type RuinsGenerator struct {
@@ -96,6 +123,10 @@ func (rg *RuinsGenerator) GenerateWall() (*Wall, error) {
 		return nil, rg.Err()
 	}
 
+	if rg.areaOccupiedSum == rg.ruinsAreaLimit {
+		return nil, ErrGenerateWall("ruins generation has been done")
+	}
+
 	mask := rg.getMask()
 
 	location, err := rg.findLocation(mask)
@@ -140,6 +171,10 @@ func (rg *RuinsGenerator) getMask() *engine.DotsMask {
 }
 
 func (rg *RuinsGenerator) findLocation(mask *engine.DotsMask) (engine.Location, error) {
+	if rg.areaOccupiedSum == rg.ruinsAreaLimit {
+		return engine.Location{}, nil
+	}
+
 	mask = mask.TurnRandom()
 
 	if rg.area.Width() < mask.Width() || rg.area.Height() < mask.Height() {
