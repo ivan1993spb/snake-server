@@ -163,6 +163,7 @@ func (m *Mouse) Run(stop <-chan struct{}) {
 	go func() {
 		select {
 		case <-stop:
+			m.die()
 		case <-m.stop:
 		}
 
