@@ -3,3 +3,4 @@ snake-server*
 *.patch
 *.log
 *.test
+*.out
