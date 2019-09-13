@@ -419,7 +419,142 @@ components:
           description: List of all game objects on map
           type: array
           items:
-            type: object
+            oneOf:
+              - $ref: '#/components/schemas/Snake'
+              - $ref: '#/components/schemas/Apple'
+              - $ref: '#/components/schemas/Corpse'
+              - $ref: '#/components/schemas/Mouse'
+              - $ref: '#/components/schemas/Watermelon'
+              - $ref: '#/components/schemas/Wall'
+
+    Direction:
+      type: string
+      enum:
+        - "north"
+        - "east"
+        - "south"
+        - "west"
+
+    Dot:
+      type: array
+      items:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 255
+        nullable: false
+      minItems: 2
+      maxItems: 2
+
+    Dots:
+      type: array
+      items:
+        $ref: '#/components/schemas/Dot'
+
+    Snake:
+      type: object
+      description: Snake
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `snake`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Apple:
+      type: object
+      description: Apple
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `apple`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dot:
+          $ref: '#/components/schemas/Dot'
+
+    Corpse:
+      type: object
+      description: Cropse
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `corpse`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Mouse:
+      type: object
+      description: Mouse
+      required:
+        - type
+        - id
+        - dots
+        - direction
+      properties:
+        type:
+          description: The value is `mouse`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dot:
+          $ref: '#/components/schemas/Dot'
+        direction:
+          $ref: '#/components/schemas/Direction'
+
+    Watermelon:
+      type: object
+      description: Watermelon
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `watermelon`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Wall:
+      type: object
+      description: Wall
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `wall`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
 
     Pong:
       type: object
