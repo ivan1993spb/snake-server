@@ -3,10 +3,10 @@
 ARG IMAGE_GOLANG
 ARG IMAGE_ALPINE
 
-FROM $IMAGE_GOLANG AS intermediate
+ARG VERSION
+ARG BUILD
 
-ARG VERSION=docker
-ARG BUILD=docker
+FROM $IMAGE_GOLANG AS intermediate
 
 WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
