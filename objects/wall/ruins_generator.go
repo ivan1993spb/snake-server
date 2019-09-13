@@ -2,6 +2,7 @@ package wall
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -76,6 +77,8 @@ type RuinsGenerator struct {
 	errNewWallLocationCounter int
 
 	maskIndex int
+
+	mux *sync.Mutex
 }
 
 type ErrCreateRuinsGenerator string
@@ -92,6 +95,8 @@ func NewRuinsGenerator(w world.Interface) *RuinsGenerator {
 		area:  area,
 
 		ruinsAreaLimit: calcRuinsAreaLimit(area.Size()),
+
+		mux: &sync.Mutex{},
 	}
 }
 
@@ -122,6 +127,9 @@ func (rg *RuinsGenerator) GenerateWall() (*Wall, error) {
 	if rg.Err() != nil {
 		return nil, rg.Err()
 	}
+
+	rg.mux.Lock()
+	defer rg.mux.Unlock()
 
 	if rg.areaOccupiedSum == rg.ruinsAreaLimit {
 		return nil, ErrGenerateWall("ruins generation has been done")
