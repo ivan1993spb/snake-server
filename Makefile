@@ -22,14 +22,16 @@ PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
-BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
+DOCKER_BUILD_ARGS=\
+ --build-arg VERSION=$(VERSION) \
+ --build-arg BUILD=$(BUILD) \
+ --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
+ --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE)
 
 default: build
 
 docker/build:
-	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) \
-		--build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
-		--build-arg IMAGE_ALPINE=$(IMAGE_ALPINE) .
+	@docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) .
 	@docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
 	@echo "Build $(BUILD) tagged $(IMAGE):$(VERSION)"
 	@echo "Build $(BUILD) tagged $(IMAGE):latest"
