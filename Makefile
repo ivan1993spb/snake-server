@@ -12,7 +12,7 @@ IMAGE_ALPINE=alpine:3.10
 REPO=github.com/ivan1993spb/snake-server
 
 DEFAULT_GOOS=linux
-DEFAULT_GOARCH=386
+DEFAULT_GOARCH=amd64
 
 BINARY_NAME=snake-server
 VERSION=$(shell git describe --tags --abbrev=0)
