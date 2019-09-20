@@ -1,0 +1,567 @@
+openapi: 3.0.0
+
+info:
+  title: Snake-Server API
+  description: Snake-Server is the server for online arcade game - snake.
+  version: 4.2.0
+  license:
+    name: MIT
+  contact:
+    name: Ivan Pushkin
+    url: https://twitter.com/IvanDeveloper
+
+servers:
+  - url: /api
+    description: Current instance
+  - url: http://localhost:8080/api
+    description: HTTP instance
+  - url: https://localhost:8080/api
+    description: HTTPS instance
+
+paths:
+  /games:
+    get:
+      description: Get all games
+      tags:
+        - Games
+      responses:
+        200:
+          description: Returns games on server and additional information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Games'
+    post:
+      description: Create new game
+      tags:
+        - Games
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                limit:
+                  description: Players limit for game
+                  type: integer
+                  format: int32
+                  minimum: 1
+                width:
+                  description: Map width
+                  type: integer
+                  format: int32
+                  maximum: 255
+                height:
+                  description: Map height
+                  type: integer
+                  format: int32
+                  maximum: 255
+              required:
+                - limit
+                - width
+                - height
+      responses:
+        201:
+          description: Returns created game object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Service unavailable, cannot create new game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /games/{id}:
+    get:
+      description: Get game by identificator
+      tags:
+        - Games
+      parameters:
+        - $ref: '#/components/parameters/GameID'
+      responses:
+        200:
+          description: Returns game object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: Delete game by identificator
+      tags:
+        - Games
+      parameters:
+        - $ref: '#/components/parameters/GameID'
+      responses:
+        200:
+          description: Returns identificator of deleted game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deleted'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Service unavailable, cannot delete game right away
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /capacity:
+    get:
+      tags:
+        - Server
+      description: Get server load (capacity)
+      responses:
+        200:
+          description: Returns server capacity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capacity'
+  /info:
+    get:
+      tags:
+        - Server
+      description: Get server information
+      responses:
+        200:
+          description: Returns information about server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Info'
+  /games/{id}/broadcast:
+    post:
+      tags:
+        - Games
+      description: Broadcast a message to players in game with passed identificator
+      parameters:
+        - $ref: '#/components/parameters/GameID'
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                message:
+                  description: Message to broadcast for players in selected game
+                  type: string
+              required:
+                - message
+      responses:
+        200:
+          description: Returns object contained broadcast result flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        400:
+          description: Invalid inputs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        503:
+          description: Service unavailable, cannot broadcast right away
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /games/{id}/objects:
+    get:
+      tags:
+        - Games
+      description: Get all objects on map
+      parameters:
+        - $ref: '#/components/parameters/GameID'
+      responses:
+        200:
+          description: Returns all objects on map
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Objects'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /ping:
+    get:
+      tags:
+        - Server
+      description: Ping-pong request
+      responses:
+        200:
+          description: Pong response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pong'
+components:
+
+  parameters:
+    GameID:
+      in: path
+      name: id
+      schema:
+        type: integer
+        format: int32
+      required: true
+      description: Game identificator
+
+  schemas:
+
+    Games:
+      type: object
+      description: Object contains list of games on server
+      required:
+        - games
+        - limit
+        - count
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+        limit:
+          description: Games limit
+          type: integer
+          format: int32
+        count:
+          description: Current games count on server
+          type: integer
+          format: int32
+
+    Info:
+      type: object
+      description: Object contains common information about server
+      required:
+        - author
+        - license
+        - version
+        - build
+      properties:
+        author:
+          type: string
+        license:
+          type: string
+        version:
+          type: string
+        build:
+          type: string
+
+    Game:
+      type: object
+      description: Object contains information about game
+      required:
+        - id
+        - limit
+        - count
+        - width
+        - height
+        - rate
+      properties:
+        id:
+          description: Game identificator
+          type: integer
+          format: int32
+        limit:
+          description: Game players limit
+          type: integer
+          format: int32
+        count:
+          description: Current players count in game
+          type: integer
+          format: int32
+        width:
+          description: Map width
+          type: integer
+          format: int32
+        height:
+          description: Map height
+          type: integer
+          format: int32
+        rate:
+          description: Game rate
+          type: integer
+          format: int32
+
+    Broadcast:
+      type: object
+      description: Object contains broadcast result flag
+      required:
+        - success
+      properties:
+        success:
+          description: Flag is true if broadcast is succeed and flag is false if broadcast is failed
+          type: boolean
+
+    Capacity:
+      type: object
+      description: Object contains current server capacity
+      required:
+        - capacity
+      properties:
+        capacity:
+          description: Capacity is the number of opened connections divided by the number of allowed connections for server instance
+          type: number
+          format: double
+
+    Error:
+      type: object
+      description: Contains code of error and short description text
+      required:
+        - code
+        - text
+      properties:
+        code:
+          description: Error code
+          type: integer
+          format: int32
+        text:
+          description: Short error description
+          type: string
+
+    Deleted:
+      type: object
+      description: Object contains information about deleted game
+      required:
+        - id
+      properties:
+        id:
+          description: Game identificator
+          type: integer
+          format: int32
+
+    Objects:
+      type: object
+      description: Object contains all game objects on map
+      required:
+        - objects
+      properties:
+        objects:
+          description: List of all game objects on map
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/Snake'
+              - $ref: '#/components/schemas/Apple'
+              - $ref: '#/components/schemas/Corpse'
+              - $ref: '#/components/schemas/Mouse'
+              - $ref: '#/components/schemas/Watermelon'
+              - $ref: '#/components/schemas/Wall'
+
+    Direction:
+      type: string
+      enum:
+        - "north"
+        - "east"
+        - "south"
+        - "west"
+
+    Dot:
+      type: array
+      items:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 255
+        nullable: false
+      minItems: 2
+      maxItems: 2
+
+    Dots:
+      type: array
+      items:
+        $ref: '#/components/schemas/Dot'
+
+    Snake:
+      type: object
+      description: Snake
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `snake`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Apple:
+      type: object
+      description: Apple
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `apple`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dot:
+          $ref: '#/components/schemas/Dot'
+
+    Corpse:
+      type: object
+      description: Cropse
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `corpse`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Mouse:
+      type: object
+      description: Mouse
+      required:
+        - type
+        - id
+        - dots
+        - direction
+      properties:
+        type:
+          description: The value is `mouse`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dot:
+          $ref: '#/components/schemas/Dot'
+        direction:
+          $ref: '#/components/schemas/Direction'
+
+    Watermelon:
+      type: object
+      description: Watermelon
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `watermelon`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Wall:
+      type: object
+      description: Wall
+      required:
+        - type
+        - id
+        - dots
+      properties:
+        type:
+          description: The value is `wall`
+          type: string
+        id:
+          type: integer
+          format: int64
+        dots:
+          $ref: '#/components/schemas/Dots'
+
+    Pong:
+      type: object
+      description: Pong message from server
+      required:
+        - pong
+      properties:
+        pong:
+          type: integer
+          format: int32

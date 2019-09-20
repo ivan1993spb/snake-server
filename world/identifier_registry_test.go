@@ -187,3 +187,20 @@ func TestIdentifierRegistry_Obtain_ObtainsIdentifierCorrectly(t *testing.T) {
 		require.Equal(t, test.expectedIdentifier, actualIdentifier, msg)
 	}
 }
+
+func Test_Identifier_String(t *testing.T) {
+	tests := []struct {
+		id  Identifier
+		str string
+	}{
+		{22, "22"},
+		{0, "0"},
+		{123, "123"},
+		{1123, "1123"},
+		{12313241, "12313241"},
+	}
+
+	for number, test := range tests {
+		require.Equal(t, test.str, test.id.String(), fmt.Sprintf("error test case: %d", number))
+	}
+}

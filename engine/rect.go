@@ -43,11 +43,11 @@ func (r Rect) ContainsDot(d Dot) bool {
 }
 
 func (r1 Rect) ContainsRect(r2 Rect) bool {
-	return r1.x <= r2.x && r1.y <= r2.y && r1.w >= r2.w && r1.h >= r2.h
+	return r1.x <= r2.x && r1.y <= r2.y && r1.x+r1.w >= r2.x+r2.w && r1.y+r1.h >= r2.y+r2.h
 }
 
 func (r1 Rect) Equals(r2 Rect) bool {
-	return r1 == r2 || (r1.x == r2.x && r1.y == r2.y && r1.w == r2.w && r1.h == r2.h)
+	return r1 == r2
 }
 
 func (r Rect) DotCount() uint16 {

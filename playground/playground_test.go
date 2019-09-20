@@ -96,8 +96,47 @@ func Test_Playground_UpdateObject(t *testing.T) {
 	t.SkipNow()
 }
 
+type TestStructure struct {
+	a, b, c, d int64
+	e, f, g, h float64
+}
+
 func Benchmark_Playground_UpdateObject(b *testing.B) {
-	// TODO: Implement benchmark.
+	const (
+		areaWidth  = 150
+		areaHeight = 100
+	)
+
+	const (
+		first = iota
+		second
+		count
+	)
+
+	pg, err := NewPlayground(areaWidth, areaHeight)
+
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	object := &TestStructure{}
+
+	locations := [count]engine.Location{
+		first:  engine.NewRect(0, 0, areaWidth, areaHeight/2).Location(),
+		second: engine.NewRect(0, 0, areaWidth/2, areaHeight).Location(),
+	}
+
+	location := locations[first]
+	pg.CreateObject(object, location)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if err := pg.UpdateObject(object, location, locations[i%count]); err != nil {
+			b.Fatal(err)
+		}
+		location = locations[i%count]
+	}
 }
 
 func Test_Playground_DeleteObject(t *testing.T) {

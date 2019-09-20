@@ -359,30 +359,14 @@ func (w *World) LocationOccupied(location engine.Location) bool {
 	return w.pg.LocationOccupied(location)
 }
 
-func (w *World) Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error) {
-	return w.pg.Navigate(dot, dir, dis)
-}
-
-func (w *World) Size() uint16 {
-	return w.pg.Size()
-}
-
-func (w *World) Width() uint8 {
-	return w.pg.Width()
-}
-
-func (w *World) Height() uint8 {
-	return w.pg.Height()
+func (w *World) Area() engine.Area {
+	return w.pg.Area()
 }
 
 func (w *World) GetObjects() []interface{} {
 	return w.pg.GetObjects()
 }
 
-func (w *World) ObtainIdentifier() Identifier {
-	return w.identifierRegistry.Obtain()
-}
-
-func (w *World) ReleaseIdentifier(id Identifier) {
-	w.identifierRegistry.Release(id)
+func (w *World) IdentifierRegistry() *IdentifierRegistry {
+	return w.identifierRegistry
 }

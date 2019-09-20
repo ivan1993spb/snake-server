@@ -2,6 +2,7 @@ package world
 
 import (
 	"math"
+	"strconv"
 	"sync"
 )
 
@@ -13,6 +14,10 @@ const (
 )
 
 type Identifier uint32
+
+func (i Identifier) String() string {
+	return strconv.FormatUint(uint64(i), 10)
+}
 
 type IdentifierRegistry struct {
 	index               uint32

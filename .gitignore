@@ -1,3 +1,6 @@
 snake-server*
 *.diff
 *.patch
+*.log
+*.test
+*.out

@@ -8,5 +8,5 @@ const (
 )
 
 func NewHandler() http.Handler {
-	return http.FileServer(newRelateveAssetFS())
+	return http.FileServer(newRelativeAssetFS())
 }

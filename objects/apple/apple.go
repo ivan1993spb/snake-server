@@ -31,7 +31,7 @@ func (e errCreateApple) Error() string {
 // NewApple creates and locates new apple
 func NewApple(world world.Interface) (*Apple, error) {
 	apple := &Apple{
-		id:  world.ObtainIdentifier(),
+		id:  world.IdentifierRegistry().Obtain(),
 		mux: &sync.RWMutex{},
 	}
 
@@ -40,13 +40,13 @@ func NewApple(world world.Interface) (*Apple, error) {
 
 	location, err := world.CreateObjectRandomDot(apple)
 	if err != nil {
-		world.ReleaseIdentifier(apple.id)
+		world.IdentifierRegistry().Release(apple.id)
 
 		return nil, errCreateApple(err.Error())
 	}
 
 	if location.Empty() {
-		world.ReleaseIdentifier(apple.id)
+		world.IdentifierRegistry().Release(apple.id)
 
 		if err := world.DeleteObject(apple, location); err != nil {
 			return nil, errCreateApple("no location located and cannot delete apple")
@@ -77,7 +77,7 @@ func (a *Apple) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	defer a.mux.RUnlock()
 
 	if a.dot.Equals(dot) {
-		a.world.ReleaseIdentifier(a.id)
+		a.world.IdentifierRegistry().Release(a.id)
 		if err := a.world.DeleteObject(a, engine.Location{a.dot}); err != nil {
 			return 0, false, errAppleBite(err.Error())
 		}

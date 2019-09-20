@@ -47,7 +47,7 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 		defer wg.Done()
 
 		chout <- NewMessageNotice("welcome to snake-server!")
-		chout <- NewMessageSize(p.world.Width(), p.world.Height())
+		chout <- NewMessageSize(p.world.Area().Width(), p.world.Area().Height())
 		chout <- NewMessageObjects(p.world.GetObjects())
 
 		for {
@@ -70,6 +70,9 @@ func (p *Player) Start(stop <-chan struct{}, chin <-chan string) <-chan Message 
 				p.logger.Errorln("cannot create snake to player:", err)
 				continue
 			}
+
+			p.emptyInputChan(localStopper, chin)
+
 			snakeStop := s.Run(localStopper, p.logger)
 
 			chout <- NewMessageSnake(s.GetID())
@@ -127,4 +130,20 @@ func (p *Player) processSnakeCommands(stop <-chan struct{}, chin <-chan string, 
 	}()
 
 	return errch
+}
+
+func (p *Player) emptyInputChan(stop <-chan struct{}, chin <-chan string) {
+	for {
+		if len(chin) > 0 {
+			select {
+			case <-chin:
+			case <-stop:
+				return
+			default:
+				return
+			}
+		} else {
+			return
+		}
+	}
 }

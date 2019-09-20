@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/rand"
 	"strconv"
 )
@@ -93,7 +94,7 @@ func (a Area) ContainsDot(dot Dot) bool {
 }
 
 func (a Area) ContainsRect(rect Rect) bool {
-	return a.width > rect.w+rect.x && a.height > rect.h+rect.y
+	return a.width >= rect.w+rect.x && a.height >= rect.h+rect.y
 }
 
 func (a Area) ContainsLocation(location Location) bool {
@@ -239,15 +240,19 @@ func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
 	}
 }
 
-const areaExpectedSerializedSize = 10
+const areaExpectedSerializedSize = 26
 
 // Implementing json.Marshaler interface
 func (a Area) MarshalJSON() ([]byte, error) {
 	buff := bytes.NewBuffer(make([]byte, 0, areaExpectedSerializedSize))
-	buff.WriteByte('[')
+	buff.WriteString(`{"width":`)
 	buff.WriteString(strconv.Itoa(int(a.width)))
-	buff.WriteByte(',')
+	buff.WriteString(`,"height":`)
 	buff.WriteString(strconv.Itoa(int(a.height)))
-	buff.WriteByte(']')
+	buff.WriteByte('}')
 	return buff.Bytes(), nil
+}
+
+func (a Area) String() string {
+	return fmt.Sprintf("[Area: width=%d; height=%d]", a.width, a.height)
 }

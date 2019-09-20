@@ -17,11 +17,7 @@ type Interface interface {
 	CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error)
 	CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error)
 	LocationOccupied(location engine.Location) bool
-	Navigate(dot engine.Dot, dir engine.Direction, dis uint8) (engine.Dot, error)
-	Size() uint16
-	Width() uint8
-	Height() uint8
+	Area() engine.Area
 	GetObjects() []interface{}
-	ObtainIdentifier() Identifier
-	ReleaseIdentifier(id Identifier)
+	IdentifierRegistry() *IdentifierRegistry
 }

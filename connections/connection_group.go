@@ -212,11 +212,11 @@ func (cg *ConnectionGroup) Stop() {
 }
 
 func (cg *ConnectionGroup) GetWorldWidth() uint8 {
-	return cg.game.World().Width()
+	return cg.game.World().Area().Width()
 }
 
 func (cg *ConnectionGroup) GetWorldHeight() uint8 {
-	return cg.game.World().Height()
+	return cg.game.World().Area().Height()
 }
 
 func (cg *ConnectionGroup) GetObjects() []interface{} {

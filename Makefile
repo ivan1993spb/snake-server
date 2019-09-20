@@ -1,16 +1,18 @@
 
-EXECUTABLES=git go find docker
+EXECUTABLES=git go find docker tar
 
 _=$(foreach exec,$(EXECUTABLES), \
 	$(if $(shell which $(exec)), ok, $(error "No $(exec) in PATH")))
 
 IMAGE=ivan1993spb/snake-server
-IMAGE_GOLANG=golang:1.10-alpine3.7
+
+IMAGE_GOLANG=golang:1.12-alpine3.10
+IMAGE_ALPINE=alpine:3.10
 
 REPO=github.com/ivan1993spb/snake-server
 
 DEFAULT_GOOS=linux
-DEFAULT_GOARCH=386
+DEFAULT_GOARCH=amd64
 
 BINARY_NAME=snake-server
 VERSION=$(shell git describe --tags --abbrev=0)
@@ -20,12 +22,16 @@ PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
-BUILD_ARGS=--build-arg VERSION=$(VERSION) --build-arg BUILD=$(BUILD)
+DOCKER_BUILD_ARGS=\
+ --build-arg VERSION=$(VERSION) \
+ --build-arg BUILD=$(BUILD) \
+ --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
+ --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE)
 
 default: build
 
 docker/build:
-	@docker build $(BUILD_ARGS) -t $(IMAGE):$(VERSION) .
+	@docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) .
 	@docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
 	@echo "Build $(BUILD) tagged $(IMAGE):$(VERSION)"
 	@echo "Build $(BUILD) tagged $(IMAGE):latest"
@@ -37,26 +43,39 @@ docker/push:
 	@docker push $(IMAGE):latest
 
 go/vet:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
-		sh -c "go list ./... | grep -v vendor | xargs go vet"
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet ./...
 
 go/test:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) $(IMAGE_GOLANG) \
-		sh -c "go list ./... | grep -v vendor | xargs go test -v"
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go test -v -cover ./...
 
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) $(IMAGE_GOLANG) \
+		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
 		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
-	$(foreach GOOS, $(PLATFORMS),\
-		$(foreach GOARCH, $(ARCHITECTURES), $(shell docker run --rm \
-			-v $(PWD):/go/src/$(REPO) \
-			-w /go/src/$(REPO) \
-			-e GOOS=$(GOOS) \
-			-e GOARCH=$(GOARCH) \
-			$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH))))
+	@_=$(foreach GOOS, $(PLATFORMS), \
+		$(foreach GOARCH, $(ARCHITECTURES), \
+			$(shell docker run --rm \
+				-v $(PWD):/go/src/$(REPO) \
+				-w /go/src/$(REPO) \
+				-e GOOS=$(GOOS) \
+				-e GOARCH=$(GOARCH) \
+				-e CGO_ENABLED=0 \
+				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+		) \
+	)
+	@_=$(foreach GOOS, $(PLATFORMS), \
+		$(foreach GOARCH, $(ARCHITECTURES), \
+			$(shell tar -zcf \
+				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH).tar.gz \
+				--transform="flags=r;s|-$(VERSION)-$(GOOS)-$(GOARCH)||" \
+				$(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+		) \
+	)
 	@echo -n
 
 build:
@@ -67,6 +86,11 @@ install:
 
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
+
+coverprofile:
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -func=coverage.out
+	@go tool cover -html=coverage.out
 
 go/generate:
 	@go list ./... | grep -v vendor | xargs go generate -v
