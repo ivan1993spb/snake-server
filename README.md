@@ -1,11 +1,12 @@
 
 # Snake-Server [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server)  [![GitHub release](https://img.shields.io/github/release/ivan1993spb/snake-server.svg)](https://github.com/ivan1993spb/snake-server/releases/latest) [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
-Snake-Server is a server for online arcade game - snake.
+Snake-Server is a server for online arcade game - snake. See working instance here - http://snakeonline.xyz
 
 ## Table of contents
 
 - [Game rules](#game-rules)
+- [Demo](#demo)
 - [Basic usage](#basic-usage)
 - [Installation](#installation)
   * [Download and install binary](#download-and-install-binary)
@@ -33,9 +34,11 @@ Snake-Server is a server for online arcade game - snake.
 * If a snake hits a wall the snake dies and the player starts again with a new small snake.
 * A snake may eat another snake if it's length greater or equal to the square of length of the second one.
 
-Demo:
+## Demo
 
-![Client screenshot](demo.gif)
+[![Game demo](demo.gif)](http://snakeonline.xyz)
+
+[Try it out!](http://snakeonline.xyz)
 
 ## Basic usage
 
