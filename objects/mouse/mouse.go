@@ -3,6 +3,7 @@ package mouse
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -155,10 +156,17 @@ func (m *Mouse) move() error {
 	return nil
 }
 
-const mouseTickDuration = time.Second
+const (
+	mouseTickDurationMin = time.Second
+	mouseTickDurationMax = time.Second * 3
+)
+
+func genMouseTickDuration() time.Duration {
+	return mouseTickDurationMin + time.Duration(rand.Int63n(int64(mouseTickDurationMax-mouseTickDurationMin)))
+}
 
 func (m *Mouse) Run(stop <-chan struct{}) {
-	var ticker = time.NewTicker(mouseTickDuration)
+	var ticker = time.NewTicker(genMouseTickDuration())
 
 	go func() {
 		select {
