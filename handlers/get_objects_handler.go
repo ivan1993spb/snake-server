@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -14,6 +17,8 @@ import (
 const URLRouteGetObjects = "/games/{id}/objects"
 
 const MethodGetObjects = http.MethodGet
+
+const waitRequestTimeout = time.Second * 10
 
 type responseGetObjectsHandler struct {
 	Objects []interface{} `json:"objects"`
@@ -27,6 +32,9 @@ type responseGetObjectsHandlerError struct {
 type getObjectsHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
+
+	timers    map[int]time.Time
+	timersMux *sync.Mutex
 }
 
 type ErrGetObjectsHandler string
@@ -39,7 +47,40 @@ func NewGetObjectsHandler(logger logrus.FieldLogger, groupManager *connections.C
 	return &getObjectsHandler{
 		logger:       logger,
 		groupManager: groupManager,
+
+		timers:    map[int]time.Time{},
+		timersMux: &sync.Mutex{},
 	}
+}
+
+func (h *getObjectsHandler) unsafeDiscardOutdatedTimers() {
+	for groupId, timer := range h.timers {
+		if time.Since(timer) > waitRequestTimeout {
+			delete(h.timers, groupId)
+		}
+	}
+}
+
+func (h *getObjectsHandler) unsafeSetupTimer(groupId int) {
+	h.timers[groupId] = time.Now()
+}
+
+func (h *getObjectsHandler) getRetryAfterHeaderSeconds(groupId int) int {
+	h.timersMux.Lock()
+	defer h.timersMux.Unlock()
+
+	h.unsafeDiscardOutdatedTimers()
+
+	if timer, ok := h.timers[groupId]; ok {
+		since := time.Since(timer)
+		if since < waitRequestTimeout {
+			return int(math.Ceil((waitRequestTimeout - since).Seconds()))
+		}
+	}
+
+	h.unsafeSetupTimer(groupId)
+
+	return 0
 }
 
 func (h *getObjectsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +114,16 @@ func (h *getObjectsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Text: "unknown error",
 			})
 		}
+		return
+	}
+
+	if retryAfterSeconds := h.getRetryAfterHeaderSeconds(id); retryAfterSeconds > 0 {
+		seconds := strconv.Itoa(retryAfterSeconds)
+		w.Header().Set("Retry-After", seconds)
+		h.writeResponseJSON(w, http.StatusTooManyRequests, &responseGetObjectsHandlerError{
+			Code: http.StatusTooManyRequests,
+			Text: "retry after " + seconds + " second(s)",
+		})
 		return
 	}
 
