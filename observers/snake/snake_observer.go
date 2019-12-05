@@ -1,10 +1,11 @@
-package observers
+package snake_observer
 
 import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/objects/corpse"
 	"github.com/ivan1993spb/snake-server/objects/snake"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -15,7 +16,7 @@ type SnakeObserver struct {
 	logger logrus.FieldLogger
 }
 
-func NewSnakeObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+func NewSnakeObserver(w world.Interface, logger logrus.FieldLogger) observers.Observer {
 	return &SnakeObserver{
 		world:  w,
 		logger: logger,

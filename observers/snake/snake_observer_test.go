@@ -1,4 +1,4 @@
-package observers
+package snake_observer
 
 import (
 	"testing"

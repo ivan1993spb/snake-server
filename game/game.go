@@ -5,7 +5,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/ivan1993spb/snake-server/observers"
+	"github.com/ivan1993spb/snake-server/observers/apple"
+	"github.com/ivan1993spb/snake-server/observers/logger"
+	"github.com/ivan1993spb/snake-server/observers/mouse"
+	"github.com/ivan1993spb/snake-server/observers/snake"
+	"github.com/ivan1993spb/snake-server/observers/wall"
+	"github.com/ivan1993spb/snake-server/observers/watermelon"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -37,12 +42,12 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
-	observers.NewLoggerObserver(g.world, g.logger).Observe(stop)
-	observers.NewWallObserver(g.world, g.logger).Observe(stop)
-	observers.NewAppleObserver(g.world, g.logger).Observe(stop)
-	observers.NewSnakeObserver(g.world, g.logger).Observe(stop)
-	observers.NewWatermelonObserver(g.world, g.logger).Observe(stop)
-	observers.NewMouseObserver(g.world, g.logger).Observe(stop)
+	logger_observer.NewLoggerObserver(g.world, g.logger).Observe(stop)
+	wall_observer.NewWallObserver(g.world, g.logger).Observe(stop)
+	apple_observer.NewAppleObserver(g.world, g.logger).Observe(stop)
+	snake_observer.NewSnakeObserver(g.world, g.logger).Observe(stop)
+	watermelon_observer.NewWatermelonObserver(g.world, g.logger).Observe(stop)
+	mouse_observer.NewMouseObserver(g.world, g.logger).Observe(stop)
 }
 
 func (g *Game) World() world.Interface {
