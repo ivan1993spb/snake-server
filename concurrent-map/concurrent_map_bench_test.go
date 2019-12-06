@@ -1,7 +1,11 @@
 package cmap
 
-import "testing"
-import "strconv"
+import (
+	"strconv"
+	"testing"
+
+	"github.com/ivan1993spb/snake-server/engine"
+)
 
 const keyA = 0
 
@@ -40,6 +44,43 @@ func BenchmarkSingleInsertAbsent(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		m.Set(uint16(i), "value")
+	}
+}
+
+func Benchmark_ConcurrentMap_MSet_MRemove(b *testing.B) {
+	const dotsCount = 10
+	const dotsPadding = dotsCount
+
+	a := engine.MustArea(255, 255)
+	m, _ := New(defaultShardCount)
+
+	object := "value"
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i += dotsPadding {
+		dotsToBeRemoved := make([]uint16, 0, dotsCount)
+		for j := 0; j < dotsCount; j++ {
+			index := uint16(i+j) % a.Size()
+			dot := engine.Dot{
+				X: uint8(index % uint16(a.Width())),
+				Y: uint8(index / uint16(a.Width())),
+			}
+			dotsToBeRemoved = append(dotsToBeRemoved, dot.Hash())
+		}
+
+		dotsToBeSet := make(map[uint16]interface{})
+		for j := 0; j < dotsCount; j++ {
+			index := uint16(i+j+dotsPadding) % a.Size()
+			dot := engine.Dot{
+				X: uint8(index % uint16(a.Width())),
+				Y: uint8(index / uint16(a.Width())),
+			}
+			dotsToBeSet[dot.Hash()] = object
+		}
+
+		m.MRemove(dotsToBeRemoved)
+		m.MSet(dotsToBeSet)
 	}
 }
 
