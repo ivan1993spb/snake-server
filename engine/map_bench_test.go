@@ -28,6 +28,8 @@ func Benchmark_Map_MSet_MRemove(b *testing.B) {
 
 	b.ResetTimer()
 
+	b.StopTimer()
+
 	for i := 0; i < b.N; i += dotsPadding {
 		dotsToBeRemoved := make([]Dot, 0, dotsCount)
 		for j := 0; j < dotsCount; j++ {
@@ -49,8 +51,12 @@ func Benchmark_Map_MSet_MRemove(b *testing.B) {
 			dotsToBeSet = append(dotsToBeSet, dot)
 		}
 
+		b.StartTimer()
+
 		m.MRemove(dotsToBeRemoved)
 		m.MSet(dotsToBeSet, object)
+
+		b.StopTimer()
 	}
 }
 
@@ -64,6 +70,8 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject(b *testing.B) {
 
 	b.ResetTimer()
 
+	b.StopTimer()
+
 	for i := 0; i < b.N; i += dotsPadding {
 		dotsToBeRemoved := make([]Dot, 0, dotsCount)
 		for j := 0; j < dotsCount; j++ {
@@ -85,7 +93,11 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject(b *testing.B) {
 			dotsToBeSet = append(dotsToBeSet, dot)
 		}
 
+		b.StartTimer()
+
 		m.MRemoveObject(dotsToBeRemoved, object)
 		m.MSetIfAbsent(dotsToBeSet, object)
+
+		b.StopTimer()
 	}
 }
