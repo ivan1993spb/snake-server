@@ -58,6 +58,8 @@ func Benchmark_ConcurrentMap_MSet_MRemove(b *testing.B) {
 
 	b.ResetTimer()
 
+	b.StopTimer()
+
 	for i := 0; i < b.N; i += dotsPadding {
 		dotsToBeRemoved := make([]uint16, 0, dotsCount)
 		for j := 0; j < dotsCount; j++ {
@@ -79,8 +81,12 @@ func Benchmark_ConcurrentMap_MSet_MRemove(b *testing.B) {
 			dotsToBeSet[dot.Hash()] = object
 		}
 
+		b.StartTimer()
+
 		m.MRemove(dotsToBeRemoved)
 		m.MSet(dotsToBeSet)
+
+		b.StopTimer()
 	}
 }
 
