@@ -224,7 +224,7 @@ func (e errUpdateObject) Error() string {
 func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) error {
 	diff := old.Difference(new)
 
-	keysToRemove := make([]uint16, len(diff))
+	keysToRemove := make([]uint16, 0, len(diff))
 	dotsToSet := make(map[uint16]interface{})
 
 	for _, dot := range diff {
@@ -256,7 +256,7 @@ func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new eng
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
-	keysToRemove := make([]uint16, len(diff))
+	keysToRemove := make([]uint16, 0, len(diff))
 	dotsToSet := make(map[uint16]interface{})
 
 	for _, dot := range diff {
