@@ -93,7 +93,7 @@ func Test_emptyObject_emptiesPointer(t *testing.T) {
 	require.Equal(t, uintptr(0), uintptr(storePointer))
 }
 
-func Test_storeObject_returnsFalseInPointerIsEngaged(t *testing.T) {
+func Test_storeObject_returnsFalseIfPointerIsEngaged(t *testing.T) {
 	// First
 	wrappedObjectFirst := getSampleWrappedObjectFirst()
 
@@ -175,6 +175,14 @@ func Test_NewMap_CreatesEmptyMap(t *testing.T) {
 	}
 }
 
+func Test_Map_Area_ReturnsArea(t *testing.T) {
+	area := MustArea(53, 20)
+	m := Map{
+		area: area,
+	}
+	require.Equal(t, area, m.Area())
+}
+
 func Test_Map_Print_Prints(t *testing.T) {
 	area := MustArea(23, 15)
 	m := getSampleMapArea(area)
@@ -239,7 +247,7 @@ func Test_Map_Set(t *testing.T) {
 		pointer := *m.fields[dot.Y][dot.X]
 
 		if dot.Equals(dotFirst) {
-			require.NotEqual(t, uintptr(0), uintptr(pointer))
+			require.Equal(t, uintptr(unsafe.Pointer(wrappedObjectFirst)), uintptr(pointer))
 		} else {
 			require.Equal(t, uintptr(0), uintptr(pointer))
 		}
@@ -355,7 +363,7 @@ func Test_Map_SetIfAbsent_OccupiedDots(t *testing.T) {
 	}
 }
 
-func Test_Map_Remove(t *testing.T) {
+func Test_Map_Remove_RemovesObjects(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -479,7 +487,7 @@ func Test_Map_RemoveObject_RemovesObject(t *testing.T) {
 	}
 }
 
-func Test_Map_RemoveObject_DoesNotRemovesMismatchedObject(t *testing.T) {
+func Test_Map_RemoveObject_DoesNotRemoveMismatchedObject(t *testing.T) {
 	area := MustArea(123, 211)
 	m := getSampleMapArea(area)
 
@@ -602,7 +610,7 @@ func Test_Map_HasAny_ReturnsCorrectResult(t *testing.T) {
 	}
 }
 
-func Test_Map_HasAll(t *testing.T) {
+func Test_Map_HasAll_returnsCorrectResult(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -657,7 +665,7 @@ func Test_Map_HasAll(t *testing.T) {
 	}
 }
 
-func Test_Map_MGet(t *testing.T) {
+func Test_Map_MGet_returnsValidDotObjectMap(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -722,7 +730,7 @@ func Test_Map_MGet(t *testing.T) {
 	}
 }
 
-func Test_Map_MRemove(t *testing.T) {
+func Test_Map_MRemove_removes(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -764,7 +772,7 @@ func Test_Map_MRemove(t *testing.T) {
 	}
 }
 
-func Test_Map_MRemoveObject(t *testing.T) {
+func Test_Map_MRemoveObject_removesCertainObjects(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -1016,6 +1024,7 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 
 	require.Len(t, resultDots, 3)
 
+	t.Log("Check result dot set")
 	for i, dot := range resultDots {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
@@ -1023,6 +1032,7 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 		}
 	}
 
+	t.Log("Check if objects has been linked correclty on the map")
 	for i, dot := range []Dot{{11, 66}, {4, 2}, {20, 4}, dotSecond} {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
@@ -1030,6 +1040,7 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 		}
 	}
 
+	t.Log("Check another objects")
 	{
 		pointer := *m.fields[dotFirst.Y][dotFirst.X]
 		require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer))

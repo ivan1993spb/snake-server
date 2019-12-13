@@ -51,20 +51,26 @@ func NewMap(a Area) *Map {
 	}
 }
 
+// Area returns area of a Map
+func (m *Map) Area() Area {
+	return m.area
+}
+
 // Print prints a map
 func (m *Map) Print() {
 	fmt.Println("Map size:", m.area)
 
 	for y := uint8(0); y < m.area.height; y++ {
 		fmt.Printf("%4d |", y)
-		for x := uint8(0); x < m.area.width; x++ {
 
+		for x := uint8(0); x < m.area.width; x++ {
 			if p := atomic.LoadPointer(m.fields[y][x]); fieldIsEmpty(p) {
 				fmt.Print(" .")
 			} else {
 				fmt.Print(" x")
 			}
 		}
+
 		fmt.Println()
 	}
 }
@@ -108,7 +114,7 @@ func (m *Map) SetIfAbsent(dot Dot, object *Object) bool {
 	return storeObject(m.fields[dot.Y][dot.X], object)
 }
 
-// Remove removes object under the specified dot
+// Remove removes an object under a specified dot
 func (m *Map) Remove(dot Dot) {
 	if m.area.ContainsDot(dot) {
 		empty(m.fields[dot.Y][dot.X])
@@ -137,7 +143,7 @@ func (m *Map) HasAny(dots []Dot) bool {
 	return false
 }
 
-// HasAll returns true all the dots in the slice has been linked with an
+// HasAll returns true if all dots in passed slice has been linked with an
 // object.
 func (m *Map) HasAll(dots []Dot) bool {
 	for _, dot := range dots {
@@ -201,7 +207,8 @@ func (m *Map) MSet(dots []Dot, object *Object) {
 }
 
 // MSetIfAllAbsent sets given object under specified dots and returns true only
-// if all the dots are empty otherwise the function does nothing and returns false
+// if all the dots has been set otherwise the function does nothing and returns
+// false
 func (m *Map) MSetIfAllAbsent(dots []Dot, object *Object) bool {
 	var i int
 
@@ -234,9 +241,9 @@ func (m *Map) MSetIfAllAbsent(dots []Dot, object *Object) bool {
 	return false
 }
 
-// MSetIfAbsent sets given object under specified dots. If a dot in the slice is engaged
-// the function skips the dot. Returns a list of dot which was eventually linked with the
-// passed object
+// MSetIfAbsent sets given object under specified dots. If a dot in the slice has already
+// been engaged, the function skips the dot. Returns a list of dots which was eventually
+// linked with the passed object
 func (m *Map) MSetIfAbsent(dots []Dot, object *Object) []Dot {
 	result := make([]Dot, 0, len(dots))
 
