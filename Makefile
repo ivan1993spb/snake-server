@@ -52,7 +52,7 @@ go/test:
 
 go/test/benchmarks:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go test -v -cover -bench . ./...
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go test -bench . -timeout 1h ./...
 
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
