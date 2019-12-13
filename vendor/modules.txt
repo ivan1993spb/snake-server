@@ -1,0 +1,33 @@
+# github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495
+github.com/davecgh/go-spew/spew
+# github.com/elazarl/go-bindata-assetfs v0.0.0-20180223160309-38087fe4dafb
+github.com/elazarl/go-bindata-assetfs
+# github.com/gorilla/context v1.1.1
+github.com/gorilla/context
+# github.com/gorilla/mux v0.0.0-20170704074345-ac112f7d75a0
+github.com/gorilla/mux
+# github.com/gorilla/websocket v0.0.0-20180420171612-21ab95fa12b9
+github.com/gorilla/websocket
+# github.com/meatballhat/negroni-logrus v0.0.0-20170801195057-31067281800f
+github.com/meatballhat/negroni-logrus
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
+github.com/pquerna/ffjson/ffjson
+github.com/pquerna/ffjson/fflib/v1
+github.com/pquerna/ffjson/fflib/v1/internal
+# github.com/rs/cors v0.0.0-20180524071409-694cf2ad010f
+github.com/rs/cors
+# github.com/sirupsen/logrus v0.0.0-20180515154058-0dad3b6953e7
+github.com/sirupsen/logrus
+github.com/sirupsen/logrus/hooks/test
+# github.com/stretchr/testify v0.0.0-20170809224252-890a5c3458b4
+github.com/stretchr/testify/require
+github.com/stretchr/testify/assert
+# github.com/urfave/negroni v0.0.0-20171227212638-89f5378aa22c
+github.com/urfave/negroni
+# golang.org/x/crypto v0.0.0-20180515001509-1a580b3eff78
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e
+golang.org/x/sys/unix
+golang.org/x/sys/windows
