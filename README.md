@@ -211,7 +211,7 @@ X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 Request creates a game and returns JSON game object.
 
 ```
-curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
+curl -s -X POST -d limit=3 -d width=100 -d height=100 -d enable_walls=true http://localhost:8080/api/games | jq
 {
   "id": 1,
   "limit": 3,
@@ -221,6 +221,8 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/
   "rate": 0
 }
 ```
+
+`enable_walls` - optional parameter, default value is `true`
 
 #### Request `GET /api/games`
 
