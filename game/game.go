@@ -17,6 +17,7 @@ import (
 type Game struct {
 	world  world.Interface
 	logger logrus.FieldLogger
+	config Config
 }
 
 type ErrCreateGame struct {
@@ -27,7 +28,7 @@ func (e *ErrCreateGame) Error() string {
 	return "cannot create game: " + e.Err.Error()
 }
 
-func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
+func NewGame(logger logrus.FieldLogger, width, height uint8, config Config) (*Game, error) {
 	w, err := world.NewWorld(width, height)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create game: %s", err)
@@ -36,6 +37,7 @@ func NewGame(logger logrus.FieldLogger, width, height uint8) (*Game, error) {
 	return &Game{
 		world:  w,
 		logger: logger,
+		config: config,
 	}, nil
 }
 
@@ -43,7 +45,9 @@ func (g *Game) Start(stop <-chan struct{}) {
 	g.world.Start(stop)
 
 	logger_observer.NewLoggerObserver(g.world, g.logger).Observe(stop)
-	wall_observer.NewWallObserver(g.world, g.logger).Observe(stop)
+	if g.config.EnableWalls {
+		wall_observer.NewWallObserver(g.world, g.logger).Observe(stop)
+	}
 	apple_observer.NewAppleObserver(g.world, g.logger).Observe(stop)
 	snake_observer.NewSnakeObserver(g.world, g.logger).Observe(stop)
 	watermelon_observer.NewWatermelonObserver(g.world, g.logger).Observe(stop)

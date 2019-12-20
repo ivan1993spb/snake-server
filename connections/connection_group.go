@@ -60,8 +60,10 @@ func (e errCreateConnectionGroup) Error() string {
 	return "cannot create connection group: " + string(e)
 }
 
-func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8) (*ConnectionGroup, error) {
-	g, err := game.NewGame(logger, width, height)
+func NewConnectionGroup(logger logrus.FieldLogger, connectionLimit int, width, height uint8, enableWalls bool) (*ConnectionGroup, error) {
+	g, err := game.NewGame(logger, width, height, game.Config{
+		EnableWalls: enableWalls,
+	})
 	if err != nil {
 		return nil, errCreateConnectionGroup(err.Error())
 	}

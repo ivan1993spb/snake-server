@@ -19,12 +19,15 @@ const (
 	postFieldConnectionLimit = "limit"
 	postFieldMapWidth        = "width"
 	postFieldMapHeight       = "height"
+	postFieldEnableWalls     = "enable_walls"
 )
 
 const (
 	minMapWidth  = 8
 	minMapHeight = 8
 )
+
+const defaultParamValueEnableWalls = true
 
 var (
 	strErrLessThanMinMapWidth  = fmt.Sprintf("map width less than %d", minMapWidth)
@@ -118,13 +121,19 @@ func (h *createGameHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	enableWalls, err := strconv.ParseBool(r.PostFormValue(postFieldEnableWalls))
+	if err != nil {
+		enableWalls = defaultParamValueEnableWalls
+	}
+
 	h.logger.WithFields(logrus.Fields{
 		"width":            mapWidth,
 		"height":           mapHeight,
 		"connection_limit": connectionLimit,
+		"enable_walls":     enableWalls,
 	}).Debug("create game group")
 
-	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight))
+	group, err := connections.NewConnectionGroup(h.logger, connectionLimit, uint8(mapWidth), uint8(mapHeight), enableWalls)
 	if err != nil {
 		h.logger.Error(ErrCreateGameHandler(err.Error()))
 		h.writeResponseJSON(w, http.StatusInternalServerError, &responseCreateGameHandlerError{
