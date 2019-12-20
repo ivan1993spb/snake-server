@@ -1,4 +1,4 @@
-package observers
+package mouse_observer
 
 import (
 	"sync/atomic"
@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/objects/mouse"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -24,7 +25,7 @@ type MouseObserver struct {
 	maxMouseNumber int32
 }
 
-func NewMouseObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+func NewMouseObserver(w world.Interface, logger logrus.FieldLogger) observers.Observer {
 	return &MouseObserver{
 		world:  w,
 		logger: logger,

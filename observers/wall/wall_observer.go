@@ -1,9 +1,10 @@
-package observers
+package wall_observer
 
 import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/objects/wall"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -12,7 +13,7 @@ type WallObserver struct {
 	logger logrus.FieldLogger
 }
 
-func NewWallObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+func NewWallObserver(w world.Interface, logger logrus.FieldLogger) observers.Observer {
 	return &WallObserver{
 		world:  w,
 		logger: logger,
