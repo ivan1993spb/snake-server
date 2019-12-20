@@ -51,6 +51,11 @@ go/test:
 		-e CGO_ENABLED=0 -e GO111MODULE=on $(IMAGE_GOLANG) \
 		go test -v -cover -mod vendor ./...
 
+go/test/benchmarks:
+	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
+		-e CGO_ENABLED=0 -e GO111MODULE=on $(IMAGE_GOLANG) \
+		go test -bench . -mod vendor -timeout 1h ./...
+
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
