@@ -12,7 +12,9 @@ WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -ldflags "-X main.Version=$VERSION -X main.Build=$BUILD" \
+ENV CGO_ENABLED=0 GO111MODULE=on
+
+RUN go build -mod vendor -ldflags "-X main.Version=$VERSION -X main.Build=$BUILD" \
     -v -x -o /snake-server github.com/ivan1993spb/snake-server
 
 FROM $IMAGE_ALPINE

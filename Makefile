@@ -44,17 +44,18 @@ docker/push:
 
 go/vet:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet ./...
+		-e CGO_ENABLED=0 -e GO111MODULE=on $(IMAGE_GOLANG) go vet -mod vendor ./...
 
 go/test:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go test -v -cover ./...
+		-e CGO_ENABLED=0 -e GO111MODULE=on $(IMAGE_GOLANG) \
+		go test -v -cover -mod vendor ./...
 
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		go build $(LDFLAGS) -v -o $(BINARY_NAME)
+		-e CGO_ENABLED=0 -e GO111MODULE=on $(IMAGE_GOLANG) \
+		go build $(LDFLAGS) -mod vendor -v -o $(BINARY_NAME)
 
 go/crosscompile:
 	@_=$(foreach GOOS, $(PLATFORMS), \
@@ -65,7 +66,8 @@ go/crosscompile:
 				-e GOOS=$(GOOS) \
 				-e GOARCH=$(GOARCH) \
 				-e CGO_ENABLED=0 \
-				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+				-e GO111MODULE=on \
+				$(IMAGE_GOLANG) go build $(LDFLAGS) -mod vendor -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)
 	@_=$(foreach GOOS, $(PLATFORMS), \
@@ -79,10 +81,10 @@ go/crosscompile:
 	@echo -n
 
 build:
-	@go build $(LDFLAGS) -v -o $(BINARY_NAME)
+	@GO111MODULE=on go build $(LDFLAGS) -mod vendor -v -o $(BINARY_NAME)
 
 install:
-	@go install $(LDFLAGS) -v
+	@GO111MODULE=on go install -mod vendor $(LDFLAGS) -v
 
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
