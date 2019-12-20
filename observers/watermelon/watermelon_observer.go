@@ -1,4 +1,4 @@
-package observers
+package watermelon_observer
 
 import (
 	"sync/atomic"
@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/objects/watermelon"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -26,7 +27,7 @@ type WatermelonObserver struct {
 	maxWatermelonCount int32
 }
 
-func NewWatermelonObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+func NewWatermelonObserver(w world.Interface, logger logrus.FieldLogger) observers.Observer {
 	return &WatermelonObserver{
 		world:  w,
 		logger: logger,

@@ -1,4 +1,4 @@
-package observers
+package apple_observer
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/objects/apple"
+	"github.com/ivan1993spb/snake-server/observers"
 	"github.com/ivan1993spb/snake-server/world"
 )
 
@@ -20,7 +21,7 @@ type AppleObserver struct {
 	logger logrus.FieldLogger
 }
 
-func NewAppleObserver(w world.Interface, logger logrus.FieldLogger) Observer {
+func NewAppleObserver(w world.Interface, logger logrus.FieldLogger) observers.Observer {
 	return &AppleObserver{
 		world:  w,
 		logger: logger,
