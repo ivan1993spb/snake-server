@@ -10,6 +10,8 @@ github.com/gorilla/mux
 github.com/gorilla/websocket
 # github.com/meatballhat/negroni-logrus v0.0.0-20170801195057-31067281800f
 github.com/meatballhat/negroni-logrus
+# github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029
+github.com/phyber/negroni-gzip/gzip
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
