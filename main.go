@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
 
@@ -143,6 +144,7 @@ func main() {
 	}
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
+	rootRouter.Path("/metrics").Handler(promhttp.Handler())
 	if enableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
 		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
