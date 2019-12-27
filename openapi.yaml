@@ -24,6 +24,21 @@ paths:
       description: Get all games
       tags:
         - Games
+      parameters:
+        - name: limit
+          in: query
+          description: Games limit to receive in a response
+          schema:
+            type: integer
+            format: int32
+        - name: sorting
+          in: query
+          description: Games sorting type
+          schema:
+            type: string
+            enum:
+              - smart
+              - random
       responses:
         200:
           description: Returns games on server and additional information
@@ -31,6 +46,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Games'
+        400:
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       description: Create new game
       tags:
