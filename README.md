@@ -228,6 +228,11 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 -d enable_walls=true http:
 
 Request returns an information about all games on server.
 
+Optional **GET** params:
+
+- `limit` - a number - limit of games in a response
+- `sorting` - a sorting rule for the method. Could be either `smart` or `random`. The default value is `random`
+
 ```
 curl -s -X GET http://localhost:8080/api/games | jq
 {
