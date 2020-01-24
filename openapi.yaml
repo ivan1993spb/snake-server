@@ -481,15 +481,14 @@ components:
 
     Snake:
       type: object
-      description: Snake
+      description: Object Snake. The type is `snake`
       required:
         - type
         - id
         - dots
       properties:
         type:
-          description: The value is `snake`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dots:
@@ -497,15 +496,14 @@ components:
 
     Apple:
       type: object
-      description: Apple
+      description: Object Apple. The type is `apple`
       required:
         - type
         - id
         - dots
       properties:
         type:
-          description: The value is `apple`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dot:
@@ -513,15 +511,14 @@ components:
 
     Corpse:
       type: object
-      description: Cropse
+      description: Object Corpse. The type is `corpse`
       required:
         - type
         - id
         - dots
       properties:
         type:
-          description: The value is `corpse`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dots:
@@ -529,7 +526,7 @@ components:
 
     Mouse:
       type: object
-      description: Mouse
+      description: Object Mouse. The type is `mouse`
       required:
         - type
         - id
@@ -537,8 +534,7 @@ components:
         - direction
       properties:
         type:
-          description: The value is `mouse`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dot:
@@ -548,15 +544,14 @@ components:
 
     Watermelon:
       type: object
-      description: Watermelon
+      description: Object Watermelon. The type is `watermelon`
       required:
         - type
         - id
         - dots
       properties:
         type:
-          description: The value is `watermelon`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dots:
@@ -564,15 +559,14 @@ components:
 
     Wall:
       type: object
-      description: Wall
+      description: Object Wall. The type is `wall`
       required:
         - type
         - id
         - dots
       properties:
         type:
-          description: The value is `wall`
-          type: string
+          $ref: '#/components/schemas/ObjectType'
         id:
           $ref: '#/components/schemas/ObjectId'
         dots:
@@ -583,6 +577,16 @@ components:
       format: int64
       description: An object identifier
       example: 31
+
+    ObjectType:
+      type: string
+      enum:
+        - "apple"
+        - "corpse"
+        - "mouse"
+        - "snake"
+        - "wall"
+        - "watermelon"
 
     Pong:
       type: object
