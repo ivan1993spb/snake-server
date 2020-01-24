@@ -472,6 +472,7 @@ components:
         nullable: false
       minItems: 2
       maxItems: 2
+      example: [2, 3]
 
     Dots:
       type: array
