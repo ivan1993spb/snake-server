@@ -491,8 +491,7 @@ components:
           description: The value is `snake`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dots:
           $ref: '#/components/schemas/Dots'
 
@@ -508,8 +507,7 @@ components:
           description: The value is `apple`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dot:
           $ref: '#/components/schemas/Dot'
 
@@ -525,8 +523,7 @@ components:
           description: The value is `corpse`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dots:
           $ref: '#/components/schemas/Dots'
 
@@ -543,8 +540,7 @@ components:
           description: The value is `mouse`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dot:
           $ref: '#/components/schemas/Dot'
         direction:
@@ -562,8 +558,7 @@ components:
           description: The value is `watermelon`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dots:
           $ref: '#/components/schemas/Dots'
 
@@ -579,10 +574,15 @@ components:
           description: The value is `wall`
           type: string
         id:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ObjectId'
         dots:
           $ref: '#/components/schemas/Dots'
+
+    ObjectId:
+      type: integer
+      format: int64
+      description: An object identifier
+      example: 31
 
     Pong:
       type: object
