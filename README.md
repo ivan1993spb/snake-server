@@ -301,7 +301,7 @@ If request method is disabled, you will get 404 error. See [CLI arguments](#cli-
 
 #### Request `GET /api/games/{id}/objects`
 
-Request returns all objects on the map of a game with passed identifier.
+Request returns all objects on and map properties of a game with passed identifier.
 
 ```
 curl -s -X GET http://localhost:8080/api/games/1/objects | jq
@@ -334,7 +334,11 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
       ],
       "type": "watermelon"
     }
-  ]
+  ],
+  "map": {
+    "width": 120,
+    "height": 75
+  }
 }
 ```
 

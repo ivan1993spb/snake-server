@@ -20,8 +20,14 @@ const MethodGetObjects = http.MethodGet
 
 const waitRequestTimeout = time.Second * 10
 
+type responseGetObjectsMap struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
 type responseGetObjectsHandler struct {
-	Objects []interface{} `json:"objects"`
+	Objects []interface{}         `json:"objects"`
+	Map     responseGetObjectsMap `json:"map"`
 }
 
 type responseGetObjectsHandlerError struct {
@@ -129,6 +135,10 @@ func (h *getObjectsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.writeResponseJSON(w, http.StatusOK, &responseGetObjectsHandler{
 		Objects: group.GetObjects(),
+		Map: responseGetObjectsMap{
+			Width:  int(group.GetWorldWidth()),
+			Height: int(group.GetWorldHeight()),
+		},
 	})
 }
 

@@ -436,7 +436,7 @@ components:
 
     Objects:
       type: object
-      description: Object contains all game objects on map
+      description: Object contains all game objects on map and map properties
       required:
         - objects
       properties:
@@ -451,6 +451,8 @@ components:
               - $ref: '#/components/schemas/Mouse'
               - $ref: '#/components/schemas/Watermelon'
               - $ref: '#/components/schemas/Wall'
+        map:
+          $ref: '#/components/schemas/Map'
 
     Direction:
       type: string
@@ -590,3 +592,21 @@ components:
         pong:
           type: integer
           format: int32
+
+    Map:
+      type: object
+      description: Map properties
+      required:
+        - width
+        - height
+      properties:
+        width:
+          description: Map width
+          type: integer
+          format: int32
+          example: 120
+        height:
+          description: Map height
+          type: integer
+          format: int32
+          example: 75
