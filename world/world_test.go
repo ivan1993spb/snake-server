@@ -92,4 +92,5 @@ func Test_World_UpdateObject(t *testing.T) {
 
 func Benchmark_World_UpdateObject(b *testing.B) {
 	// TODO: Implement benchmark.
+	b.Skip("Not implemented")
 }

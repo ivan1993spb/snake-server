@@ -5,7 +5,10 @@ go:
 env:
   global:
     - GOARCH=amd64
+    - GO111MODULE=on
 script:
   # TODO: Create lint
   #- go list ./... | grep -v vendor | xargs go vet
-  - go test -v -cover ./...
+  - go test -v -cover -mod=vendor ./...
+  # Benchmarks are slow very much
+  #- travis_wait 60 go test -mod=vendor -bench . -timeout 1h ./...

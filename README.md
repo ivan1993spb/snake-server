@@ -211,7 +211,7 @@ X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 Request creates a game and returns JSON game object.
 
 ```
-curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/games | jq
+curl -s -X POST -d limit=3 -d width=100 -d height=100 -d enable_walls=true http://localhost:8080/api/games | jq
 {
   "id": 1,
   "limit": 3,
@@ -222,9 +222,16 @@ curl -s -X POST -d limit=3 -d width=100 -d height=100 http://localhost:8080/api/
 }
 ```
 
+`enable_walls` - optional parameter, default value is `true`
+
 #### Request `GET /api/games`
 
 Request returns an information about all games on server.
+
+Optional **GET** params:
+
+- `limit` - a number - limit of games in a response
+- `sorting` - a sorting rule for the method. Could be either `smart` or `random`. The default value is `random`
 
 ```
 curl -s -X GET http://localhost:8080/api/games | jq
@@ -294,7 +301,7 @@ If request method is disabled, you will get 404 error. See [CLI arguments](#cli-
 
 #### Request `GET /api/games/{id}/objects`
 
-Request returns all objects on the map of a game with passed identifier.
+Request returns all objects on and map properties of a game with passed identifier.
 
 ```
 curl -s -X GET http://localhost:8080/api/games/1/objects | jq
@@ -327,7 +334,11 @@ curl -s -X GET http://localhost:8080/api/games/1/objects | jq
       ],
       "type": "watermelon"
     }
-  ]
+  ],
+  "map": {
+    "width": 120,
+    "height": 75
+  }
 }
 ```
 

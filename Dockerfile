@@ -1,18 +1,20 @@
 
 # See Makefile
-ARG IMAGE_GOLANG
-ARG IMAGE_ALPINE
+ARG IMAGE_GOLANG=golang:1.12-alpine3.10
+ARG IMAGE_ALPINE=alpine:3.10
 
 FROM $IMAGE_GOLANG AS intermediate
 
-ARG VERSION
-ARG BUILD
+ARG VERSION=unknown
+ARG BUILD=unknown
 
 WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -ldflags "-X main.Version=$VERSION -X main.Build=$BUILD" \
+ENV CGO_ENABLED=0 GO111MODULE=on
+
+RUN go build -mod vendor -ldflags "-X main.Version=$VERSION -X main.Build=$BUILD" \
     -v -x -o /snake-server github.com/ivan1993spb/snake-server
 
 FROM $IMAGE_ALPINE
