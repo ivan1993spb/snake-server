@@ -44,23 +44,23 @@ docker/push:
 
 go/vet:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet -mod vendor ./...
+		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet ./...
 
 go/test:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		go test -v -cover -mod vendor ./...
+		go test -v -cover ./...
 
 go/test/benchmarks:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		go test -bench . -mod vendor -timeout 1h ./...
+		go test -bench . -timeout 1h ./...
 
 go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
 		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		go build $(LDFLAGS) -mod vendor -v -o $(BINARY_NAME)
+		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
 	@_=$(foreach GOOS, $(PLATFORMS), \
@@ -71,7 +71,7 @@ go/crosscompile:
 				-e GOOS=$(GOOS) \
 				-e GOARCH=$(GOARCH) \
 				-e CGO_ENABLED=0 \
-				$(IMAGE_GOLANG) go build $(LDFLAGS) -mod vendor -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)
 	@_=$(foreach GOOS, $(PLATFORMS), \
@@ -85,10 +85,10 @@ go/crosscompile:
 	@echo -n
 
 build:
-	@go build $(LDFLAGS) -mod vendor -v -o $(BINARY_NAME)
+	@go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 install:
-	@go install -mod vendor $(LDFLAGS) -v
+	@go install $(LDFLAGS) -v
 
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
