@@ -158,12 +158,19 @@ Also, you are welcome to create your own client using described API below.
 Some samples you can find here:
 
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
+
   *This is the embedded in the server web client*
+
 * PyGame client repo: https://github.com/ivan1993spb/snake-desktop-client
+
   *Development is in progress*
+
 * Python client repo: https://github.com/ivan1993spb/snake-client
+
   *Development is in progress*
+
 * Python backend repo: https://github.com/ivan1993spb/snake-backend
+
   *Development is in progress*
 
 
