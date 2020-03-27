@@ -1,4 +1,6 @@
 
+- Badges
+
 # Snake-Server
 
 [![Build Status](https://travis-ci.org/ivan1993spb/snake-server.svg?branch=master)](https://travis-ci.org/ivan1993spb/snake-server) [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server)
@@ -24,8 +26,7 @@ The Snake-Server is a server for the online arcade game snake. Take a look at a 
 - [Game Web-Socket messages description](#game-web-socket-messages-description)
   * [Game primitives](#game-primitives)
   * [Game objects](#game-objects)
-  * [Output messages](#output-messages)
-  * [Input messages](#input-messages)
+  * [Game messages](#game-messages)
 - [License](#license)
 
 ## Game rules
@@ -47,22 +48,30 @@ The Snake-Server is a server for the online arcade game snake. Take a look at a 
 * Run the Snake-Server:
   - Using binary:
     ```bash
-    snake-server -h # show help information
-    snake-server --enable-web # run the server and enable web interface:
+    # show help information
+    snake-server -h
+
+     # run the server and enable web interface
+    snake-server --enable-web
     ```
-  - Or with Docker:
+  - With Docker:
     ```bash
+    # show information
     docker run --rm -p 8080:8080 ivan1993spb/snake-server -h
+
+    # run the server with an interface enabled
     docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
     ```
-* Then open in a browser http://localhost:8080/.
+* Open in a browser http://localhost:8080/.
 
 ## Install
 
-To install the Snake-Server you can download the server binary or pull the docker image or run the ansible playbook. See below.
+To install the Snake-Server you can download the server as a binary or pull the docker image or run the ansible playbook. See below.
 
-* **Download with go get**
+* **Download with *go get***
+
   The simpliest way to install the latest version of the Snake-Server is to run **go get**
+
   ```
   go get github.com/ivan1993spb/snake-server
   snake-server -h
@@ -70,35 +79,42 @@ To install the Snake-Server you can download the server binary or pull the docke
 
 * **Download and install binary**
 
-  You can download a binary from the latest release page: https://github.com/ivan1993spb/snake-server/releases/latest
+  You can download a binary from the [**release page**](https://github.com/ivan1993spb/snake-server/releases/latest)
 
-  + Setup variables *VERSION*, *PLATFORM* (darwin, linux or windows) and *ARCHITECTURE* (386 or amd64):
+  Also using curl:
+
+  + Setup variables *VERSION*, *PLATFORM* and *ARCHITECTURE* (386 or amd64):
     ```bash
     VERSION=v4.3.0
+    # darwin or linux or windows
     PLATFORM=linux
+    # amd64 or 386
     ARCHITECTURE=amd64
     ```
-  + Use curl to download the Snake-Server binary:
+  + Download and install the Snake-Server's binary:
     ```bash
-    curl -sL https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz | sudo tar xvz -C /usr/local/bin/
+    curl -sL "https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz" |\
+      tar xvz -C /usr/local/bin/
     ```
 
-* **Pull the server image from docker-hub**
+* **Pull an image from docker-hub**
 
   Check out [**the repo**](https://hub.docker.com/r/ivan1993spb/snake-server) and [**the tag list**](https://hub.docker.com/r/ivan1993spb/snake-server/tags/).
 
-  + Use `docker pull ivan1993spb/snake-server` to pull the server image from docker-hub
-  + `docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web` to run the server
-  + `docker run --rm ivan1993spb/snake-server -h` for usage information
+  ```bash
+  # pull an image
+  docker pull ivan1993spb/snake-server
 
-  Optionally you can define an alias:
+  # run it
+  docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
 
-  + `alias snake-server="docker run --rm -p 8080:8080 ivan1993spb/snake-server"`
-  + `snake-server -h`
+  # view usage inforamtion
+  docker run --rm ivan1993spb/snake-server -h
+  ```
 
 * **Deploy the server with ansible playbook**
 
-  The playbook repository is [here](https://github.com/ivan1993spb/snake-ansible).
+  The repository is [here](https://github.com/ivan1993spb/snake-ansible).
 
   ```bash
   git clone https://github.com/ivan1993spb/snake-ansible.git
@@ -113,13 +129,13 @@ Use `snake-server -h` for help info.
 Arguments:
 
 * `--address` - **string** - sets an address to listen and serve (default: *:8080*). For example: *:8080*, *localhost:7070*
-* `--conns-limit` - **int** - to limit the number of opened web-socket connections (default: *1000*)
-* `--groups-limit` - **int** - to limit the number of games for a server instance (default: *100*)
+* `--conns-limit` - **integer** - to limit the number of opened web-socket connections (default: *1000*)
+* `--groups-limit` - **integer** - to limit the number of games for a server instance (default: *100*)
 * `--enable-web` - **bool** - to enable the embedded web client (default: *false*)
 * `--enable-broadcast` - **bool** - to enable the broadcasting API method (default: *false*)
 * `--log-json` - **bool** - to enable JSON log output format (default: *false*)
 * `--log-level` - **string** - to set the log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
-* `--seed` - **int** - to specify a random seed (default: the number of nanoseconds elapsed since January 1, 1970 UTC)
+* `--seed` - **integer** - to specify a random seed (default: *the number of nanoseconds elapsed since January 1, 1970 UTC*)
 * `--tls-cert` - **string** - to specify a path to a certificate file
 * `--tls-enable` - **bool** - to enable TLS
 * `--tls-key` - **string** - to specify a path to a key file
@@ -148,24 +164,19 @@ Then:
     make go/build
     mv snake-server /usr/local/bin/
     ```
-  - Or build a docker image `make docker/build`
-
-Finaly:
-
-* Use `snake-server -h` to see usage information
-* `snake-server --enable-web` to start the server
+* If you want to build a docker image `make docker/build`
 
 ## Clients
 
-There is an embedded JavaScript web client for the server. You can enable it using the cli flag `--enable-web`.
+There is an embedded JavaScript web client for the server. You can enable it using the CLI flag `--enable-web`.
 
-Also, you are welcome to create your own client using described API below.
+Also, you are welcome to create your own client using the described below API.
 
 Some samples you can find here:
 
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
 
-  *This is the embedded in the server web client*
+  *This is the embedded web client*
 
 * PyGame client repo: https://github.com/ivan1993spb/snake-desktop-client
 
@@ -178,7 +189,6 @@ Some samples you can find here:
 * Python backend repo: https://github.com/ivan1993spb/snake-backend
 
   *Development is in progress*
-
 
 ## API description
 
@@ -220,10 +230,10 @@ X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 
   Request returns information about all games on a server.
 
-  Optional **GET** params:
+  Optional **query string** params:
 
-  + `limit` - a number - limit of games in response
-  + `sorting` - a sorting rule for the method. Could be either `smart` or `random`. The default value is `random`
+  + `limit` - **integer** - a limit for games in response
+  + `sorting` - **string** - a sorting rule for the method. Could be either `smart` or `random`. The default value is `random`
 
   ```
   curl -s -X GET http://localhost:8080/api/games | jq
@@ -297,7 +307,7 @@ X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 
 * **Request `GET /api/games/{id}/objects`**
 
-  Request returns all objects and map properties of a game with given id.
+  Request returns all objects and map properties of a game by given id.
 
   ```
   curl -s -X GET http://localhost:8080/api/games/1/objects | jq
@@ -340,7 +350,7 @@ X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 
 * **Request `GET /api/capacity`**
 
-  Request returns capacity of a server instance. Capacity is the number of opened web-socket connections divided by the number of allowed connections for a server instance.
+  Request returns capacity of a server instance. Capacity is a number of opened web-socket connections divided by a number of allowed connections for a server instance.
 
   ```
   curl -s -X GET http://localhost:8080/api/capacity | jq
@@ -424,14 +434,12 @@ When a connection has been established, the server handler:
 * Returns playground size
 * Returns all objects in the game
 * Creates a snake
-* Returns the snake identifier
-* Pushes game events to the web-socket stream
-
-There are *input* and *output* web-socket messages.
+* Returns an identifier of the snake
+* Pushes game events to the stream
 
 ### Game primitives
 
-To explain game objects there are primitives:
+To explain game objects there are these primitives:
 
 * Direction: `"north"`, `"west"`, `"south"`, `"east"`
 * Dot: `[x, y]`
@@ -492,11 +500,15 @@ Game objects:
   }
   ```
 
-### Output messages
+### Game messages 
 
-Output messages are sent by server to a client.
+There are *input* and *output* game messages.
 
-Output message structure:
+#### Output messages
+
+Output messages are sent by a server to a client.
+
+The structure:
 
 ```
 {
@@ -505,9 +517,10 @@ Output message structure:
 }
 ```
 
-Output message types:
+Types:
 
 * *game* - a message payload contains game events. Game events have a type and a payload:
+  
   ```
   {
     "type": "game",
@@ -517,8 +530,11 @@ Output message types:
     }
   }
   ```
+  
   Game events contain information about creating, updating, deleting of game objects on a playground.
-* *player* - a message payload contains player specific info. Player messages have a type and a payload:
+
+* *player* - a message payload contains player specific information. Player messages have a type and a payload:
+
   ```
   {
     "type": "player",
@@ -528,8 +544,11 @@ Output message types:
     }
   }
   ```
+
   Player messages contain user specific information such as user notifications, errors, snake identifiers, etc.
-* *broadcast* - a message payload contains group broadcasted messages. A payload of a message of type *broadcast* contains a message **string**
+
+* *broadcast* - a message payload contains group broadcasted messages. A payload of a message of type *broadcast* contains a **string**:
+
   ```json
   {
     "type": "broadcast",
@@ -537,14 +556,16 @@ Output message types:
   }
   ```
 
-#### Game events
+##### Game events
 
 Output message type: *game*
 
 Game event types:
 
-* *error* - a payload contains a **string**: error description
-* *create* - a payload contains an object which was created
+* *error* - a payload contains a **string** which is a description of an error
+
+* *create* - a payload contains an object which was created. For example:
+
   ```json
   {
     "type": "game",
@@ -558,7 +579,9 @@ Game event types:
     }
   }
   ```
+
 * *delete* - a payload contains an object which was deleted
+
 * *update* - a payload contains an object which was updated
   + Snake movement:
     ```json
@@ -588,28 +611,16 @@ Game event types:
       }
     }
     ```
-* *checked* - a payload contains an object which was checked by another game object (deprecated)
-  ```json
-  {
-    "type": "game",
-    "payload": {
-      "type": "checked",
-      "payload": {
-        "id": 421,
-        "dots": [[6, 17], [6, 18], [6, 19], [7, 19], [8, 19], [8, 20], [8, 21]],
-        "type": "corpse"
-      }
-    }
-  }
-  ```
 
-#### Player messages
+* *checked* - a payload contains an object which was checked by another game object (**deprecated**)
+
+##### Player messages
 
 Output message type: *player*
 
 Player's messages types:
 
-* *size* - a payload contains playground size **object**:
+* *size* - a payload contains the size of a playground (**object**):
   ```json
   {
     "type": "player",
@@ -622,8 +633,10 @@ Player's messages types:
     }
   }
   ```
-* *snake* - a payload contains a **int**: a snake identifier
-* *notice* - a payload contains a **string**: a notification
+
+* *snake* - a payload contains an **integer**: a snake identifier
+
+* *notice* - a payload contains a **string** which is a notification
   ```json
   {
     "type": "player",
@@ -633,6 +646,7 @@ Player's messages types:
     }
   }
   ```
+
 * *error* - a payload contains a **string**: an error description
   ```json
   {
@@ -643,7 +657,8 @@ Player's messages types:
     }
   }
   ```
-* *countdown* - a payload contains an **int**: a number of seconds to wait and count down
+
+* *countdown* - a payload contains an **integer**: a number of seconds to wait and count down
   ```json
   {
     "type": "player",
@@ -653,6 +668,7 @@ Player's messages types:
     }
   }
   ```
+
 * *objects* - a payload contains a list of all objects in a game. A message containing all objects on a playground is necessary to initialize the map on the client side
   ```json
   {
@@ -675,7 +691,7 @@ Player's messages types:
   }
   ```
 
-#### Broadcast messages
+##### Broadcast messages
 
 Output message type: *broadcast*
 
@@ -690,7 +706,7 @@ Example:
 }
 ```
 
-### Input messages
+#### Input messages
 
 Input messages are sent by a client to a server.
 
@@ -705,39 +721,39 @@ Input message structure:
 
 Input message types:
 
-* *snake* - to send game commands
-* *broadcast* - to send a short phrase or emoji to be broadcasted in a game
+* *snake* - game commands
+* *broadcast* - short phrases or emojis to be broadcasted in a game
 
 **Input message size is limited: maximum 128 bytes**
 
-#### Snake input message
+##### Snake input message
 
-A *snake* input message contains a game command. A game command sets player's snake movement direction if it possible.
+A *snake* input message contains a game command. A game command sets player's snake movement direction if it is possible.
 
 Accepted commands:
 
-* *north* - to north
+* *north* - to the north
   ```json
   {
     "type": "snake",
     "payload": "north"
   }
   ```
-* *east* - to east
+* *east* - to the east
   ```json
   {
     "type": "snake",
     "payload": "east"
   }
   ```
-* *south* - to south
+* *south* - to the south
   ```json
   {
     "type": "snake",
     "payload": "south"
   }
   ```
-* *west* - to west
+* *west* - to the west
   ```json
   {
     "type": "snake",
@@ -745,7 +761,7 @@ Accepted commands:
   }
   ```
 
-#### Broadcast input message
+##### Broadcast input message
 
 A broadcast input message contains a short message to be sent to all players in a game.
 
