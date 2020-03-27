@@ -9,7 +9,9 @@
 
 [![license](https://img.shields.io/github/license/ivan1993spb/snake-server.svg)](LICENSE)
 
-The Snake-Server is a server for the online arcade game snake. Take a look at a working instance here - http://snakeonline.xyz
+The Snake-Server is a server for the online arcade game snake. In this edition you can interact with other players and even eat small snakes!
+
+Take a look at a working instance here - http://snakeonline.xyz
 
 ## Table of contents
 
