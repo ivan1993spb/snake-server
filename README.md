@@ -581,7 +581,7 @@ Game event types:
 * *delete* - a payload contains an object which was deleted
 
 * *update* - a payload contains an object which was updated
-  + Snake movement:
+  + A snake movement:
     ```json
     {
       "type": "game",
@@ -595,7 +595,7 @@ Game event types:
       }
     }
     ```
-  + Update of a corpse:
+  + An update of a corpse object:
     ```json
     {
       "type": "game",
