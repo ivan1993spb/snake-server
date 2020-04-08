@@ -190,7 +190,11 @@ Some samples you can find here:
 
 ## API description
 
-All API methods provide JSON format. If errors are occurred, the methods return HTTP statuses and JSON formatted error objects. See [openapi.yaml](openapi.yaml) for details. Also, see API curl examples below.
+All API methods provide JSON format.
+
+If errors occurre, the methods return HTTP statuses and JSON formatted error objects.
+
+See [openapi.yaml](openapi.yaml) for details.
 
 You can use SwaggerUI to open API documentation:
 
@@ -207,6 +211,8 @@ For clients it is recommended to use header `X-Snake-Client` to specify a client
 ```
 X-Snake-Client: SnakeLightweightClient/v0.3.2 (build 8554f6b)
 ```
+
+API examples:
 
 * **Request `POST /api/games`**
 
