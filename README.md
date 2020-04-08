@@ -198,6 +198,8 @@ You can use SwaggerUI to open API documentation:
 docker run --rm -p 80:8080 -e SWAGGER_JSON=$PWD/openapi.yaml -v $PWD:$PWD swaggerapi/swagger-ui:v3.25.0
 ```
 
+Also openapi.yaml specification is provided by the server with `/openapi.yaml` path.
+
 ### API requests
 
 For clients it is recommended to use header `X-Snake-Client` to specify a client name, version and build hash. For instance:
