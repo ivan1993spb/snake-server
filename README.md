@@ -190,19 +190,13 @@ Some samples you can find here:
 
 ## API description
 
-All API methods provide JSON format.
+All API methods provide JSON formated responses.
 
 If errors occurre, the methods return HTTP statuses and JSON formatted error objects.
 
-See [openapi.yaml](openapi.yaml) for details.
+See specification [openapi.yaml](openapi.yaml) for details.
 
-You can use SwaggerUI to open API documentation:
-
-```
-docker run --rm -p 80:8080 -e SWAGGER_JSON=$PWD/openapi.yaml -v $PWD:$PWD swaggerapi/swagger-ui:v3.25.0
-```
-
-Also openapi.yaml specification is provided by the server with `/openapi.yaml` path.
+openapi.yaml specification is provided by the server with `/openapi.yaml` path.
 
 ### API requests
 
