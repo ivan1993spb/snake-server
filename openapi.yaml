@@ -119,11 +119,7 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
         404:
-          description: Game not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/GameNotFound'
         500:
           $ref: '#/components/responses/ServerError'
     delete:
@@ -143,11 +139,7 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
         404:
-          description: Game not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/GameNotFound'
         500:
           $ref: '#/components/responses/ServerError'
         503:
@@ -212,11 +204,7 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
         404:
-          description: Game not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/GameNotFound'
         500:
           $ref: '#/components/responses/ServerError'
         503:
@@ -243,11 +231,7 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
         404:
-          description: Game not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/GameNotFound'
         500:
           $ref: '#/components/responses/ServerError'
   /ping:
@@ -284,6 +268,12 @@ components:
             $ref: '#/components/schemas/Error'
     ServerError:
       description: An internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GameNotFound:
+      description: Game not found
       content:
         application/json:
           schema:
