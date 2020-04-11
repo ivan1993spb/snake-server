@@ -1,8 +1,8 @@
 openapi: 3.0.0
 
 info:
-  title: Snake-Server API
-  description: Snake-Server is the server for online arcade game - snake.
+  title: The Snake-Server API
+  description: The Snake-Server is a server for online arcade game - snake.
   version: 4.3.0
   license:
     name: MIT
@@ -21,7 +21,8 @@ servers:
 paths:
   /games:
     get:
-      description: Get all games
+      summary: Get a list of games
+      description: Get all games on a server
       tags:
         - Games
       parameters:
@@ -41,7 +42,7 @@ paths:
               - random
       responses:
         200:
-          description: Returns games on server and additional information
+          description: Games list on server and additional information
           content:
             application/json:
               schema:
@@ -53,7 +54,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
-      description: Create new game
+      summary: Start a new game
+      description: Create a new game on a server with given map parameters and limits
       tags:
         - Games
       requestBody:
@@ -64,7 +66,7 @@ paths:
               type: object
               properties:
                 limit:
-                  description: Players limit for game
+                  description: Players limit for new game
                   type: integer
                   format: int32
                   minimum: 1
@@ -79,7 +81,7 @@ paths:
                   format: int32
                   maximum: 255
                 enable_walls:
-                  description: Parameter indicates whether to add walls to a new game or not
+                  description: This boolean parameter indicates whether to add walls to the new game or not to
                   type: boolean
                   default: true
               required:
@@ -88,7 +90,7 @@ paths:
                 - height
       responses:
         201:
-          description: Returns created game object
+          description: Information about created game
           content:
             application/json:
               schema:
@@ -106,21 +108,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         503:
-          description: Service unavailable, cannot create new game
+          description: Service unavailable, cannot create a new game
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   /games/{id}:
     get:
-      description: Get game by identificator
+      summary: Get information about a game
+      description: Get information about a game by identificator
       tags:
         - Games
       parameters:
         - $ref: '#/components/parameters/GameID'
       responses:
         200:
-          description: Returns game object
+          description: Information about the game object
           content:
             application/json:
               schema:
@@ -144,14 +147,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: Delete game by identificator
+      summary: Delete a game
+      description: Delete a game by identificator
       tags:
         - Games
       parameters:
         - $ref: '#/components/parameters/GameID'
       responses:
         200:
-          description: Returns identificator of deleted game
+          description: Object with identificator of the deleted game
           content:
             application/json:
               schema:
@@ -175,40 +179,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         503:
-          description: Service unavailable, cannot delete game right away
+          description: Service unavailable, cannot delete the game right now
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   /capacity:
     get:
+      summary: Server capacity
       tags:
         - Server
-      description: Get server load (capacity)
+      description: Get server capacity. Capacity is the number of opened connections divided on limit of the server
       responses:
         200:
-          description: Returns server capacity
+          description: Return capacity of a server
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Capacity'
   /info:
     get:
+      summary: Information about a server
       tags:
         - Server
-      description: Get server information
+      description: Get information about a server
       responses:
         200:
-          description: Returns information about server
+          description: Returns information about a server
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Info'
   /games/{id}/broadcast:
     post:
+      summary: Broadcast a message
       tags:
         - Games
-      description: Broadcast a message to players in game with passed identificator
+      description: Broadcast a message to all players in a game with passed identificator
       parameters:
         - $ref: '#/components/parameters/GameID'
       requestBody:
@@ -225,13 +232,13 @@ paths:
                 - message
       responses:
         200:
-          description: Returns object contained broadcast result flag
+          description: Object contained broadcast result flag
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Broadcast'
         400:
-          description: Invalid inputs
+          description: Invalid input
           content:
             application/json:
               schema:
@@ -249,21 +256,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         503:
-          description: Service unavailable, cannot broadcast right away
+          description: Service unavailable, cannot broadcast right now
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
   /games/{id}/objects:
     get:
+      summary: List objects on a map
       tags:
         - Games
-      description: Get all objects on map
+      description: Get all objects on a map
       parameters:
         - $ref: '#/components/parameters/GameID'
       responses:
         200:
-          description: Returns all objects on map
+          description: All objects on map
           content:
             application/json:
               schema:
@@ -288,9 +296,10 @@ paths:
                 $ref: '#/components/schemas/Error'
   /ping:
     get:
+      summary: Ping-pong requesting
       tags:
         - Server
-      description: Ping-pong request
+      description: Ping request to check up a server
       responses:
         200:
           description: Pong response
