@@ -22,14 +22,7 @@ const wsReadBufferSize = 2048
 
 const wsWriteBufferSize = 20480
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:    wsReadBufferSize,
-	WriteBufferSize:   wsWriteBufferSize,
-	EnableCompression: false,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+const messageUpgradeConnectionError = "web-socket upgrade connection error"
 
 type responseGameWebSocketHandlerError struct {
 	Code int    `json:"code"`
@@ -39,6 +32,7 @@ type responseGameWebSocketHandlerError struct {
 type gameWebSocketHandler struct {
 	logger       logrus.FieldLogger
 	groupManager *connections.ConnectionGroupManager
+	upgrader     *websocket.Upgrader
 }
 
 type ErrGameWebSocketHandler string
@@ -48,10 +42,24 @@ func (e ErrGameWebSocketHandler) Error() string {
 }
 
 func NewGameWebSocketHandler(logger logrus.FieldLogger, groupManager *connections.ConnectionGroupManager) http.Handler {
-	return &gameWebSocketHandler{
+	upgrader := &websocket.Upgrader{
+		ReadBufferSize:    wsReadBufferSize,
+		WriteBufferSize:   wsWriteBufferSize,
+		EnableCompression: false,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
+	handler := &gameWebSocketHandler{
 		logger:       logger,
 		groupManager: groupManager,
+		upgrader:     upgrader,
 	}
+
+	upgrader.Error = handler.errorUpgradeConnection
+
+	return handler
 }
 
 func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -102,13 +110,10 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	h.logger.Info("upgrade connection")
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
-		h.writeResponseJSON(w, http.StatusInternalServerError, &responseGameWebSocketHandlerError{
-			Code: http.StatusInternalServerError,
-			Text: "web-socket upgrade connection error",
-		})
+		// Response is written by failed upgrader
 		return
 	}
 
@@ -120,6 +125,16 @@ func (h *gameWebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		h.logger.Error(ErrGameWebSocketHandler(err.Error()))
 		return
 	}
+}
+
+func (h *gameWebSocketHandler) errorUpgradeConnection(w http.ResponseWriter, _ *http.Request, status int, _ error) {
+	// Composing error message for upgrade failure case
+	w.Header().Set("Sec-Websocket-Version", "13")
+
+	h.writeResponseJSON(w, status, &responseGameWebSocketHandlerError{
+		Code: status,
+		Text: messageUpgradeConnectionError,
+	})
 }
 
 func (h *gameWebSocketHandler) writeResponseJSON(w http.ResponseWriter, statusCode int, response interface{}) {

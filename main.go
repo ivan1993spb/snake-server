@@ -145,6 +145,7 @@ func main() {
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path("/metrics").Handler(promhttp.Handler())
+	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
 	if enableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
 		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
@@ -171,21 +172,14 @@ func main() {
 	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
 
-	httpMux := http.NewServeMux()
-
-	httpMux.Handle("/", rootRouter)
-
-	// Use middlewares for API routes
-	httpMux.Handle("/api/", negroni.New(
+	n := negroni.New(
 		middlewares.NewRecovery(logger),
+		middlewares.NewServerInfo(ServerName, Version, Build),
 		middlewares.NewLogger(logger, logName),
 		middlewares.NewCORS(),
-		negroni.Wrap(rootRouter),
-	))
+	)
 
-	n := negroni.New()
-	n.Use(middlewares.NewServerInfo(ServerName, Version, Build))
-	n.UseHandler(httpMux)
+	n.UseHandler(rootRouter)
 
 	logger.WithFields(logrus.Fields{
 		"address": address,
