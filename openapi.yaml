@@ -48,11 +48,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Games'
         400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
     post:
       summary: Start a new game
       description: Create a new game on a server with given map parameters and limits
@@ -96,11 +92,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Game'
         400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
         500:
           description: Internal server error
           content:
@@ -129,11 +121,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Game'
         400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
         404:
           description: Game not found
           content:
@@ -161,11 +149,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Deleted'
         400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
         404:
           description: Game not found
           content:
@@ -238,11 +222,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Broadcast'
         400:
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
         404:
           description: Game not found
           content:
@@ -277,11 +257,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Objects'
         400:
-          description: Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/InvalidParameters'
         404:
           description: Game not found
           content:
@@ -318,6 +294,14 @@ components:
         format: int32
       required: true
       description: Game identificator
+
+  responses:
+    InvalidParameters:
+      description: Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
   schemas:
 
