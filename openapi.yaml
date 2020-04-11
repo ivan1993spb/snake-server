@@ -94,11 +94,7 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
         500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ServerError'
         503:
           description: Service unavailable, cannot create a new game
           content:
@@ -129,11 +125,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ServerError'
     delete:
       summary: Delete a game
       description: Delete a game by identificator
@@ -157,11 +149,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ServerError'
         503:
           description: Service unavailable, cannot delete the game right now
           content:
@@ -230,11 +218,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ServerError'
         503:
           description: Service unavailable, cannot broadcast right now
           content:
@@ -265,11 +249,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ServerError'
   /ping:
     get:
       summary: Ping-pong requesting
@@ -298,6 +278,12 @@ components:
   responses:
     InvalidParameters:
       description: Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServerError:
+      description: An internal server error
       content:
         application/json:
           schema:
