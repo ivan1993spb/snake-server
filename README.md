@@ -73,6 +73,23 @@ To install the Snake-Server you can download the server as a binary or pull the 
   snake-server -h
   ```
 
+* **Pull the image from DOCKER-HUB**
+
+  [![Docker Pulls](https://img.shields.io/docker/pulls/ivan1993spb/snake-server)](https://hub.docker.com/r/ivan1993spb/snake-server)
+
+  Check out [**the repo**](https://hub.docker.com/r/ivan1993spb/snake-server) and [**the tag list**](https://hub.docker.com/r/ivan1993spb/snake-server/tags/).
+
+  ```bash
+  # pull an image
+  docker pull ivan1993spb/snake-server
+
+  # run it
+  docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
+
+  # view usage inforamtion
+  docker run --rm ivan1993spb/snake-server -h
+  ```
+
 * **Download and install binary**
 
   You can download a binary from the [**release page**](https://github.com/ivan1993spb/snake-server/releases/latest)
@@ -92,23 +109,6 @@ To install the Snake-Server you can download the server as a binary or pull the 
     curl -sL "https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz" |\
       tar xvz -C /usr/local/bin/
     ```
-
-* **Pull an image from docker-hub**
-
-  [![Docker Pulls](https://img.shields.io/docker/pulls/ivan1993spb/snake-server)](https://hub.docker.com/r/ivan1993spb/snake-server)
-
-  Check out [**the repo**](https://hub.docker.com/r/ivan1993spb/snake-server) and [**the tag list**](https://hub.docker.com/r/ivan1993spb/snake-server/tags/).
-
-  ```bash
-  # pull an image
-  docker pull ivan1993spb/snake-server
-
-  # run it
-  docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
-
-  # view usage inforamtion
-  docker run --rm ivan1993spb/snake-server -h
-  ```
 
 * **Deploy the server with ansible playbook**
 
