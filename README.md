@@ -30,8 +30,8 @@ Take a look at a working instance here - http://snakeonline.xyz
 * A player controls a snake
 * The task of the game is to rise the biggest snake and keep your dominating
 * To achieve the goal players may eat apples, mice, watermelons, small snakes and remains of dead snakes
-* If a snake hits a wall it dies and the player starts again with a new small snake
-* A snake can eat smaller snakes which squares of lengths are less or equal to the length of the predator snake
+* If a snake hits a wall, it dies, and the player starts again with a new small snake
+* A snake can eat smaller snakes
 
 ## Demo
 
