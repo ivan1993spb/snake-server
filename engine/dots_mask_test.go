@@ -117,6 +117,34 @@ func Test_DotsMask_Copy(t *testing.T) {
 	}, dm2Copy.mask)
 }
 
+func Test_DotsMask_Copy_CopyingLongRows(t *testing.T) {
+	// Test row lengths have to be more than 255
+	var rowsLengths = [...]int{321, 3331, 102021, 3123, 1010, 321, 123312, 2212, 777}
+
+	dm := &DotsMask{
+		mask: make([][]uint8, len(rowsLengths)),
+	}
+
+	for i := 0; i < len(rowsLengths); i++ {
+		dm.mask[i] = make([]uint8, rowsLengths[i])
+		for j := 0; j < rowsLengths[i]; j++ {
+			dm.mask[i][j] = 1
+		}
+	}
+
+	expectedMask := make([][]uint8, len(rowsLengths))
+	for i := 0; i < len(rowsLengths); i++ {
+		expectedMask[i] = make([]uint8, math.MaxUint8+1)
+		for j := 0; j < math.MaxUint8+1; j++ {
+			expectedMask[i][j] = 1
+		}
+	}
+
+	result := dm.Copy()
+
+	require.Equal(t, expectedMask, result.mask)
+}
+
 func Test_DotsMask_Width(t *testing.T) {
 	dm1 := &DotsMask{
 		mask: [][]uint8{
