@@ -17,7 +17,7 @@ import (
 
 	"github.com/ivan1993spb/snake-server/client"
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/handlers"
+	"github.com/ivan1993spb/snake-server/server/http/handlers"
 	"github.com/ivan1993spb/snake-server/server/http/middlewares"
 )
 
