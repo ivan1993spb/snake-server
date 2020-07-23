@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -129,6 +131,16 @@ var defaultConfig = Config{
 
 func DefaultConfig() Config {
 	return defaultConfig
+}
+
+func ParseYAML(input []byte, defaults Config) (Config, error) {
+	config := defaults
+
+	if err := yaml.Unmarshal(input, &config); err != nil {
+		return defaults, fmt.Errorf("cannot parse YAML: %s", err)
+	}
+
+	return config, nil
 }
 
 func ParseFlags(fs *flag.FlagSet, args []string, defaults Config) (Config, error) {
