@@ -169,3 +169,96 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 		require.Equal(t, test.expectConfig, config, label)
 	}
 }
+
+func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
+	type Test struct {
+		msg string
+
+		input    []byte
+		defaults Config
+
+		expectConfig Config
+		expectErr    bool
+	}
+
+	var tests = make([]*Test, 0)
+
+	// Test case 1
+	tests = append(tests, &Test{
+		msg: "input is nil",
+
+		input:    nil,
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    false,
+	})
+
+	// Test case 2
+	configTest2 := defaultConfig
+	configTest2.Server.Seed = 0
+
+	tests = append(tests, &Test{
+		msg: "a valid config with seed equal 0",
+
+		input:    ConfigYAMLSampleDefault,
+		defaults: defaultConfig,
+
+		expectConfig: configTest2,
+		expectErr:    false,
+	})
+
+	// Test case 3
+	configTest3 := defaultConfig
+	configTest3.Server.Address = ":9999"
+	configTest3.Server.TLS.Enable = true
+	configTest3.Server.TLS.Cert = "path/to/cert"
+	configTest3.Server.TLS.Key = "path/to/key"
+
+	tests = append(tests, &Test{
+		msg: "a valid config with address and TLS settings",
+
+		input:    ConfigYAMLSampleAddressAndTLS,
+		defaults: defaultConfig,
+
+		expectConfig: configTest3,
+		expectErr:    false,
+	})
+
+	// Test case 4
+	tests = append(tests, &Test{
+		msg: "bullshit YAML syntax of the config",
+
+		input:    ConfigYAMLSampleBullshitSyntax,
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    true,
+	})
+
+	// Test case 5
+	tests = append(tests, &Test{
+		msg: "empty config",
+
+		input:    []byte{},
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    false,
+	})
+
+	for n, test := range tests {
+		t.Log(test.msg)
+
+		label := fmt.Sprintf("case number %d", n+1)
+
+		config, err := ParseYAML(test.input, test.defaults)
+
+		if test.expectErr {
+			require.NotNil(t, err, label)
+		} else {
+			require.Nil(t, err, label)
+		}
+		require.Equal(t, test.expectConfig, config, label)
+	}
+}
