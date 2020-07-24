@@ -266,3 +266,49 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 		require.Equal(t, test.expectConfig, config, label)
 	}
 }
+
+func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
+	require.Equal(t, map[string]interface{}{
+		fieldLabelAddress: ":9999",
+
+		fieldLabelTLSEnable: true,
+		fieldLabelTLSCert:   "path/to/cert",
+		fieldLabelTLSKey:    "path/to/key",
+
+		fieldLabelGroupsLimit: 1000,
+		fieldLabelConnsLimit:  10000,
+
+		fieldLabelSeed: int64(321),
+
+		fieldLabelLogEnableJSON: false,
+		fieldLabelLogLevel:      "warning",
+
+		fieldLabelEnableBroadcast: true,
+		fieldLabelEnableWeb:       false,
+	}, Config{
+		Server: Server{
+			Address: ":9999",
+
+			TLS: TLS{
+				Enable: true,
+				Cert:   "path/to/cert",
+				Key:    "path/to/key",
+			},
+
+			Limits: Limits{
+				Groups: 1000,
+				Conns:  10000,
+			},
+
+			Seed: 321,
+
+			Log: Log{
+				EnableJSON: false,
+				Level:      "warning",
+			},
+
+			EnableBroadcast: true,
+			EnableWeb:       false,
+		},
+	}.Fields())
+}

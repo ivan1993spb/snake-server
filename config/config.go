@@ -63,6 +63,25 @@ const (
 	flagUsageEnableWeb       = "enable web client"
 )
 
+const (
+	fieldLabelAddress = "address"
+
+	fieldLabelTLSEnable = "tls-enable"
+	fieldLabelTLSCert   = "tls-cert"
+	fieldLabelTLSKey    = "tls-key"
+
+	fieldLabelGroupsLimit = "groups-limit"
+	fieldLabelConnsLimit  = "conns-limit"
+
+	fieldLabelSeed = "seed"
+
+	fieldLabelLogEnableJSON = "log-json"
+	fieldLabelLogLevel      = "log-level"
+
+	fieldLabelEnableBroadcast = "enable-broadcast"
+	fieldLabelEnableWeb       = "enable-web"
+)
+
 const envVarSnakeServerConfigPath = "SNAKE_SERVER_CONFIG_PATH"
 
 func generateSeed() int64 {
@@ -100,6 +119,27 @@ type Server struct {
 // Config is a server configuration structure
 type Config struct {
 	Server Server `yaml:"server"`
+}
+
+func (c Config) Fields() map[string]interface{} {
+	return map[string]interface{}{
+		fieldLabelAddress: c.Server.Address,
+
+		fieldLabelTLSEnable: c.Server.TLS.Enable,
+		fieldLabelTLSCert:   c.Server.TLS.Cert,
+		fieldLabelTLSKey:    c.Server.TLS.Key,
+
+		fieldLabelGroupsLimit: c.Server.Limits.Groups,
+		fieldLabelConnsLimit:  c.Server.Limits.Conns,
+
+		fieldLabelSeed: c.Server.Seed,
+
+		fieldLabelLogEnableJSON: c.Server.Log.EnableJSON,
+		fieldLabelLogLevel:      c.Server.Log.Level,
+
+		fieldLabelEnableBroadcast: c.Server.EnableBroadcast,
+		fieldLabelEnableWeb:       c.Server.EnableWeb,
+	}
 }
 
 var defaultConfig = Config{
