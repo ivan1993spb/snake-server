@@ -1,13 +1,13 @@
 package config
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"testing"
 
-	"bytes"
 	"github.com/stretchr/testify/require"
 )
 
