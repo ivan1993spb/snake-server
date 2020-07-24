@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"time"
 
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 )
 
@@ -253,6 +255,43 @@ func ReadYAMLConfig(r io.Reader, defaults Config) (Config, error) {
 	config, err := ParseYAML(input, defaults)
 	if err != nil {
 		return defaults, &errReadConfigYAML{err}
+	}
+
+	return config, nil
+}
+
+type errConfigurate struct {
+	err error
+}
+
+func (e *errConfigurate) Error() string {
+	return fmt.Sprintf("cannot configurate: %s", e.err)
+}
+
+// Configurate gathers a config from a config file and a flag set
+func Configurate(fs afero.Fs, flagSet *flag.FlagSet, args []string) (Config, error) {
+	defaults := DefaultConfig()
+	config := defaults
+
+	if configPath, ok := os.LookupEnv(envVarSnakeServerConfigPath); ok {
+		f, err := fs.Open(configPath)
+		if err != nil {
+			return defaults, &errConfigurate{err}
+		}
+
+		config, err = ReadYAMLConfig(f, config)
+		if err != nil {
+			return defaults, &errConfigurate{err}
+		}
+
+		if err := f.Close(); err != nil {
+			return defaults, &errConfigurate{err}
+		}
+	}
+
+	config, err := ParseFlags(flagSet, args, config)
+	if err != nil {
+		return defaults, &errConfigurate{err}
 	}
 
 	return config, nil
