@@ -3,9 +3,11 @@ package config
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"testing"
 
+	"bytes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -189,7 +191,7 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 
 	// Test case 1
 	tests = append(tests, &Test{
-		msg: "input is nil",
+		msg: "r is nil",
 
 		input:    nil,
 		defaults: defaultConfig,
@@ -311,4 +313,86 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 			EnableWeb:       false,
 		},
 	}.Fields())
+}
+
+func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
+	type Test struct {
+		msg string
+
+		r        io.Reader
+		defaults Config
+
+		expectConfig Config
+		expectErr    bool
+	}
+
+	var tests = make([]*Test, 0)
+
+	// Test case 1
+	configTest2 := defaultConfig
+	configTest2.Server.Seed = 0
+
+	tests = append(tests, &Test{
+		msg: "a valid config with seed equal 0",
+
+		r:        bytes.NewBuffer(ConfigYAMLSampleDefault),
+		defaults: defaultConfig,
+
+		expectConfig: configTest2,
+		expectErr:    false,
+	})
+
+	// Test case 2
+	configTest3 := defaultConfig
+	configTest3.Server.Address = ":9999"
+	configTest3.Server.TLS.Enable = true
+	configTest3.Server.TLS.Cert = "path/to/cert"
+	configTest3.Server.TLS.Key = "path/to/key"
+
+	tests = append(tests, &Test{
+		msg: "a valid config with address and TLS settings",
+
+		r:        bytes.NewBuffer(ConfigYAMLSampleAddressAndTLS),
+		defaults: defaultConfig,
+
+		expectConfig: configTest3,
+		expectErr:    false,
+	})
+
+	// Test case 3
+	tests = append(tests, &Test{
+		msg: "bullshit YAML syntax of the config",
+
+		r:        bytes.NewBuffer(ConfigYAMLSampleBullshitSyntax),
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    true,
+	})
+
+	// Test case 4
+	tests = append(tests, &Test{
+		msg: "empty reader",
+
+		r:        bytes.NewBuffer(make([]byte, 0)),
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    false,
+	})
+
+	for n, test := range tests {
+		t.Log(test.msg)
+
+		label := fmt.Sprintf("case number %d", n+1)
+
+		config, err := ReadYAMLConfig(test.r, test.defaults)
+
+		if test.expectErr {
+			require.NotNil(t, err, label)
+		} else {
+			require.Nil(t, err, label)
+		}
+		require.Equal(t, test.expectConfig, config, label)
+	}
 }

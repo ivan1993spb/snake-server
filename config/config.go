@@ -3,6 +3,8 @@ package config
 import (
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -215,6 +217,28 @@ func ParseFlags(fs *flag.FlagSet, args []string, defaults Config) (Config, error
 
 	if err := fs.Parse(args); err != nil {
 		return defaults, fmt.Errorf("cannot parse flags: %s", err)
+	}
+
+	return config, nil
+}
+
+type errReadConfigYAML struct {
+	err error
+}
+
+func (e *errReadConfigYAML) Error() string {
+	return fmt.Sprintf("cannot read YAML config: %s", e.err)
+}
+
+func ReadYAMLConfig(r io.Reader, defaults Config) (Config, error) {
+	input, err := ioutil.ReadAll(r)
+	if err != nil {
+		return defaults, &errReadConfigYAML{err}
+	}
+
+	config, err := ParseYAML(input, defaults)
+	if err != nil {
+		return defaults, &errReadConfigYAML{err}
 	}
 
 	return config, nil
