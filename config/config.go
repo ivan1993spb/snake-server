@@ -198,37 +198,37 @@ func ParseYAML(input []byte, defaults Config) (Config, error) {
 }
 
 // ParseFlags parses flags and returns a config based on the default configuration
-func ParseFlags(fs *flag.FlagSet, args []string, defaults Config) (Config, error) {
-	if fs.Parsed() {
+func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, error) {
+	if flagSet.Parsed() {
 		panic("program composition error: the provided FlagSet has been parsed")
 	}
 
 	config := defaults
 
 	// Address
-	fs.StringVar(&config.Server.Address, flagLabelAddress, defaults.Server.Address, flagUsageAddress)
+	flagSet.StringVar(&config.Server.Address, flagLabelAddress, defaults.Server.Address, flagUsageAddress)
 
 	// TLS
-	fs.BoolVar(&config.Server.TLS.Enable, flagLabelTLSEnable, defaults.Server.TLS.Enable, flagUsageTLSEnable)
-	fs.StringVar(&config.Server.TLS.Cert, flagLabelTLSCert, defaults.Server.TLS.Cert, flagUsageTLSCert)
-	fs.StringVar(&config.Server.TLS.Key, flagLabelTLSKey, defaults.Server.TLS.Key, flagUsageTLSKey)
+	flagSet.BoolVar(&config.Server.TLS.Enable, flagLabelTLSEnable, defaults.Server.TLS.Enable, flagUsageTLSEnable)
+	flagSet.StringVar(&config.Server.TLS.Cert, flagLabelTLSCert, defaults.Server.TLS.Cert, flagUsageTLSCert)
+	flagSet.StringVar(&config.Server.TLS.Key, flagLabelTLSKey, defaults.Server.TLS.Key, flagUsageTLSKey)
 
 	// Limits
-	fs.IntVar(&config.Server.Limits.Groups, flagLabelGroupsLimit, defaults.Server.Limits.Groups, flagUsageGroupsLimit)
-	fs.IntVar(&config.Server.Limits.Conns, flagLabelConnsLimit, defaults.Server.Limits.Conns, flagUsageConnsLimit)
+	flagSet.IntVar(&config.Server.Limits.Groups, flagLabelGroupsLimit, defaults.Server.Limits.Groups, flagUsageGroupsLimit)
+	flagSet.IntVar(&config.Server.Limits.Conns, flagLabelConnsLimit, defaults.Server.Limits.Conns, flagUsageConnsLimit)
 
 	// Random
-	fs.Int64Var(&config.Server.Seed, flagLabelSeed, defaults.Server.Seed, flagUsageSeed)
+	flagSet.Int64Var(&config.Server.Seed, flagLabelSeed, defaults.Server.Seed, flagUsageSeed)
 
 	// Logging
-	fs.BoolVar(&config.Server.Log.EnableJSON, flagLabelLogEnableJSON, defaults.Server.Log.EnableJSON, flagUsageLogEnableJSON)
-	fs.StringVar(&config.Server.Log.Level, flagLabelLogLevel, defaults.Server.Log.Level, flagUsageLogLevel)
+	flagSet.BoolVar(&config.Server.Log.EnableJSON, flagLabelLogEnableJSON, defaults.Server.Log.EnableJSON, flagUsageLogEnableJSON)
+	flagSet.StringVar(&config.Server.Log.Level, flagLabelLogLevel, defaults.Server.Log.Level, flagUsageLogLevel)
 
 	// Flags
-	fs.BoolVar(&config.Server.EnableBroadcast, flagLabelEnableBroadcast, defaults.Server.EnableBroadcast, flagUsageEnableBroadcast)
-	fs.BoolVar(&config.Server.EnableWeb, flagLabelEnableWeb, defaults.Server.EnableWeb, flagUsageEnableWeb)
+	flagSet.BoolVar(&config.Server.EnableBroadcast, flagLabelEnableBroadcast, defaults.Server.EnableBroadcast, flagUsageEnableBroadcast)
+	flagSet.BoolVar(&config.Server.EnableWeb, flagLabelEnableWeb, defaults.Server.EnableWeb, flagUsageEnableWeb)
 
-	if err := fs.Parse(args); err != nil {
+	if err := flagSet.Parse(args); err != nil {
 		return defaults, fmt.Errorf("cannot parse flags: %s", err)
 	}
 

@@ -162,10 +162,10 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 		t.Log(test.msg)
 
 		label := fmt.Sprintf("case number %d", n+1)
-		fs := flag.NewFlagSet(flagSetName, flag.ContinueOnError)
-		fs.SetOutput(ioutil.Discard)
+		flagSet := flag.NewFlagSet(flagSetName, flag.ContinueOnError)
+		flagSet.SetOutput(ioutil.Discard)
 
-		config, err := ParseFlags(fs, test.args, test.defaults)
+		config, err := ParseFlags(flagSet, test.args, test.defaults)
 
 		if test.expectErr {
 			require.NotNil(t, err, label)
