@@ -20,6 +20,8 @@ github.com/gorilla/mux
 github.com/gorilla/websocket
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
+# github.com/kr/fs v0.1.0
+## explicit
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/meatballhat/negroni-logrus v0.0.0-20170801195057-31067281800f
@@ -28,6 +30,8 @@ github.com/meatballhat/negroni-logrus
 # github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029
 ## explicit
 github.com/phyber/negroni-gzip/gzip
+# github.com/pkg/sftp v1.10.0
+## explicit
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
@@ -57,6 +61,10 @@ github.com/rs/cors
 ## explicit
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
+# github.com/spf13/afero v1.2.2
+## explicit
+github.com/spf13/afero
+github.com/spf13/afero/mem
 # github.com/stretchr/testify v1.3.0
 ## explicit
 github.com/stretchr/testify/assert
@@ -64,9 +72,14 @@ github.com/stretchr/testify/require
 # github.com/urfave/negroni v0.0.0-20171227212638-89f5378aa22c
 ## explicit
 github.com/urfave/negroni
+# golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
+## explicit
 # golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/text v0.3.0
+golang.org/x/text/transform
+golang.org/x/text/unicode/norm
 # gopkg.in/yaml.v2 v2.3.0
 ## explicit
 gopkg.in/yaml.v2
