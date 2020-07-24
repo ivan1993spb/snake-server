@@ -88,10 +88,10 @@ type Log struct {
 type Server struct {
 	Address string `yaml:"address"`
 
-	TLS    `yaml:"tls"`
-	Limits `yaml:"limits"`
-	Seed   int64 `yaml:"seed"`
-	Log    `yaml:"log"`
+	TLS    TLS    `yaml:"tls"`
+	Limits Limits `yaml:"limits"`
+	Seed   int64  `yaml:"seed"`
+	Log    Log    `yaml:"log"`
 
 	EnableBroadcast bool `yaml:"enable_broadcast"`
 	EnableWeb       bool `yaml:"enable_web"`
@@ -99,7 +99,7 @@ type Server struct {
 
 // Config is a server configuration structure
 type Config struct {
-	Server `yaml:"server"`
+	Server Server `yaml:"server"`
 }
 
 var defaultConfig = Config{
