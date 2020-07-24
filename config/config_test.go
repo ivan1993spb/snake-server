@@ -9,6 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_DefaultConfig_ReturnsDefaultConfig(t *testing.T) {
+	require.Equal(t, defaultConfig, DefaultConfig())
+}
+
 func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	const flagSetName = "test"
 
