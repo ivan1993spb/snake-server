@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Default values for the server's settings
 const (
 	defaultAddress = ":8080"
 
@@ -27,6 +28,7 @@ const (
 	defaultEnableWeb       = false
 )
 
+// Flag labels
 const (
 	flagLabelAddress = "address"
 
@@ -46,6 +48,7 @@ const (
 	flagLabelEnableWeb       = "enable-web"
 )
 
+// Flag usage descriptions
 const (
 	flagUsageAddress = "address to serve"
 
@@ -65,6 +68,7 @@ const (
 	flagUsageEnableWeb       = "enable web client"
 )
 
+// Label names
 const (
 	fieldLabelAddress = "address"
 
@@ -90,22 +94,26 @@ func generateSeed() int64 {
 	return time.Now().UnixNano()
 }
 
+// TLS structure represents TLS config
 type TLS struct {
 	Enable bool   `yaml:"enable"`
 	Cert   string `yaml:"cert"`
 	Key    string `yaml:"key"`
 }
 
+// Limits structure sets up server limits
 type Limits struct {
 	Groups int `yaml:"groups"`
 	Conns  int `yaml:"conns"`
 }
 
+// Log structure defines preferences for logging
 type Log struct {
 	EnableJSON bool   `yaml:"enable_json"`
 	Level      string `yaml:"level"`
 }
 
+// Server structure contains configurations for the server
 type Server struct {
 	Address string `yaml:"address"`
 
@@ -118,11 +126,12 @@ type Server struct {
 	EnableWeb       bool `yaml:"enable_web"`
 }
 
-// Config is a server configuration structure
+// Config is a base server configuration structure
 type Config struct {
 	Server Server `yaml:"server"`
 }
 
+// Fields returns a map of all configurations
 func (c Config) Fields() map[string]interface{} {
 	return map[string]interface{}{
 		fieldLabelAddress: c.Server.Address,
@@ -144,6 +153,7 @@ func (c Config) Fields() map[string]interface{} {
 	}
 }
 
+// Default settings
 var defaultConfig = Config{
 	Server: Server{
 		Address: defaultAddress,
@@ -171,10 +181,12 @@ var defaultConfig = Config{
 	},
 }
 
+// DefaultConfig returns configuration by default
 func DefaultConfig() Config {
 	return defaultConfig
 }
 
+// ParseYAML parses input byte slice and returns a config based on the default configuration
 func ParseYAML(input []byte, defaults Config) (Config, error) {
 	config := defaults
 
@@ -185,6 +197,7 @@ func ParseYAML(input []byte, defaults Config) (Config, error) {
 	return config, nil
 }
 
+// ParseFlags parses flags and returns a config based on the default configuration
 func ParseFlags(fs *flag.FlagSet, args []string, defaults Config) (Config, error) {
 	if fs.Parsed() {
 		panic("program composition error: the provided FlagSet has been parsed")
@@ -230,6 +243,7 @@ func (e *errReadConfigYAML) Error() string {
 	return fmt.Sprintf("cannot read YAML config: %s", e.err)
 }
 
+// ReadYAMLConfig reads configurations from a reader and returns a config structure based on defaults
 func ReadYAMLConfig(r io.Reader, defaults Config) (Config, error) {
 	input, err := ioutil.ReadAll(r)
 	if err != nil {
