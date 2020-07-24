@@ -141,10 +141,21 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 		expectErr:    true,
 	})
 
+	// Test case 8
+	tests = append(tests, &Test{
+		msg: "args is nil",
+
+		args:     nil,
+		defaults: defaultConfig,
+
+		expectConfig: defaultConfig,
+		expectErr:    false,
+	})
+
 	for n, test := range tests {
 		t.Log(test.msg)
 
-		label := fmt.Sprintf("case number %d", n)
+		label := fmt.Sprintf("case number %d", n+1)
 		fs := flag.NewFlagSet(flagSetName, flag.ContinueOnError)
 		fs.SetOutput(ioutil.Discard)
 
