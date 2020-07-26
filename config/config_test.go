@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -395,4 +397,67 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 		}
 		require.Equal(t, test.expectConfig, config, label)
 	}
+}
+
+func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
+	const (
+		configPath = "/etc/server/test/config.yaml"
+
+		perm = 0666
+
+		flagSetName = "test"
+	)
+
+	type Test struct {
+		msg string
+
+		input []byte
+		args  []string
+
+		expectConfig Config
+		expectErr    bool
+	}
+
+	var tests = make([]*Test, 0)
+
+	// Test case 1
+	configTest1 := defaultConfig
+	configTest1.Server.Seed = 0
+
+	tests = append(tests, &Test{
+		msg: "a valid config with seed equal 0",
+
+		input: ConfigYAMLSampleDefault,
+		args:  []string{},
+
+		expectConfig: configTest1,
+		expectErr:    false,
+	})
+
+	err := os.Setenv(envVarSnakeServerConfigPath, configPath)
+	require.Nil(t, err)
+
+	for n, test := range tests {
+		t.Log(test.msg)
+
+		label := fmt.Sprintf("case number %d", n+1)
+
+		fs := afero.NewMemMapFs()
+		err := afero.WriteFile(fs, configPath, test.input, perm)
+		require.Nil(t, err, label)
+
+		flagSet := flag.NewFlagSet(flagSetName, flag.ContinueOnError)
+		flagSet.SetOutput(ioutil.Discard)
+
+		config, err := Configurate(fs, flagSet, test.args)
+
+		if test.expectErr {
+			require.NotNil(t, err, label)
+		} else {
+			require.Nil(t, err, label)
+		}
+		require.Equal(t, test.expectConfig, config, label)
+	}
+
+	os.Unsetenv(envVarSnakeServerConfigPath)
 }
