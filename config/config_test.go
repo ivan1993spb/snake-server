@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -193,7 +192,7 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 
 	// Test case 1
 	tests = append(tests, &Test{
-		msg: "r is nil",
+		msg: "input is nil",
 
 		input:    nil,
 		defaults: defaultConfig,
@@ -321,7 +320,7 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	type Test struct {
 		msg string
 
-		r        io.Reader
+		input    []byte
 		defaults Config
 
 		expectConfig Config
@@ -331,33 +330,33 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	var tests = make([]*Test, 0)
 
 	// Test case 1
-	configTest2 := defaultConfig
-	configTest2.Server.Seed = 0
+	configTest1 := defaultConfig
+	configTest1.Server.Seed = 0
 
 	tests = append(tests, &Test{
 		msg: "a valid config with seed equal 0",
 
-		r:        bytes.NewBuffer(ConfigYAMLSampleDefault),
+		input:    ConfigYAMLSampleDefault,
 		defaults: defaultConfig,
 
-		expectConfig: configTest2,
+		expectConfig: configTest1,
 		expectErr:    false,
 	})
 
 	// Test case 2
-	configTest3 := defaultConfig
-	configTest3.Server.Address = ":9999"
-	configTest3.Server.TLS.Enable = true
-	configTest3.Server.TLS.Cert = "path/to/cert"
-	configTest3.Server.TLS.Key = "path/to/key"
+	configTest2 := defaultConfig
+	configTest2.Server.Address = ":9999"
+	configTest2.Server.TLS.Enable = true
+	configTest2.Server.TLS.Cert = "path/to/cert"
+	configTest2.Server.TLS.Key = "path/to/key"
 
 	tests = append(tests, &Test{
 		msg: "a valid config with address and TLS settings",
 
-		r:        bytes.NewBuffer(ConfigYAMLSampleAddressAndTLS),
+		input:    ConfigYAMLSampleAddressAndTLS,
 		defaults: defaultConfig,
 
-		expectConfig: configTest3,
+		expectConfig: configTest2,
 		expectErr:    false,
 	})
 
@@ -365,7 +364,7 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	tests = append(tests, &Test{
 		msg: "bullshit YAML syntax of the config",
 
-		r:        bytes.NewBuffer(ConfigYAMLSampleBullshitSyntax),
+		input:    ConfigYAMLSampleBullshitSyntax,
 		defaults: defaultConfig,
 
 		expectConfig: defaultConfig,
@@ -376,7 +375,7 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	tests = append(tests, &Test{
 		msg: "empty reader",
 
-		r:        bytes.NewBuffer(make([]byte, 0)),
+		input:    make([]byte, 0),
 		defaults: defaultConfig,
 
 		expectConfig: defaultConfig,
@@ -388,7 +387,7 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 
 		label := fmt.Sprintf("case number %d", n+1)
 
-		config, err := ReadYAMLConfig(test.r, test.defaults)
+		config, err := ReadYAMLConfig(bytes.NewBuffer(test.input), test.defaults)
 
 		if test.expectErr {
 			require.NotNil(t, err, label)
