@@ -415,6 +415,9 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 
 		expectConfig Config
 		expectErr    bool
+
+		setEnv     bool
+		saveConfig bool
 	}
 
 	var tests = make([]*Test, 0)
@@ -431,10 +434,84 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 
 		expectConfig: configTest1,
 		expectErr:    false,
+
+		setEnv:     true,
+		saveConfig: true,
 	})
 
-	err := os.Setenv(envVarSnakeServerConfigPath, configPath)
-	require.Nil(t, err)
+	// Test case 2
+	tests = append(tests, &Test{
+		msg: "environment variable hasn't been set and flags are empty",
+
+		input: ConfigYAMLSampleDefault,
+		args:  []string{},
+
+		expectConfig: defaultConfig,
+		expectErr:    false,
+
+		setEnv:     false,
+		saveConfig: true,
+	})
+
+	// Test case 3
+	configTest3 := defaultConfig
+	configTest3.Server.Log.EnableJSON = true
+	configTest3.Server.Limits.Groups = 120
+
+	tests = append(tests, &Test{
+		msg: "environment variable hasn't been set, json logging is enabled, group limits is 120",
+
+		input: ConfigYAMLSampleDefault,
+		args:  []string{"-log-json", "-groups-limit", "120"},
+
+		expectConfig: configTest3,
+		expectErr:    false,
+
+		setEnv:     false,
+		saveConfig: true,
+	})
+
+	// Test case 4
+	tests = append(tests, &Test{
+		msg: "environment variable has been set, config is empty, flags are incorrect",
+
+		input: make([]byte, 0),
+		args:  []string{"-log-json", "-invalid-flag"},
+
+		expectConfig: defaultConfig,
+		expectErr:    true,
+
+		setEnv:     true,
+		saveConfig: true,
+	})
+
+	// Test case 5
+	tests = append(tests, &Test{
+		msg: "environment variable has been set, config not found",
+
+		input: make([]byte, 0),
+		args:  []string{"-log-json"},
+
+		expectConfig: defaultConfig,
+		expectErr:    true,
+
+		setEnv:     true,
+		saveConfig: false,
+	})
+
+	// Test case 5
+	tests = append(tests, &Test{
+		msg: "environment variable has been set, config exists, YAML syntax is invalid",
+
+		input: ConfigYAMLSampleBullshitSyntax,
+		args:  []string{"-log-json", "-enable-web"},
+
+		expectConfig: defaultConfig,
+		expectErr:    true,
+
+		setEnv:     true,
+		saveConfig: true,
+	})
 
 	for n, test := range tests {
 		t.Log(test.msg)
@@ -442,8 +519,16 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 		label := fmt.Sprintf("case number %d", n+1)
 
 		fs := afero.NewMemMapFs()
-		err := afero.WriteFile(fs, configPath, test.input, perm)
-		require.Nil(t, err, label)
+
+		if test.saveConfig {
+			err := afero.WriteFile(fs, configPath, test.input, perm)
+			require.Nil(t, err, label)
+		}
+
+		if test.setEnv {
+			err := os.Setenv(envVarSnakeServerConfigPath, configPath)
+			require.Nil(t, err)
+		}
 
 		flagSet := flag.NewFlagSet(flagSetName, flag.ContinueOnError)
 		flagSet.SetOutput(ioutil.Discard)
@@ -456,7 +541,10 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 			require.Nil(t, err, label)
 		}
 		require.Equal(t, test.expectConfig, config, label)
-	}
 
-	os.Unsetenv(envVarSnakeServerConfigPath)
+		if test.setEnv {
+			err := os.Unsetenv(envVarSnakeServerConfigPath)
+			require.Nil(t, err)
+		}
+	}
 }
