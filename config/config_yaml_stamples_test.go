@@ -36,3 +36,16 @@ server:
      cert: "path/to/cert"
     key: "path/to/key"
 `)
+
+var ConfigYAMLSampleAddressAndTLSAndLimits = []byte(`
+server:
+  address: :9999
+  tls:
+    enable: True
+    cert: "path/to/cert"
+    key: "path/to/key"
+  limits:
+    groups: 144
+    conns: 4123
+  enable_broadcast: True
+`)

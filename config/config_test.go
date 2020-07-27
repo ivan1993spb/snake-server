@@ -513,6 +513,37 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 		saveConfig: true,
 	})
 
+	// Test case 6
+	configTest6 := defaultConfig
+	configTest6.Server.Address = ":9999"
+	configTest6.Server.TLS.Enable = true
+	configTest6.Server.TLS.Cert = "/etc/path/cert"
+	configTest6.Server.TLS.Key = "path/to/key"
+	configTest6.Server.Limits.Groups = 422
+	configTest6.Server.Limits.Conns = 4123
+	configTest6.Server.EnableBroadcast = false
+	configTest6.Server.Log.EnableJSON = true
+	configTest6.Server.EnableWeb = true
+
+	tests = append(tests, &Test{
+		msg: "overwrite configuration in file config and with flags",
+
+		input: ConfigYAMLSampleAddressAndTLSAndLimits,
+		args: []string{
+			"-log-json",
+			"-enable-web",
+			"-groups-limit", "422",
+			"-tls-cert", "/etc/path/cert",
+			"-enable-broadcast=false",
+		},
+
+		expectConfig: configTest6,
+		expectErr:    false,
+
+		setEnv:     true,
+		saveConfig: true,
+	})
+
 	for n, test := range tests {
 		t.Log(test.msg)
 
