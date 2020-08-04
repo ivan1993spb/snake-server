@@ -4,24 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"os"
 	"runtime"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/phyber/negroni-gzip/gzip"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/negroni"
 
-	"github.com/ivan1993spb/snake-server/client"
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/server/http/handlers"
-	"github.com/ivan1993spb/snake-server/server/http/middlewares"
+	"github.com/ivan1993spb/snake-server/server/http"
 )
-
-const ServerName = "Snake-Server"
 
 const (
 	defaultAddress     = ":8080"
@@ -54,8 +45,6 @@ var (
 
 	enableWeb bool
 )
-
-const logName = "api"
 
 func usage() {
 	fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
@@ -100,11 +89,12 @@ func logger() *logrus.Logger {
 	return logger
 }
 
-func serve(h http.Handler) error {
+func RunServer(server *http.Server) error {
+	// TODO: Refactor this function.
 	if flagEnableTLS {
-		return http.ListenAndServeTLS(address, certFile, keyFile, h)
+		return server.ListenAndServeTLS(certFile, keyFile)
 	}
-	return http.ListenAndServe(address, h)
+	return server.ListenAndServe()
 }
 
 func main() {
@@ -143,50 +133,20 @@ func main() {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
 
-	rootRouter := mux.NewRouter().StrictSlash(true)
-	rootRouter.Path("/metrics").Handler(promhttp.Handler())
-	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
-	if enableWeb {
-		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
-		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
-	} else {
-		rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
+	server := &http.Server{
+		Addr:         address,
+		Logger:       logger,
+		GroupManager: groupManager,
 	}
-	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
 
-	// Web-Socket routes
-	wsRouter := rootRouter.PathPrefix("/ws").Subrouter()
-	wsRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
-
-	// API routes
-	apiRouter := rootRouter.PathPrefix("/api").Subrouter()
-	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
-	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	if enableBroadcast {
-		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
-	}
-	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
-
-	n := negroni.New(
-		middlewares.NewRecovery(logger),
-		middlewares.NewServerInfo(ServerName, Version, Build),
-		middlewares.NewLogger(logger, logName),
-		middlewares.NewCORS(),
-	)
-
-	n.UseHandler(rootRouter)
+	server.InitRoutes(enableWeb, enableBroadcast, Author, License, Version, Build)
 
 	logger.WithFields(logrus.Fields{
 		"address": address,
 		"tls":     flagEnableTLS,
 	}).Info("starting server")
 
-	if err := serve(n); err != nil {
+	if err := RunServer(server); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
