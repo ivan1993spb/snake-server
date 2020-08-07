@@ -2,23 +2,29 @@ package objects
 
 import "github.com/ivan1993spb/snake-server/engine"
 
-// Food interface describes methods that must be implemented all edible objects
+// Food interface describes methods which must be implemented by all edible
+// objects
 type Food interface {
-	// Bites object on dot dot and returns nutritional value nv, success flag -
-	// true if dot free and error err if error occurred
+	// Bite bites an object at the passed dot and returns the nutritional
+	// value nv, success flag true if the dot has been released or an error err
+	// if one occurred
 	Bite(dot engine.Dot) (nv uint16, success bool, err error)
 }
 
-// Alive interface describes methods that must be implemented all alive objects
+// Alive interface describes methods which must be implemented by all living
+// objects
 type Alive interface {
-	// Hits object on dot dot with force force and returns success flag - true
-	// if dot free and error err if error occurred
+	// Hit hits an object at the passed dot with the given force force and
+	// returns success flag true if the dot has been released or an error err
+	// if one occurred
 	Hit(dot engine.Dot, force float64) (success bool, err error)
 }
 
-// Object interface describes methods that must be implemented all not alive objects
-type Object interface {
-	// Breaks object on dot dot with force force, returns success flag true if dot
-	// free and error err if error occurred
+// Breakable interface describes methods that must be implemented by all
+// objects which could be broken
+type Breakable interface {
+	// Break breaks an object at the passed dot with the given force and
+	// returns success flag true if the dot has been released or an error err
+	// if one occurred
 	Break(dot engine.Dot, force float64) (success bool, err error)
 }
