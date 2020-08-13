@@ -288,6 +288,7 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 
 		fieldLabelEnableBroadcast: true,
 		fieldLabelEnableWeb:       false,
+		fieldLabelForbidCORS:      true,
 	}, Config{
 		Server: Server{
 			Address: ":9999",
@@ -312,6 +313,7 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 
 			EnableBroadcast: true,
 			EnableWeb:       false,
+			ForbidCORS:      true,
 		},
 	}.Fields())
 }
@@ -379,6 +381,27 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 		defaults: defaultConfig,
 
 		expectConfig: defaultConfig,
+		expectErr:    false,
+	})
+
+	// Test case 5
+	configTest5 := defaultConfig
+	configTest5.Server.Address = ":9999"
+	configTest5.Server.TLS.Enable = true
+	configTest5.Server.TLS.Cert = "path/to/cert"
+	configTest5.Server.TLS.Key = "path/to/key"
+	configTest5.Server.Limits.Groups = 144
+	configTest5.Server.Limits.Conns = 4123
+	configTest5.Server.EnableBroadcast = true
+	configTest5.Server.ForbidCORS = true
+
+	tests = append(tests, &Test{
+		msg: "a valid config with address, TLS settings, limits, and flags of broadcast and CORS",
+
+		input:    ConfigYAMLSampleAddressAndTLSAndLimitsAndCORS,
+		defaults: defaultConfig,
+
+		expectConfig: configTest5,
 		expectErr:    false,
 	})
 

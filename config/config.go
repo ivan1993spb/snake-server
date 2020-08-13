@@ -28,6 +28,7 @@ const (
 
 	defaultEnableBroadcast = false
 	defaultEnableWeb       = false
+	defaultForbidCORS      = false
 )
 
 // Flag labels
@@ -48,6 +49,7 @@ const (
 
 	flagLabelEnableBroadcast = "enable-broadcast"
 	flagLabelEnableWeb       = "enable-web"
+	flagLabelForbidCORS      = "forbid-cors"
 )
 
 // Flag usage descriptions
@@ -68,6 +70,7 @@ const (
 
 	flagUsageEnableBroadcast = "enable broadcasting API method"
 	flagUsageEnableWeb       = "enable web client"
+	flagUsageForbidCORS      = "forbid cross-origin resource sharing"
 )
 
 // Label names
@@ -88,6 +91,7 @@ const (
 
 	fieldLabelEnableBroadcast = "enable-broadcast"
 	fieldLabelEnableWeb       = "enable-web"
+	fieldLabelForbidCORS      = "forbid-cors"
 )
 
 const envVarSnakeServerConfigPath = "SNAKE_SERVER_CONFIG_PATH"
@@ -126,6 +130,7 @@ type Server struct {
 
 	EnableBroadcast bool `yaml:"enable_broadcast"`
 	EnableWeb       bool `yaml:"enable_web"`
+	ForbidCORS      bool `yaml:"forbid_cors"`
 }
 
 // Config is a base server configuration structure
@@ -152,6 +157,7 @@ func (c Config) Fields() map[string]interface{} {
 
 		fieldLabelEnableBroadcast: c.Server.EnableBroadcast,
 		fieldLabelEnableWeb:       c.Server.EnableWeb,
+		fieldLabelForbidCORS:      c.Server.ForbidCORS,
 	}
 }
 
@@ -180,6 +186,7 @@ var defaultConfig = Config{
 
 		EnableBroadcast: defaultEnableBroadcast,
 		EnableWeb:       defaultEnableWeb,
+		ForbidCORS:      defaultForbidCORS,
 	},
 }
 
@@ -229,6 +236,7 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 	// Flags
 	flagSet.BoolVar(&config.Server.EnableBroadcast, flagLabelEnableBroadcast, defaults.Server.EnableBroadcast, flagUsageEnableBroadcast)
 	flagSet.BoolVar(&config.Server.EnableWeb, flagLabelEnableWeb, defaults.Server.EnableWeb, flagUsageEnableWeb)
+	flagSet.BoolVar(&config.Server.ForbidCORS, flagLabelForbidCORS, defaults.Server.ForbidCORS, flagUsageForbidCORS)
 
 	if err := flagSet.Parse(args); err != nil {
 		return defaults, fmt.Errorf("cannot parse flags: %s", err)
