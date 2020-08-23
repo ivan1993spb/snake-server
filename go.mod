@@ -7,10 +7,9 @@ require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v0.0.0-20170704074345-ac112f7d75a0
 	github.com/gorilla/websocket v0.0.0-20180420171612-21ab95fa12b9
-	github.com/kr/fs v0.1.0 // indirect
+	github.com/jteeuwen/go-bindata v3.0.8-0.20180305030458-6025e8de665b+incompatible
 	github.com/meatballhat/negroni-logrus v0.0.0-20170801195057-31067281800f
 	github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029
-	github.com/pkg/sftp v1.10.0 // indirect
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13
 	github.com/prometheus/client_golang v1.3.0
 	github.com/rs/cors v0.0.0-20180524071409-694cf2ad010f
@@ -18,6 +17,5 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/stretchr/testify v1.3.0
 	github.com/urfave/negroni v0.0.0-20171227212638-89f5378aa22c
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
