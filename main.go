@@ -44,6 +44,8 @@ var (
 	enableBroadcast bool
 
 	enableWeb bool
+
+	forbidCORS bool
 )
 
 func usage() {
@@ -65,6 +67,7 @@ func init() {
 	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
 	flag.BoolVar(&enableBroadcast, "enable-broadcast", false, "enable broadcasting API method")
 	flag.BoolVar(&enableWeb, "enable-web", false, "enable web client")
+	flag.BoolVar(&forbidCORS, "forbid-cors", false, "forbid cross-origin resource sharing")
 	flag.Usage = usage
 	flag.Parse()
 }
@@ -120,6 +123,7 @@ func main() {
 		"log_level":    logLevel,
 		"broadcast":    enableBroadcast,
 		"web":          enableWeb,
+		"cors":         !forbidCORS,
 	}).Info("preparing to start server")
 
 	if enableBroadcast {
@@ -139,7 +143,7 @@ func main() {
 		GroupManager: groupManager,
 	}
 
-	server.InitRoutes(enableWeb, enableBroadcast, Author, License, Version, Build)
+	server.InitRoutes(enableWeb, enableBroadcast, forbidCORS, Author, License, Version, Build)
 
 	logger.WithFields(logrus.Fields{
 		"address": address,

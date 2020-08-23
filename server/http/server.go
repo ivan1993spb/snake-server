@@ -27,7 +27,7 @@ type Server struct {
 	GroupManager *connections.ConnectionGroupManager
 }
 
-func (srv *Server) InitRoutes(enableWeb, enableBroadcast bool, author, license, version, build string) {
+func (srv *Server) InitRoutes(enableWeb, enableBroadcast, forbidCORS bool, author, license, version, build string) {
 	// TODO: Refactor this function.
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
@@ -63,8 +63,11 @@ func (srv *Server) InitRoutes(enableWeb, enableBroadcast bool, author, license, 
 		middlewares.NewRecovery(srv.Logger),
 		middlewares.NewServerInfo(ServerName, version, build),
 		middlewares.NewLogger(srv.Logger, logName),
-		middlewares.NewCORS(),
 	)
+
+	if !forbidCORS {
+		n.Use(middlewares.NewCORS())
+	}
 
 	n.UseHandler(rootRouter)
 

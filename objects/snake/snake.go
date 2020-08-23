@@ -323,8 +323,8 @@ func (s *Snake) interactObject(object interface{}, dot engine.Dot) (success bool
 		return success, nil
 	}
 
-	if object, ok := object.(objects.Object); ok {
-		success, err := object.Break(dot, s.getForce())
+	if breakable, ok := object.(objects.Breakable); ok {
+		success, err := breakable.Break(dot, s.getForce())
 		if err != nil {
 			return false, errInteractObject(err.Error())
 		}
