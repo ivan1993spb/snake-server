@@ -4,3 +4,5 @@ snake-server*
 *.log
 *.test
 *.out
+
+vendor
