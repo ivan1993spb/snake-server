@@ -224,23 +224,33 @@ func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
+	wrapNewConstMetric := func(desc *prometheus.Desc, valueType prometheus.ValueType,
+		value float64, labelValues ...string) prometheus.Metric {
+		metric, err := prometheus.NewConstMetric(desc, valueType, value, labelValues...)
+		if err != nil {
+			m.logger.Errorln("cannot create a metric:", err)
+			return prometheus.NewInvalidMetric(desc, err)
+		}
+		return metric
+	}
+
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
 
-	ch <- prometheus.MustNewConstMetric(
+	ch <- wrapNewConstMetric(
 		gameServerCapacityDesc,
 		prometheus.GaugeValue,
 		float64(m.unsafeCapacity()),
 	)
 
-	ch <- prometheus.MustNewConstMetric(
+	ch <- wrapNewConstMetric(
 		gameServerGroupCountDesc,
 		prometheus.GaugeValue,
 		float64(m.unsafeGroupCount()),
 	)
 
 	for id, group := range m.groups {
-		ch <- prometheus.MustNewConstMetric(
+		ch <- wrapNewConstMetric(
 			gameServerPlayersNumberDesc,
 			prometheus.GaugeValue,
 			float64(group.GetCount()),
