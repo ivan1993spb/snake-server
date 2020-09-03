@@ -2,8 +2,10 @@ package connections
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -175,4 +177,74 @@ func (m *ConnectionGroupManager) Capacity() float32 {
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
 	return m.unsafeCapacity()
+}
+
+const (
+	serverGamesPlayersGameIdLabel = "game_id"
+
+	serverCapacityFQName     = "server_capacity"
+	serverGamesFQName        = "server_games"
+	serverGamesPlayersFQName = "server_games_players"
+
+	serverCapacityHelp     = "Capacity of the server"
+	serverGamesHelp        = "Games number"
+	serverGamesPlayersHelp = "Players number"
+)
+
+var (
+	gameServerCapacityDesc = prometheus.NewDesc(
+		serverCapacityFQName,
+		serverCapacityHelp,
+		nil,
+		nil,
+	)
+	gameServerGroupCountDesc = prometheus.NewDesc(
+		serverGamesFQName,
+		serverGamesHelp,
+		nil,
+		nil,
+	)
+	gameServerPlayersNumberDesc = prometheus.NewDesc(
+		serverGamesPlayersFQName,
+		serverGamesPlayersHelp,
+		[]string{serverGamesPlayersGameIdLabel},
+		nil,
+	)
+)
+
+func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
+	var descriptors = [...]*prometheus.Desc{
+		gameServerCapacityDesc,
+		gameServerGroupCountDesc,
+		gameServerPlayersNumberDesc,
+	}
+	for _, desc := range descriptors {
+		ch <- desc
+	}
+}
+
+func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
+	m.groupsMutex.RLock()
+	defer m.groupsMutex.RUnlock()
+
+	ch <- prometheus.MustNewConstMetric(
+		gameServerCapacityDesc,
+		prometheus.GaugeValue,
+		float64(m.unsafeCapacity()),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		gameServerGroupCountDesc,
+		prometheus.GaugeValue,
+		float64(m.unsafeGroupCount()),
+	)
+
+	for id, group := range m.groups {
+		ch <- prometheus.MustNewConstMetric(
+			gameServerPlayersNumberDesc,
+			prometheus.GaugeValue,
+			float64(group.GetCount()),
+			strconv.Itoa(id),
+		)
+	}
 }
