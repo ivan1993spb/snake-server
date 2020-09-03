@@ -192,19 +192,19 @@ const (
 )
 
 var (
-	gameServerCapacityDesc = prometheus.NewDesc(
+	serverCapacityDesc = prometheus.NewDesc(
 		serverCapacityFQName,
 		serverCapacityHelp,
 		nil,
 		nil,
 	)
-	gameServerGroupCountDesc = prometheus.NewDesc(
+	serverGamesDesc = prometheus.NewDesc(
 		serverGamesFQName,
 		serverGamesHelp,
 		nil,
 		nil,
 	)
-	gameServerPlayersNumberDesc = prometheus.NewDesc(
+	serverGamesPlayersDesc = prometheus.NewDesc(
 		serverGamesPlayersFQName,
 		serverGamesPlayersHelp,
 		[]string{serverGamesPlayersGameIdLabel},
@@ -214,9 +214,9 @@ var (
 
 func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 	var descriptors = [...]*prometheus.Desc{
-		gameServerCapacityDesc,
-		gameServerGroupCountDesc,
-		gameServerPlayersNumberDesc,
+		serverCapacityDesc,
+		serverGamesDesc,
+		serverGamesPlayersDesc,
 	}
 	for _, desc := range descriptors {
 		ch <- desc
@@ -237,10 +237,10 @@ func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
 
-	sendMetric(gameServerCapacityDesc, prometheus.GaugeValue, float64(m.unsafeCapacity()))
-	sendMetric(gameServerGroupCountDesc, prometheus.GaugeValue, float64(m.unsafeGroupCount()))
+	sendMetric(serverCapacityDesc, prometheus.GaugeValue, float64(m.unsafeCapacity()))
+	sendMetric(serverGamesDesc, prometheus.GaugeValue, float64(m.unsafeGroupCount()))
 
 	for id, group := range m.groups {
-		sendMetric(gameServerPlayersNumberDesc, prometheus.GaugeValue, float64(group.GetCount()), strconv.Itoa(id))
+		sendMetric(serverGamesPlayersDesc, prometheus.GaugeValue, float64(group.GetCount()), strconv.Itoa(id))
 	}
 }
