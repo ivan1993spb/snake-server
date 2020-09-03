@@ -224,37 +224,23 @@ func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
-	wrapNewConstMetric := func(desc *prometheus.Desc, valueType prometheus.ValueType,
-		value float64, labelValues ...string) prometheus.Metric {
+	sendMetric := func(desc *prometheus.Desc, valueType prometheus.ValueType,
+		value float64, labelValues ...string) {
 		metric, err := prometheus.NewConstMetric(desc, valueType, value, labelValues...)
 		if err != nil {
 			m.logger.Errorln("cannot create a metric:", err)
-			return prometheus.NewInvalidMetric(desc, err)
+		} else {
+			ch <- metric
 		}
-		return metric
 	}
 
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
 
-	ch <- wrapNewConstMetric(
-		gameServerCapacityDesc,
-		prometheus.GaugeValue,
-		float64(m.unsafeCapacity()),
-	)
-
-	ch <- wrapNewConstMetric(
-		gameServerGroupCountDesc,
-		prometheus.GaugeValue,
-		float64(m.unsafeGroupCount()),
-	)
+	sendMetric(gameServerCapacityDesc, prometheus.GaugeValue, float64(m.unsafeCapacity()))
+	sendMetric(gameServerGroupCountDesc, prometheus.GaugeValue, float64(m.unsafeGroupCount()))
 
 	for id, group := range m.groups {
-		ch <- wrapNewConstMetric(
-			gameServerPlayersNumberDesc,
-			prometheus.GaugeValue,
-			float64(group.GetCount()),
-			strconv.Itoa(id),
-		)
+		sendMetric(gameServerPlayersNumberDesc, prometheus.GaugeValue, float64(group.GetCount()), strconv.Itoa(id))
 	}
 }
