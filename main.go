@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
@@ -146,6 +147,7 @@ func main() {
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
+	prometheus.MustRegister(groupManager)
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path("/metrics").Handler(promhttp.Handler())
