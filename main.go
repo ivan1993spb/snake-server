@@ -148,7 +148,7 @@ func main() {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
 	if err := prometheus.Register(groupManager); err != nil {
-		logger.Fatalln("cannot register connection group manager as a collector:", err)
+		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
