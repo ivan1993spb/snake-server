@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/connections"
@@ -135,6 +136,9 @@ func main() {
 	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit, connsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
+	}
+	if err := prometheus.Register(groupManager); err != nil {
+		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
 	server := &http.Server{
