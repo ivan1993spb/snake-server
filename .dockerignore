@@ -7,3 +7,5 @@ README.md
 *.log
 *.test
 *.out
+
+vendor
