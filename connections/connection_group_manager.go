@@ -212,6 +212,7 @@ var (
 	)
 )
 
+// Describe implements prometheus.Collector.Describe by sending metrics' descriptors
 func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 	var descriptors = [...]*prometheus.Desc{
 		metricServerCapacityDesc,
@@ -223,6 +224,7 @@ func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 	}
 }
 
+// Collect implements prometheus.Collector.Collect by sending const metrics
 func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
 	send := func(desc *prometheus.Desc, valueType prometheus.ValueType, value float64, labelValues ...string) {
 		metric, err := prometheus.NewConstMetric(desc, valueType, value, labelValues...)
