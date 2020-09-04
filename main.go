@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
@@ -145,6 +146,9 @@ func main() {
 	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit, connsLimit)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
+	}
+	if err := prometheus.Register(groupManager); err != nil {
+		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
