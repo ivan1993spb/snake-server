@@ -183,12 +183,15 @@ const (
 	metricServerCapacityFQName     = "server_capacity"
 	metricServerGamesFQName        = "server_games"
 	metricServerGamesPlayersFQName = "server_games_players"
+	metricServerGamesRateFQName    = "server_games_rate"
 
 	metricServerCapacityHelp     = "Capacity of the server"
 	metricServerGamesHelp        = "Games number"
 	metricServerGamesPlayersHelp = "Players number"
+	metricServerGamesRateHelp    = "Game rate"
 
 	metricServerGamesPlayersGameIdLabel = "game_id"
+	metricServerGamesRateGameIdLabel    = "game_id"
 )
 
 var (
@@ -210,6 +213,12 @@ var (
 		[]string{metricServerGamesPlayersGameIdLabel},
 		nil,
 	)
+	metricServerGamesRateDesc = prometheus.NewDesc(
+		metricServerGamesRateFQName,
+		metricServerGamesRateHelp,
+		[]string{metricServerGamesRateGameIdLabel},
+		nil,
+	)
 )
 
 // Describe implements prometheus.Collector.Describe by sending metrics' descriptors
@@ -218,6 +227,7 @@ func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
 		metricServerCapacityDesc,
 		metricServerGamesDesc,
 		metricServerGamesPlayersDesc,
+		metricServerGamesRateDesc,
 	}
 	for _, desc := range descriptors {
 		ch <- desc
@@ -242,6 +252,8 @@ func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
 	send(metricServerGamesDesc, prometheus.GaugeValue, float64(m.unsafeGroupCount()))
 
 	for id, group := range m.groups {
-		send(metricServerGamesPlayersDesc, prometheus.GaugeValue, float64(group.GetCount()), strconv.Itoa(id))
+		gameId := strconv.Itoa(id)
+		send(metricServerGamesPlayersDesc, prometheus.GaugeValue, float64(group.GetCount()), gameId)
+		send(metricServerGamesRateDesc, prometheus.GaugeValue, float64(group.GetRate()), gameId)
 	}
 }
