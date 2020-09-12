@@ -48,9 +48,9 @@ func configurate() (config.Config, error) {
 	return cfg, err
 }
 
-func logger(flagJSONLog bool, logLevel string) *logrus.Logger {
+func logger(configLog config.Log) *logrus.Logger {
 	logger := logrus.New()
-	if flagJSONLog {
+	if configLog.EnableJSON {
 		logger.Formatter = &logrus.JSONFormatter{}
 	} else if runtime.GOOS == "windows" {
 		// Log Output on Windows shows Bash format
@@ -60,7 +60,7 @@ func logger(flagJSONLog bool, logLevel string) *logrus.Logger {
 			DisableColors: true,
 		}
 	}
-	if level, err := logrus.ParseLevel(logLevel); err != nil {
+	if level, err := logrus.ParseLevel(configLog.Level); err != nil {
 		logger.SetLevel(logrus.InfoLevel)
 	} else {
 		logger.SetLevel(level)
@@ -68,16 +68,16 @@ func logger(flagJSONLog bool, logLevel string) *logrus.Logger {
 	return logger
 }
 
-func serve(h http.Handler, flagEnableTLS bool, address, certFile, keyFile string) error {
-	if flagEnableTLS {
-		return http.ListenAndServeTLS(address, certFile, keyFile, h)
+func serve(h http.Handler, address string, configTLS config.TLS) error {
+	if configTLS.Enable {
+		return http.ListenAndServeTLS(address, configTLS.Cert, configTLS.Key, h)
 	}
 	return http.ListenAndServe(address, h)
 }
 
 func main() {
 	cfg, err := configurate()
-	logger := logger(cfg.Server.Log.EnableJSON, cfg.Server.Log.Level)
+	logger := logger(cfg.Server.Log)
 	if err != nil {
 		logger.Fatalln("cannot load config:", err)
 	}
@@ -165,7 +165,7 @@ func main() {
 		"tls":     cfg.Server.TLS.Enable,
 	}).Info("starting server")
 
-	if err := serve(n, cfg.Server.TLS.Enable, cfg.Server.Address, cfg.Server.TLS.Cert, cfg.Server.TLS.Key); err != nil {
+	if err := serve(n, cfg.Server.Address, cfg.Server.TLS); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
