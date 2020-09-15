@@ -129,6 +129,8 @@ func Benchmark_Playground_UpdateObject(b *testing.B) {
 	location := locations[first]
 	pg.CreateObject(object, location)
 
+	b.ReportAllocs()
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
