@@ -9,9 +9,11 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-func Test_NewExperimentalPlayground_CreatesPlayground(t *testing.T) {
+func Test_NewExperimentalPlayground(t *testing.T) {
 	tests := []struct {
 		width, height uint8
+
+		err bool
 	}{
 		{
 			width:  200,
@@ -29,15 +31,30 @@ func Test_NewExperimentalPlayground_CreatesPlayground(t *testing.T) {
 			width:  255,
 			height: 200,
 		},
+		{
+			width:  0,
+			height: 0,
+			err:    true,
+		},
+		{
+			width:  200,
+			height: 0,
+			err:    true,
+		},
 	}
 
 	for i, test := range tests {
 		pg, err := NewExperimentalPlayground(test.width, test.height)
-		require.Nil(t, err, "test %d", i)
-		require.NotNil(t, pg, "test %d", i)
-		require.Equal(t, test.width, pg.Area().Width(), "test %d", i)
-		require.Equal(t, test.height, pg.Area().Height(), "test %d", i)
-		require.Equal(t, uint16(test.width)*uint16(test.height), pg.Area().Size(), "test %d", i)
+
+		if test.err {
+			require.NotNil(t, err, "test %d", i)
+			require.Nil(t, pg, "test %d", i)
+		} else {
+			require.Nil(t, err, "test %d", i)
+			require.NotNil(t, pg, "test %d", i)
+			require.Equal(t, test.width, pg.Area().Width(), "test %d", i)
+			require.Equal(t, test.height, pg.Area().Height(), "test %d", i)
+		}
 	}
 }
 
