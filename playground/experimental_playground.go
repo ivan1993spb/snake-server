@@ -151,7 +151,7 @@ func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Loc
 	}
 
 	if err := p.addObject(object, container); err != nil {
-		// Rollback map if cannot add object.
+		// Roll the map back if cannot add the object.
 		p.gameMap.MRemove(location)
 
 		return errCreateObject(err.Error())
@@ -172,7 +172,7 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, locati
 	resultLocation := p.gameMap.MSetIfAbsent(location, container)
 
 	if err := p.addObject(object, container); err != nil {
-		// Rollback map if cannot add object.
+		// Roll the map back if cannot add the object.
 		p.gameMap.MRemove(resultLocation)
 
 		return nil, errCreateObjectAvailableDots(err.Error())
@@ -292,7 +292,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object Object) (engine.Lo
 
 		if p.gameMap.SetIfAbsent(dot, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Rollback map if cannot add object.
+				// Roll the map back if cannot add the object.
 				p.gameMap.Remove(dot)
 
 				return nil, errCreateObjectRandomDot(err.Error())
@@ -327,7 +327,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object Object, rw, rh ui
 
 		if p.gameMap.MSetIfAllAbsent(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Rollback map if cannot add object.
+				// Roll the map back if cannot add the object.
 				p.gameMap.MRemove(location)
 
 				return nil, errCreateObjectRandomRect(err.Error())
@@ -368,7 +368,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object Object, rw,
 
 		if p.gameMap.MSetIfAllAbsent(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Rollback map if cannot add object.
+				// Roll the map back if cannot add the object.
 				p.gameMap.MRemoveContainer(location, container)
 
 				return nil, errCreateObjectRandomRectMargin(err.Error())
@@ -404,7 +404,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object Object, dm 
 
 		if p.gameMap.MSetIfAllAbsent(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Rollback map if cannot add object.
+				// Roll the map back if cannot add the object.
 				p.gameMap.MRemoveContainer(location, container)
 
 				return nil, errCreateObjectRandomByDotsMask(err.Error())
