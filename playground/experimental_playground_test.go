@@ -59,15 +59,12 @@ func Test_NewExperimentalPlayground(t *testing.T) {
 }
 
 func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
-	area := engine.MustArea(100, 100)
+	const (
+		AreaWidth  = 100
+		AreaHeight = 100
+	)
 
-	object := &struct {
-		a int
-	}{
-		10,
-	}
-
-	location := engine.Location{engine.Dot{0, 0}}
+	area := engine.MustArea(AreaWidth, AreaHeight)
 
 	pg := &ExperimentalPlayground{
 		gameMap: engine.NewMap(area),
@@ -76,15 +73,34 @@ func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
 		objectsContainersMux: &sync.RWMutex{},
 	}
 
-	err := pg.CreateObject(object, location)
-	require.Nil(t, err)
-	require.Len(t, pg.objectsContainers, 1)
+	// Literally anything
+	object := &struct {
+		a int
+	}{
+		10,
+	}
 
-	require.NotEmpty(t, pg.objectsContainers[object])
+	location1 := engine.Location{engine.Dot{0, 0}}
+	location2 := engine.Location{engine.Dot{1, 1}}
 
-	actual, ok := pg.gameMap.Get(engine.Dot{0, 0})
-	require.True(t, ok)
-	require.Equal(t, pg.objectsContainers[object], actual)
+	// Register the object correctly
+	{
+		err := pg.CreateObject(object, location1)
+		require.Nil(t, err)
+		require.Len(t, pg.objectsContainers, 1)
+
+		require.NotEmpty(t, pg.objectsContainers[object])
+
+		actual, ok := pg.gameMap.Get(engine.Dot{0, 0})
+		require.True(t, ok)
+		require.Equal(t, pg.objectsContainers[object], actual)
+	}
+
+	// Try to register the same object second time
+	{
+		err := pg.CreateObject(object, location2)
+		require.NotNil(t, err)
+	}
 }
 
 func Test_ExperimentalPlayground_CreateObjectRandomRect(t *testing.T) {
