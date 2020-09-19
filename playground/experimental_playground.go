@@ -61,7 +61,7 @@ func (p *ExperimentalPlayground) addObject(object *engine.Object) error {
 	return p.unsafeAddObject(object)
 }
 
-func (p *ExperimentalPlayground) unsafeDeleteObject(object interface{}) error {
+func (p *ExperimentalPlayground) unsafeDeleteObject(object *engine.Object) error {
 	for i := range p.objects {
 		if p.objects[i] == object {
 			p.objects = append(p.objects[:i], p.objects[i+1:]...)
@@ -71,7 +71,7 @@ func (p *ExperimentalPlayground) unsafeDeleteObject(object interface{}) error {
 	return errors.New("delete object error: object to delete not found")
 }
 
-func (p *ExperimentalPlayground) deleteObject(object interface{}) error {
+func (p *ExperimentalPlayground) deleteObject(object *engine.Object) error {
 	p.objectsMux.Lock()
 	defer p.objectsMux.Unlock()
 	return p.unsafeDeleteObject(object)
