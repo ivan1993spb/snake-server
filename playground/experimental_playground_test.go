@@ -103,6 +103,136 @@ func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
 	}
 }
 
+func Test_ExperimentalPlayground_GetObjectByDot_WorksCorrectly(t *testing.T) {
+	const (
+		messageFormat               = "test %d"
+		messageObjectLocationFormat = "test %d, object %v, location %s"
+		messageObjectDotFormat      = "test %d, object %v, dot %s"
+	)
+
+	var (
+		object1 = "object1"
+		object2 = "object2"
+		object3 = "object3"
+		object4 = "object4"
+		object5 = "object5"
+		object6 = "object6"
+	)
+
+	tests := []struct {
+		areaWidth, areaHeight uint8
+		// Map of objects and their locations
+		objects map[Object]engine.Location
+		// Map of dots and expected objects located at the certain dot
+		checks map[engine.Dot]Object
+	}{
+		// Test 1
+		{
+			areaWidth:  100,
+			areaHeight: 100,
+			objects: map[Object]engine.Location{
+				object1: {
+					{10, 20},
+					{11, 24},
+					{90, 30},
+					{21, 34},
+				},
+				object2: {
+					{33, 20},
+					{21, 24},
+					{31, 30},
+				},
+			},
+			checks: map[engine.Dot]Object{
+				{90, 30}: object1,
+				{21, 24}: object2,
+				{21, 25}: nil,
+				{99, 99}: nil,
+			},
+		},
+		// Test 2
+		{
+			areaWidth:  150,
+			areaHeight: 150,
+			objects: map[Object]engine.Location{
+				object3: {
+					{149, 20},
+					{15, 44},
+					{10, 43},
+				},
+				object4: {
+					{133, 120},
+					{121, 124},
+					{131, 130},
+				},
+			},
+			checks: map[engine.Dot]Object{
+				{15, 44}:   object3,
+				{10, 43}:   object3,
+				{11, 43}:   nil,
+				{133, 120}: object4,
+				{131, 130}: object4,
+				{131, 131}: nil,
+			},
+		},
+		// Test 3
+		{
+			areaWidth:  151,
+			areaHeight: 203,
+			objects: map[Object]engine.Location{
+				object5: {
+					{98, 199},
+					{76, 52},
+					{65, 76},
+				},
+				object6: {
+					{76, 77},
+					{32, 87},
+					{43, 74},
+				},
+			},
+			checks: map[engine.Dot]Object{
+				{0, 0}:     nil,
+				{200, 200}: nil,
+				{98, 199}:  object5,
+				{65, 76}:   object5,
+				{43, 74}:   object6,
+				{70, 70}:   nil,
+			},
+		},
+	}
+
+	for i, test := range tests {
+		number := i + 1
+
+		// Init playground
+		area, err := engine.NewArea(test.areaWidth, test.areaHeight)
+		require.Nil(t, err, messageFormat, number)
+
+		pg := &ExperimentalPlayground{
+			gameMap: engine.NewMap(area),
+
+			objectsContainers:    make(map[Object]*engine.Container),
+			objectsContainersMux: &sync.RWMutex{},
+		}
+
+		// Add objects manually
+		for object, location := range test.objects {
+			container := engine.NewContainer(object)
+
+			pg.objectsContainers[object] = container
+			ok := pg.gameMap.MSetIfAllVacant(location, container)
+			require.True(t, ok, messageObjectLocationFormat, number, object, location)
+		}
+
+		// Check objects presence at the certain dots
+		for dot, objectExpect := range test.checks {
+			actual := pg.GetObjectByDot(dot)
+			require.Equal(t, objectExpect, actual, messageObjectDotFormat, number, objectExpect, dot)
+		}
+	}
+}
+
 func Test_ExperimentalPlayground_CreateObjectRandomRect(t *testing.T) {
 	area := engine.MustArea(100, 100)
 
