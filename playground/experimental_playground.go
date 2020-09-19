@@ -151,7 +151,8 @@ func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Loc
 	}
 
 	if err := p.addObject(object, container); err != nil {
-		// Roll the map back if cannot add the object.
+		// An object has been successfully placed but hasn't been registered in the playground.
+		// Hence, roll the map back and return the error.
 		p.gameMap.MRemove(location)
 
 		return errCreateObject(err.Error())
@@ -172,7 +173,8 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, locati
 	resultLocation := p.gameMap.MSetIfVacant(location, container)
 
 	if err := p.addObject(object, container); err != nil {
-		// Roll the map back if cannot add the object.
+		// An object has been successfully placed but hasn't been registered in the playground.
+		// Hence, roll the map back and return the error.
 		p.gameMap.MRemove(resultLocation)
 
 		return nil, errCreateObjectAvailableDots(err.Error())
@@ -292,7 +294,8 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object Object) (engine.Lo
 
 		if p.gameMap.SetIfVacant(dot, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Roll the map back if cannot add the object.
+				// An object has been successfully placed but hasn't been registered in the playground.
+				// Hence, roll the map back and return the error.
 				p.gameMap.Remove(dot)
 
 				return nil, errCreateObjectRandomDot(err.Error())
@@ -327,7 +330,8 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object Object, rw, rh ui
 
 		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Roll the map back if cannot add the object.
+				// An object has been successfully placed but hasn't been registered in the playground.
+				// Hence, roll the map back and return the error.
 				p.gameMap.MRemove(location)
 
 				return nil, errCreateObjectRandomRect(err.Error())
@@ -368,7 +372,8 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object Object, rw,
 
 		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Roll the map back if cannot add the object.
+				// An object has been successfully placed but hasn't been registered in the playground.
+				// Hence, roll the map back and return the error.
 				p.gameMap.MRemoveContainer(location, container)
 
 				return nil, errCreateObjectRandomRectMargin(err.Error())
@@ -404,7 +409,8 @@ func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object Object, dm 
 
 		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
-				// Roll the map back if cannot add the object.
+				// An object has been successfully placed but hasn't been registered in the playground.
+				// Hence, roll the map back and return the error.
 				p.gameMap.MRemoveContainer(location, container)
 
 				return nil, errCreateObjectRandomByDotsMask(err.Error())
