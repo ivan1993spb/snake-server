@@ -214,6 +214,11 @@ func (p *ExperimentalPlayground) DeleteObject(object Object, location engine.Loc
 func (p *ExperimentalPlayground) UpdateObject(object Object, old, new engine.Location) error {
 	diff := old.Difference(new)
 
+	// Nothing changed
+	if len(diff) == 0 {
+		return nil
+	}
+
 	dotsToRemove := make([]engine.Dot, 0, len(diff))
 	dotsToSet := make([]engine.Dot, 0, len(diff))
 
@@ -244,6 +249,11 @@ func (p *ExperimentalPlayground) UpdateObject(object Object, old, new engine.Loc
 func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object Object, old, new engine.Location) (engine.Location, error) {
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
+
+	// Nothing changed
+	if len(diff) == 0 {
+		return actualLocation, nil
+	}
 
 	dotsToRemove := make([]engine.Dot, 0, len(diff))
 	dotsToSet := make([]engine.Dot, 0, len(diff))
