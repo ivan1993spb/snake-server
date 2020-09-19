@@ -146,7 +146,7 @@ func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Loc
 
 	container := engine.NewContainer(object)
 
-	if !location.Empty() && !p.gameMap.MSetIfAllAbsent(location, container) {
+	if !location.Empty() && !p.gameMap.MSetIfAllVacant(location, container) {
 		return errCreateObject("location is occupied")
 	}
 
@@ -169,7 +169,7 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, locati
 	}
 
 	container := engine.NewContainer(object)
-	resultLocation := p.gameMap.MSetIfAbsent(location, container)
+	resultLocation := p.gameMap.MSetIfVacant(location, container)
 
 	if err := p.addObject(object, container); err != nil {
 		// Roll the map back if cannot add the object.
@@ -223,7 +223,7 @@ func (p *ExperimentalPlayground) UpdateObject(object Object, old, new engine.Loc
 		return errUpdateObject(err.Error())
 	}
 
-	if !p.gameMap.MSetIfAllAbsent(dotsToSet, container) {
+	if !p.gameMap.MSetIfAllVacant(dotsToSet, container) {
 		return errUpdateObject("cannot occupy new location")
 	}
 
@@ -260,7 +260,7 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object Object, old, n
 	}
 
 	if len(dotsToSet) > 0 {
-		resultDots := p.gameMap.MSetIfAbsent(dotsToSet, container)
+		resultDots := p.gameMap.MSetIfVacant(dotsToSet, container)
 		if len(resultDots) > 0 {
 			for _, dot := range resultDots {
 				actualLocation = actualLocation.Add(dot)
@@ -290,7 +290,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object Object) (engine.Lo
 	for i := 0; i < findRetriesNumber; i++ {
 		dot := p.gameMap.Area().NewRandomDot(0, 0)
 
-		if p.gameMap.SetIfAbsent(dot, container) {
+		if p.gameMap.SetIfVacant(dot, container) {
 			if err := p.addObject(object, container); err != nil {
 				// Roll the map back if cannot add the object.
 				p.gameMap.Remove(dot)
@@ -325,7 +325,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object Object, rw, rh ui
 		}
 		location := rect.Location()
 
-		if p.gameMap.MSetIfAllAbsent(location, container) {
+		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
 				// Roll the map back if cannot add the object.
 				p.gameMap.MRemove(location)
@@ -366,7 +366,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object Object, rw,
 
 		location := engine.NewRect(rect.X()+margin, rect.Y()+margin, rw, rh).Location()
 
-		if p.gameMap.MSetIfAllAbsent(location, container) {
+		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
 				// Roll the map back if cannot add the object.
 				p.gameMap.MRemoveContainer(location, container)
@@ -402,7 +402,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object Object, dm 
 			continue
 		}
 
-		if p.gameMap.MSetIfAllAbsent(location, container) {
+		if p.gameMap.MSetIfAllVacant(location, container) {
 			if err := p.addObject(object, container); err != nil {
 				// Roll the map back if cannot add the object.
 				p.gameMap.MRemoveContainer(location, container)

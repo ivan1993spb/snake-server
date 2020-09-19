@@ -105,9 +105,9 @@ func (m *Map) Get(dot Dot) (*Container, bool) {
 	return container, true
 }
 
-// SetIfAbsent sets the given container under the dot only if the dot is empty.
+// SetIfVacant  sets the given container under the dot only if the dot is empty.
 // Returns true if the container has been set under the dot.
-func (m *Map) SetIfAbsent(dot Dot, container *Container) bool {
+func (m *Map) SetIfVacant(dot Dot, container *Container) bool {
 	if !m.area.ContainsDot(dot) {
 		return false
 	}
@@ -206,9 +206,9 @@ func (m *Map) MSet(dots []Dot, container *Container) {
 	}
 }
 
-// MSetIfAllAbsent sets the given container under specified dots and returns true only
+// MSetIfAllVacant  sets the given container under specified dots and returns true only
 // if all the dots has been set, otherwise the function does nothing and returns false.
-func (m *Map) MSetIfAllAbsent(dots []Dot, container *Container) bool {
+func (m *Map) MSetIfAllVacant(dots []Dot, container *Container) bool {
 	var i int
 
 	for ; i < len(dots); i++ {
@@ -240,10 +240,10 @@ func (m *Map) MSetIfAllAbsent(dots []Dot, container *Container) bool {
 	return false
 }
 
-// MSetIfAbsent sets the given container under specified dots. If a dot in the slice has already
-// been linked, the function skips the dot. MSetIfAbsent returns a list of dots which was eventually
+// MSetIfVacant  sets the given container under specified dots. If a dot in the slice has already
+// been linked, the function skips the dot. MSetIfVacant  returns a list of dots which was eventually
 // linked with the passed container
-func (m *Map) MSetIfAbsent(dots []Dot, container *Container) []Dot {
+func (m *Map) MSetIfVacant(dots []Dot, container *Container) []Dot {
 	result := make([]Dot, 0, len(dots))
 
 	for _, dot := range dots {

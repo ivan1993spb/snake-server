@@ -187,7 +187,7 @@ func Benchmark_Map_MSet_MRemove_255x255_d256(b *testing.B) {
 	rawBenchmarkMapMSetMRemove(b, width, height, dotsCount)
 }
 
-func rawBenchmarkMapMSetIfAbsentMRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
+func rawBenchmarkMapMSetIfVacantMRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
 	b.ReportAllocs()
 
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -214,12 +214,12 @@ func rawBenchmarkMapMSetIfAbsentMRemoveContainer(b *testing.B, width, height uin
 
 		b.StartTimer()
 
-		m.MSetIfAbsent(dots, container)
+		m.MSetIfVacant(dots, container)
 		m.MRemoveContainer(dots, container)
 	}
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveContainer_64x64_d12(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_64x64_d12(b *testing.B) {
 	const (
 		width  = 64
 		height = 64
@@ -227,10 +227,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveContainer_64x64_d12(b *testing.B) {
 		dotsCount = 12
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveContainer_128x128_d32(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_128x128_d32(b *testing.B) {
 	const (
 		width  = 128
 		height = 128
@@ -238,10 +238,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveContainer_128x128_d32(b *testing.B) {
 		dotsCount = 32
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveContainer_255x255_d64(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_255x255_d64(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -249,10 +249,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveContainer_255x255_d64(b *testing.B) {
 		dotsCount = 64
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveContainer_255x255_d256(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_255x255_d256(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -260,10 +260,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveContainer_255x255_d256(b *testing.B) {
 		dotsCount = 256
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
+func rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
 	b.ReportAllocs()
 
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -293,12 +293,12 @@ func rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b *testing.B, width, heigh
 		b.StartTimer()
 
 		m.Set(dotSpoiler, container)
-		m.MSetIfAllAbsent(dots, container)
+		m.MSetIfAllVacant(dots, container)
 		m.RemoveContainer(dotSpoiler, container)
 	}
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_64x64_d12(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_64x64_d12(b *testing.B) {
 	const (
 		width  = 64
 		height = 64
@@ -306,10 +306,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_64x64_d12(b *testing.B) {
 		dotsCount = 12
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_128x128_d32(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_128x128_d32(b *testing.B) {
 	const (
 		width  = 128
 		height = 128
@@ -317,10 +317,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_128x128_d32(b *testing.B)
 		dotsCount = 32
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_255x255_d64(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_255x255_d64(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -328,10 +328,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_255x255_d64(b *testing.B)
 		dotsCount = 64
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_255x255_d256(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_255x255_d256(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -339,5 +339,5 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveContainer_255x255_d256(b *testing.B
 		dotsCount = 256
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveContainer(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }

@@ -312,7 +312,7 @@ func Test_Map_Get_ReturnsNilFalse(t *testing.T) {
 	}
 }
 
-func Test_Map_SetIfAbsent_OnEmptyMap(t *testing.T) {
+func Test_Map_SetIfVacant_OnEmptyMap(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
 	containerFirst := getSampleContainerFirst()
@@ -322,12 +322,12 @@ func Test_Map_SetIfAbsent_OnEmptyMap(t *testing.T) {
 	dot3 := Dot{12, 11}
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, containerFirst)
+		ok := m.SetIfVacant(dot, containerFirst)
 		require.True(t, ok, "number "+strconv.Itoa(i))
 	}
 }
 
-func Test_Map_SetIfAbsent_InvalidDots(t *testing.T) {
+func Test_Map_SetIfVacant_InvalidDots(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
 	containerFirst := getSampleContainerFirst()
@@ -337,12 +337,12 @@ func Test_Map_SetIfAbsent_InvalidDots(t *testing.T) {
 	dot3 := Dot{12, 111}
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, containerFirst)
+		ok := m.SetIfVacant(dot, containerFirst)
 		require.False(t, ok, "number "+strconv.Itoa(i))
 	}
 }
 
-func Test_Map_SetIfAbsent_OccupiedDots(t *testing.T) {
+func Test_Map_SetIfVacant_OccupiedDots(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
 	containerFirst := getSampleContainerFirst()
@@ -358,7 +358,7 @@ func Test_Map_SetIfAbsent_OccupiedDots(t *testing.T) {
 	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, containerFirst)
+		ok := m.SetIfVacant(dot, containerFirst)
 		require.False(t, ok, "number "+strconv.Itoa(i))
 	}
 }
@@ -868,7 +868,7 @@ func Test_Map_MSet(t *testing.T) {
 	}
 }
 
-func Test_Map_MSetIfAllAbsent_SetsContainerOnMapCorrectly(t *testing.T) {
+func Test_Map_MSetIfAllVacant_SetsContainerOnMapCorrectly(t *testing.T) {
 	area := MustArea(56, 45)
 	m := getSampleMapArea(area)
 	containerFirst := getSampleContainerFirst()
@@ -908,7 +908,7 @@ func Test_Map_MSetIfAllAbsent_SetsContainerOnMapCorrectly(t *testing.T) {
 		},
 	}
 
-	ok := m.MSetIfAllAbsent(location, containerFirst)
+	ok := m.MSetIfAllVacant(location, containerFirst)
 
 	require.True(t, ok)
 
@@ -925,7 +925,7 @@ func Test_Map_MSetIfAllAbsent_SetsContainerOnMapCorrectly(t *testing.T) {
 	}
 }
 
-func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
+func Test_Map_MSetIfAllVacant_RollbacksChangesAndReturnsFalse(t *testing.T) {
 	area := MustArea(56, 45)
 	m := getSampleMapArea(area)
 	containerFirst := getSampleContainerFirst()
@@ -962,7 +962,7 @@ func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 		dot3,
 	}
 
-	ok := m.MSetIfAllAbsent(location, containerFirst)
+	ok := m.MSetIfAllVacant(location, containerFirst)
 
 	require.False(t, ok)
 
@@ -986,7 +986,7 @@ func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 	}
 }
 
-func Test_Map_MSetIfAbsent(t *testing.T) {
+func Test_Map_MSetIfVacant(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
@@ -1020,7 +1020,7 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 		{20, 4},
 	}
 
-	resultDots := m.MSetIfAbsent(dots, containerSecond)
+	resultDots := m.MSetIfVacant(dots, containerSecond)
 
 	require.Len(t, resultDots, 3)
 
