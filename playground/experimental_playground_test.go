@@ -233,6 +233,132 @@ func Test_ExperimentalPlayground_GetObjectByDot_WorksCorrectly(t *testing.T) {
 	}
 }
 
+func Test_ExperimentalPlayground_GetObjectsByDots(t *testing.T) {
+	const (
+		objectAddMessage  = "problem adding the object manually: %s at %s"
+		testNumberMessage = "test number %d"
+	)
+
+	const (
+		areaWidth  = 210
+		areaHeight = 158
+	)
+
+	var (
+		object1   = "object1"
+		location1 = engine.Location{{1, 3}, {1, 2}, {6, 5}, {7, 3}, {9, 2}}
+
+		object2   = "object2"
+		location2 = engine.Location{{22, 32}, {32, 43}, {43, 27}, {12, 65}, {12, 66}}
+
+		object3   = "object3"
+		location3 = engine.Location{{46, 3}, {52, 1}, {51, 1}, {50, 2}, {52, 2}, {52, 4}}
+
+		object4   = "object4"
+		location4 = engine.Location{{2, 32}, {1, 32}, {5, 54}, {1, 66}, {7, 90}}
+
+		object5   = "object5"
+		location5 = engine.Location{{102, 54}, {123, 34}, {101, 35}, {115, 34}}
+
+		object6   = "object6"
+		location6 = engine.Location{{0, 0}, {201, 0}, {21, 200}}
+	)
+
+	var objects = map[engine.Object]engine.Location{
+		object1: location1,
+		object2: location2,
+		object3: location3,
+		object4: location4,
+		object5: location5,
+		object6: location6,
+	}
+
+	area, err := engine.NewArea(areaWidth, areaHeight)
+	require.Nil(t, err)
+
+	pg := &ExperimentalPlayground{
+		gameMap: engine.NewMap(area),
+
+		objectsContainers:    make(map[engine.Object]*engine.Container),
+		objectsContainersMux: &sync.RWMutex{},
+	}
+
+	// Add objects manually
+	for object, location := range objects {
+		container := engine.NewContainer(object)
+
+		pg.objectsContainers[object] = container
+		ok := pg.gameMap.MSetIfAllVacant(location, container)
+		require.True(t, ok, objectAddMessage, object, location)
+	}
+
+	tests := []struct {
+		dots            []engine.Dot
+		expectedObjects []engine.Object
+	}{
+		// Test 1
+		{
+			dots:            nil,
+			expectedObjects: nil,
+		},
+		// Test 2
+		{
+			dots:            nil,
+			expectedObjects: []engine.Object{},
+		},
+		// Test 3
+		{
+			dots:            []engine.Dot{{1, 1}},
+			expectedObjects: nil,
+		},
+		// Test 4
+		{
+			dots:            []engine.Dot{{1, 1}},
+			expectedObjects: []engine.Object{},
+		},
+		// Test 5
+		{
+			dots:            []engine.Dot{{0, 0}},
+			expectedObjects: []engine.Object{object6},
+		},
+		// Test 6
+		{
+			dots:            []engine.Dot{{0, 0}, {201, 0}},
+			expectedObjects: []engine.Object{object6},
+		},
+		// Test 7
+		{
+			dots:            []engine.Dot{{1, 3}, {1, 2}, {0, 0}, {201, 0}, {102, 54}},
+			expectedObjects: []engine.Object{object1, object5, object6},
+		},
+		// Test 8
+		{
+			dots:            []engine.Dot{{1, 3}, {1, 2}, {6, 5}, {7, 3}, {9, 2}},
+			expectedObjects: []engine.Object{object1},
+		},
+		// Test 9
+		{
+			dots:            []engine.Dot{{22, 3}, {22, 2}, {22, 5}, {2, 3}, {22, 5}},
+			expectedObjects: []engine.Object{},
+		},
+		// Test 10
+		{
+			dots: []engine.Dot{{1, 3}, {1, 2}, {22, 32}, {32, 43},
+				{46, 3}, {52, 1}, {2, 32}, {1, 32}, {102, 54},
+				{123, 34}, {0, 0}, {201, 0}},
+			expectedObjects: []engine.Object{object1, object2, object3, object4, object5, object6},
+		},
+	}
+
+	for i, test := range tests {
+		number := i + 1
+
+		actualObjects := pg.GetObjectsByDots(test.dots)
+		require.Subset(t, test.expectedObjects, actualObjects, testNumberMessage, number)
+		require.Subset(t, actualObjects, test.expectedObjects, testNumberMessage, number)
+	}
+}
+
 func Test_ExperimentalPlayground_CreateObjectRandomRect(t *testing.T) {
 	area := engine.MustArea(100, 100)
 
