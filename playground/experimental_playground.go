@@ -14,9 +14,6 @@ const (
 	errAreaDoesNotContainLocationMessage = "area does not contain location"
 )
 
-// Object is a game object
-type Object interface{}
-
 // ExperimentalPlayground is a framework which allows locating for game objects
 type ExperimentalPlayground struct {
 	gameMap *engine.Map
@@ -24,7 +21,7 @@ type ExperimentalPlayground struct {
 	// objectsContainers is a mapping between game objects and their containers.
 	// If an object and its container are registered in this map, the object must
 	// be presented on the playground.
-	objectsContainers    map[Object]*engine.Container
+	objectsContainers    map[engine.Object]*engine.Container
 	objectsContainersMux *sync.RWMutex
 }
 
@@ -40,19 +37,19 @@ func NewExperimentalPlayground(width, height uint8) (*ExperimentalPlayground, er
 	return &ExperimentalPlayground{
 		gameMap: gameMap,
 
-		objectsContainers:    make(map[Object]*engine.Container),
+		objectsContainers:    make(map[engine.Object]*engine.Container),
 		objectsContainersMux: &sync.RWMutex{},
 	}, nil
 }
 
 // unsafeObjectExists returns true if a game object has been registered in the playground
-func (p *ExperimentalPlayground) unsafeObjectExists(object Object) bool {
+func (p *ExperimentalPlayground) unsafeObjectExists(object engine.Object) bool {
 	_, ok := p.objectsContainers[object]
 	return ok
 }
 
 // unsafeAddObject registers unsafely an object and its container in the mapping
-func (p *ExperimentalPlayground) unsafeAddObject(object Object, container *engine.Container) error {
+func (p *ExperimentalPlayground) unsafeAddObject(object engine.Object, container *engine.Container) error {
 	if p.unsafeObjectExists(object) {
 		return errors.New("cannot add object: object already exists")
 	}
@@ -62,14 +59,14 @@ func (p *ExperimentalPlayground) unsafeAddObject(object Object, container *engin
 }
 
 // addObject registers safely an object and its container in the mapping
-func (p *ExperimentalPlayground) addObject(object Object, container *engine.Container) error {
+func (p *ExperimentalPlayground) addObject(object engine.Object, container *engine.Container) error {
 	p.objectsContainersMux.Lock()
 	defer p.objectsContainersMux.Unlock()
 	return p.unsafeAddObject(object, container)
 }
 
 // unsafeDeleteObject discards unsafely an object from the mapping and so from the playground
-func (p *ExperimentalPlayground) unsafeDeleteObject(object Object) error {
+func (p *ExperimentalPlayground) unsafeDeleteObject(object engine.Object) error {
 	if !p.unsafeObjectExists(object) {
 		return errors.New("delete object error: object to delete not found")
 	}
@@ -79,14 +76,14 @@ func (p *ExperimentalPlayground) unsafeDeleteObject(object Object) error {
 }
 
 // deleteObject discards safely an object from the mapping and so from the playground
-func (p *ExperimentalPlayground) deleteObject(object Object) error {
+func (p *ExperimentalPlayground) deleteObject(object engine.Object) error {
 	p.objectsContainersMux.Lock()
 	defer p.objectsContainersMux.Unlock()
 	return p.unsafeDeleteObject(object)
 }
 
 // unsafeGetContainerByObject looks unsafely for the container of a specified object in the mapping of objects
-func (p *ExperimentalPlayground) unsafeGetContainerByObject(object Object) (*engine.Container, error) {
+func (p *ExperimentalPlayground) unsafeGetContainerByObject(object engine.Object) (*engine.Container, error) {
 	container, ok := p.objectsContainers[object]
 	if !ok {
 		return nil, errors.New("get container: object was not found")
@@ -95,14 +92,14 @@ func (p *ExperimentalPlayground) unsafeGetContainerByObject(object Object) (*eng
 }
 
 // getContainerByObject looks safely for the container of a specified object in the mapping of objects
-func (p *ExperimentalPlayground) getContainerByObject(object Object) (*engine.Container, error) {
+func (p *ExperimentalPlayground) getContainerByObject(object engine.Object) (*engine.Container, error) {
 	p.objectsContainersMux.RLock()
 	defer p.objectsContainersMux.RUnlock()
 	return p.unsafeGetContainerByObject(object)
 }
 
 // GetObjectByDot returns an object by the given dot
-func (p *ExperimentalPlayground) GetObjectByDot(dot engine.Dot) Object {
+func (p *ExperimentalPlayground) GetObjectByDot(dot engine.Dot) engine.Object {
 	if object, ok := p.gameMap.Get(dot); ok {
 		return object.GetObject()
 	}
@@ -110,12 +107,12 @@ func (p *ExperimentalPlayground) GetObjectByDot(dot engine.Dot) Object {
 }
 
 // GetObjectByDot returns a list of objects located at the given dots
-func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []Object {
+func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []engine.Object {
 	if len(dots) == 0 {
 		return nil
 	}
 
-	objects := make([]Object, 0)
+	objects := make([]engine.Object, 0)
 
 	for _, container := range p.gameMap.MGet(dots) {
 		flagObjectCreated := false
@@ -139,7 +136,7 @@ func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []Object {
 // CreateObject creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the operation will be turn down with an error.
 // Initial location could be empty.
-func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Location) error {
+func (p *ExperimentalPlayground) CreateObject(object engine.Object, location engine.Location) error {
 	if !p.gameMap.Area().ContainsLocation(location) {
 		return errCreateObject(errAreaDoesNotContainLocationMessage)
 	}
@@ -164,7 +161,7 @@ func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Loc
 // CreateObjectAvailableDots creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the dots will be ignored. If all dots are occupied
 // the object will be registered without location and no error will be returned.
-func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, location engine.Location) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectAvailableDots(object engine.Object, location engine.Location) (engine.Location, error) {
 	if !p.gameMap.Area().ContainsLocation(location) {
 		return nil, errCreateObjectAvailableDots(errAreaDoesNotContainLocationMessage)
 	}
@@ -184,7 +181,7 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, locati
 }
 
 // DeleteObject deletes an object with the given location from the playground
-func (p *ExperimentalPlayground) DeleteObject(object Object, location engine.Location) error {
+func (p *ExperimentalPlayground) DeleteObject(object engine.Object, location engine.Location) error {
 	if !location.Empty() {
 		container, err := p.getContainerByObject(object)
 		if err != nil {
@@ -201,7 +198,7 @@ func (p *ExperimentalPlayground) DeleteObject(object Object, location engine.Loc
 }
 
 // UpdateObject updates the object's location. All dots of the new location must be vacant.
-func (p *ExperimentalPlayground) UpdateObject(object Object, old, new engine.Location) error {
+func (p *ExperimentalPlayground) UpdateObject(object engine.Object, old, new engine.Location) error {
 	diff := old.Difference(new)
 
 	// Nothing changed
@@ -236,7 +233,7 @@ func (p *ExperimentalPlayground) UpdateObject(object Object, old, new engine.Loc
 
 // UpdateObjectAvailableDots updates the object's location. If some dots of the new location are
 // occupied by other objects, the dots will be skipped.
-func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object Object, old, new engine.Location) (engine.Location, error) {
+func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object engine.Object, old, new engine.Location) (engine.Location, error) {
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
@@ -286,7 +283,7 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object Object, old, n
 
 // CreateObjectRandomDot creates and registers an object to the playground at a random dot
 // which will be returned.
-func (p *ExperimentalPlayground) CreateObjectRandomDot(object Object) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomDot(object engine.Object) (engine.Location, error) {
 	container := engine.NewContainer(object)
 
 	for i := 0; i < findRetriesNumber; i++ {
@@ -310,7 +307,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object Object) (engine.Lo
 
 // CreateObjectRandomRect creates and registers an object to the playground at a random location
 // of rectangle shape with the given size.
-func (p *ExperimentalPlayground) CreateObjectRandomRect(object Object, rw, rh uint8) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomRect(object engine.Object, rw, rh uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRect("invalid rect size: 0")
 	}
@@ -347,7 +344,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object Object, rw, rh ui
 // CreateObjectRandomRectMargin creates and registers an object to the playground at a random
 // rectangle location with the given size in at least X (=margin) dots apart from the other
 // objects on the playground.
-func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object Object, rw, rh, margin uint8) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object engine.Object, rw, rh, margin uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRectMargin("invalid rect size: 0")
 	}
@@ -388,7 +385,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object Object, rw,
 
 // CreateObjectRandomByDotsMask creates and registers an object to the playground at a random
 // location shaped in form of the given mask dm.
-func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object Object, dm *engine.DotsMask) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object engine.Object, dm *engine.DotsMask) (engine.Location, error) {
 	if !p.gameMap.Area().ContainsRect(engine.NewRect(0, 0, dm.Width(), dm.Height())) {
 		return nil, errCreateObjectRandomByDotsMask("area cannot contain located by dots mask object")
 	}
@@ -436,8 +433,8 @@ func (p *ExperimentalPlayground) Area() engine.Area {
 
 // unsafeGetObjects collects unsafely and returns all the objects registered at the
 // playground
-func (p *ExperimentalPlayground) unsafeGetObjects() []Object {
-	objects := make([]Object, 0, len(p.objectsContainers))
+func (p *ExperimentalPlayground) unsafeGetObjects() []engine.Object {
+	objects := make([]engine.Object, 0, len(p.objectsContainers))
 	for object := range p.objectsContainers {
 		objects = append(objects, object)
 	}
@@ -445,7 +442,7 @@ func (p *ExperimentalPlayground) unsafeGetObjects() []Object {
 }
 
 // GetObjects collects and returns all the objects registered at the playground
-func (p *ExperimentalPlayground) GetObjects() []Object {
+func (p *ExperimentalPlayground) GetObjects() []engine.Object {
 	p.objectsContainersMux.RLock()
 	defer p.objectsContainersMux.RUnlock()
 	return p.unsafeGetObjects()
