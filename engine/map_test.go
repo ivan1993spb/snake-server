@@ -14,9 +14,9 @@ type SampleObject struct {
 	f, g          float64
 }
 
-func getSampleWrappedObjectFirst() *Object {
-	return &Object{
-		value: &SampleObject{
+func getSampleContainerFirst() *Container {
+	return &Container{
+		object: &SampleObject{
 			a: 4,
 			b: 43,
 			c: 1,
@@ -28,9 +28,9 @@ func getSampleWrappedObjectFirst() *Object {
 	}
 }
 
-func getSampleWrappedObjectSecond() *Object {
-	return &Object{
-		value: &SampleObject{
+func getSampleContainerSecond() *Container {
+	return &Container{
+		object: &SampleObject{
 			a: 2,
 			b: 1,
 			c: 4,
@@ -42,9 +42,9 @@ func getSampleWrappedObjectSecond() *Object {
 	}
 }
 
-func getSampleWrappedObjectThird() *Object {
-	return &Object{
-		value: &SampleObject{
+func getSampleContainerThird() *Container {
+	return &Container{
+		object: &SampleObject{
 			a: 3,
 			b: 123,
 			c: 4,
@@ -74,61 +74,61 @@ func getSampleMapArea(a Area) *Map {
 	}
 }
 
-func Test_storeObject_storesObject(t *testing.T) {
-	wrappedObject := getSampleWrappedObjectFirst()
+func Test_storeContainer_storesContainer(t *testing.T) {
+	container := getSampleContainerFirst()
 
 	var emptyFieldPointer = unsafe.Pointer(uintptr(0))
 	storePointer := &emptyFieldPointer
 
-	require.True(t, storeObject(storePointer, wrappedObject))
-	require.Equal(t, uintptr(unsafe.Pointer(wrappedObject)), uintptr(*storePointer))
+	require.True(t, storeContainer(storePointer, container))
+	require.Equal(t, uintptr(unsafe.Pointer(container)), uintptr(*storePointer))
 }
 
-func Test_emptyObject_emptiesPointer(t *testing.T) {
-	wrappedObject := getSampleWrappedObjectFirst()
+func Test_emptyContainer_emptiesPointer(t *testing.T) {
+	container := getSampleContainerFirst()
 
-	storePointer := unsafe.Pointer(wrappedObject)
+	storePointer := unsafe.Pointer(container)
 
-	require.True(t, emptyObject(&storePointer, wrappedObject))
+	require.True(t, emptyContainer(&storePointer, container))
 	require.Equal(t, uintptr(0), uintptr(storePointer))
 }
 
-func Test_storeObject_returnsFalseIfPointerIsEngaged(t *testing.T) {
+func Test_storeContainer_returnsFalseIfPointerIsEngaged(t *testing.T) {
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
+	containerSecond := getSampleContainerSecond()
 
 	// Store cell
-	storePointer := unsafe.Pointer(wrappedObjectFirst)
+	storePointer := unsafe.Pointer(containerFirst)
 
-	require.False(t, storeObject(&storePointer, wrappedObjectSecond))
+	require.False(t, storeContainer(&storePointer, containerSecond))
 	require.NotEqual(t, uintptr(0), uintptr(storePointer))
-	require.Equal(t, uintptr(unsafe.Pointer(wrappedObjectFirst)), uintptr(storePointer))
+	require.Equal(t, uintptr(unsafe.Pointer(containerFirst)), uintptr(storePointer))
 }
 
-func Test_emptyObject_returnsFalseIfMismatching(t *testing.T) {
+func Test_emptyContainer_returnsFalseIfMismatching(t *testing.T) {
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
+	containerSecond := getSampleContainerSecond()
 
 	// Store cell
-	storePointer := unsafe.Pointer(wrappedObjectFirst)
+	storePointer := unsafe.Pointer(containerFirst)
 
-	require.False(t, emptyObject(&storePointer, wrappedObjectSecond))
+	require.False(t, emptyContainer(&storePointer, containerSecond))
 	require.NotEqual(t, uintptr(0), uintptr(storePointer))
-	require.Equal(t, uintptr(unsafe.Pointer(wrappedObjectFirst)), uintptr(storePointer))
+	require.Equal(t, uintptr(unsafe.Pointer(containerFirst)), uintptr(storePointer))
 }
 
 func Test_fieldIsEmpty(t *testing.T) {
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
+	containerSecond := getSampleContainerSecond()
 
 	tests := []struct {
 		pointer  unsafe.Pointer
@@ -139,7 +139,7 @@ func Test_fieldIsEmpty(t *testing.T) {
 			expected: true,
 		},
 		{
-			pointer:  unsafe.Pointer(wrappedObjectFirst),
+			pointer:  unsafe.Pointer(containerFirst),
 			expected: false,
 		},
 		{
@@ -147,7 +147,7 @@ func Test_fieldIsEmpty(t *testing.T) {
 			expected: true,
 		},
 		{
-			pointer:  unsafe.Pointer(wrappedObjectSecond),
+			pointer:  unsafe.Pointer(containerSecond),
 			expected: false,
 		},
 		{
@@ -188,20 +188,20 @@ func Test_Map_Print_Prints(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	pointerToWrappedObjectFirst := unsafe.Pointer(getSampleWrappedObjectFirst())
+	pointerToContainerFirst := unsafe.Pointer(getSampleContainerFirst())
 	dotFirst := Dot{3, 4}
 
 	// Second
-	pointerToWrappedObjectSecond := unsafe.Pointer(getSampleWrappedObjectSecond())
+	pointerToContainerSecond := unsafe.Pointer(getSampleContainerSecond())
 	dotSecond := Dot{22, 4}
 
 	// Second
-	pointerToWrappedObjectThird := unsafe.Pointer(getSampleWrappedObjectThird())
+	pointerToContainerThird := unsafe.Pointer(getSampleContainerThird())
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	m.Print()
 }
@@ -211,20 +211,20 @@ func Test_Map_Has_ReturnsValidIndicator(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	pointerToWrappedObjectFirst := unsafe.Pointer(getSampleWrappedObjectFirst())
+	pointerToContainerFirst := unsafe.Pointer(getSampleContainerFirst())
 	dotFirst := Dot{3, 4}
 
 	// Second
-	pointerToWrappedObjectSecond := unsafe.Pointer(getSampleWrappedObjectSecond())
+	pointerToContainerSecond := unsafe.Pointer(getSampleContainerSecond())
 	dotSecond := Dot{22, 4}
 
 	// Second
-	pointerToWrappedObjectThird := unsafe.Pointer(getSampleWrappedObjectThird())
+	pointerToContainerThird := unsafe.Pointer(getSampleContainerThird())
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	for _, dot := range area.Dots() {
 		if dot.Equals(dotFirst) || dot.Equals(dotSecond) || dot.Equals(dotThird) {
@@ -239,43 +239,43 @@ func Test_Map_Set(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
 
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 	dotFirst := Dot{1, 3}
-	m.Set(dotFirst, wrappedObjectFirst)
+	m.Set(dotFirst, containerFirst)
 
 	for _, dot := range area.Dots() {
 		pointer := *m.fields[dot.Y][dot.X]
 
 		if dot.Equals(dotFirst) {
-			require.Equal(t, uintptr(unsafe.Pointer(wrappedObjectFirst)), uintptr(pointer))
+			require.Equal(t, uintptr(unsafe.Pointer(containerFirst)), uintptr(pointer))
 		} else {
 			require.Equal(t, uintptr(0), uintptr(pointer))
 		}
 	}
 }
 
-func Test_Map_Get_ReturnsValidObject(t *testing.T) {
+func Test_Map_Get_ReturnsValidContainer(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{3, 4}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	for _, dot := range area.Dots() {
 		result, ok := m.Get(dot)
@@ -283,13 +283,13 @@ func Test_Map_Get_ReturnsValidObject(t *testing.T) {
 		switch {
 		case dot.Equals(dotFirst):
 			require.True(t, ok)
-			require.Equal(t, wrappedObjectFirst, result)
+			require.Equal(t, containerFirst, result)
 		case dot.Equals(dotSecond):
 			require.True(t, ok)
-			require.Equal(t, wrappedObjectSecond, result)
+			require.Equal(t, containerSecond, result)
 		case dot.Equals(dotThird):
 			require.True(t, ok)
-			require.Equal(t, wrappedObjectThird, result)
+			require.Equal(t, containerThird, result)
 		default:
 			require.False(t, ok)
 			require.Nil(t, result)
@@ -315,14 +315,14 @@ func Test_Map_Get_ReturnsNilFalse(t *testing.T) {
 func Test_Map_SetIfAbsent_OnEmptyMap(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 
 	dot1 := Dot{1, 21}
 	dot2 := Dot{0, 12}
 	dot3 := Dot{12, 11}
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, wrappedObjectFirst)
+		ok := m.SetIfAbsent(dot, containerFirst)
 		require.True(t, ok, "number "+strconv.Itoa(i))
 	}
 }
@@ -330,14 +330,14 @@ func Test_Map_SetIfAbsent_OnEmptyMap(t *testing.T) {
 func Test_Map_SetIfAbsent_InvalidDots(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
+	containerFirst := getSampleContainerFirst()
 
 	dot1 := Dot{1, 211}
 	dot2 := Dot{0, 121}
 	dot3 := Dot{12, 111}
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, wrappedObjectFirst)
+		ok := m.SetIfAbsent(dot, containerFirst)
 		require.False(t, ok, "number "+strconv.Itoa(i))
 	}
 }
@@ -345,46 +345,46 @@ func Test_Map_SetIfAbsent_InvalidDots(t *testing.T) {
 func Test_Map_SetIfAbsent_OccupiedDots(t *testing.T) {
 	area := MustArea(23, 31)
 	m := getSampleMapArea(area)
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerFirst := getSampleContainerFirst()
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{11, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectSecond
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		ok := m.SetIfAbsent(dot, wrappedObjectFirst)
+		ok := m.SetIfAbsent(dot, containerFirst)
 		require.False(t, ok, "number "+strconv.Itoa(i))
 	}
 }
 
-func Test_Map_Remove_RemovesObjects(t *testing.T) {
+func Test_Map_Remove_RemovesContainers(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	m.Remove(dotFirst)
 	m.Remove(dotSecond)
@@ -401,23 +401,23 @@ func Test_Map_Remove_DoesNothingInCaseOfInvalidDots(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	m.Remove(Dot{201, 0})
 	m.Remove(Dot{202, 105})
@@ -428,58 +428,58 @@ func Test_Map_Remove_DoesNothingInCaseOfInvalidDots(t *testing.T) {
 
 		switch {
 		case dot.Equals(dotFirst):
-			require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer))
+			require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer))
 		case dot.Equals(dotSecond):
-			require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer))
+			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer))
 		case dot.Equals(dotThird):
-			require.Equal(t, uintptr(pointerToWrappedObjectThird), uintptr(pointer))
+			require.Equal(t, uintptr(pointerToContainerThird), uintptr(pointer))
 		default:
 			require.Equal(t, uintptr(0), uintptr(pointer))
 		}
 	}
 }
 
-func Test_Map_RemoveObject_IgnoresInvalidDot(t *testing.T) {
+func Test_Map_RemoveContainer_IgnoresInvalidDot(t *testing.T) {
 	area := MustArea(123, 211)
 	m := getSampleMapArea(area)
 
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectFirst
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
 
-	m.RemoveObject(Dot{124, 212}, wrappedObjectFirst)
+	m.RemoveContainer(Dot{124, 212}, containerFirst)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		pointer := *m.fields[dot.Y][dot.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
+		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
 	}
 }
 
-func Test_Map_RemoveObject_RemovesObject(t *testing.T) {
+func Test_Map_RemoveContainer_RemovesContainer(t *testing.T) {
 	area := MustArea(123, 211)
 	m := getSampleMapArea(area)
 
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectFirst
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
 
-	m.RemoveObject(dot1, wrappedObjectFirst)
-	m.RemoveObject(dot2, wrappedObjectFirst)
-	m.RemoveObject(dot3, wrappedObjectFirst)
+	m.RemoveContainer(dot1, containerFirst)
+	m.RemoveContainer(dot2, containerFirst)
+	m.RemoveContainer(dot3, containerFirst)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		pointer := *m.fields[dot.Y][dot.X]
@@ -487,30 +487,30 @@ func Test_Map_RemoveObject_RemovesObject(t *testing.T) {
 	}
 }
 
-func Test_Map_RemoveObject_DoesNotRemoveMismatchedObject(t *testing.T) {
+func Test_Map_RemoveContainer_DoesNotRemoveMismatchedContainer(t *testing.T) {
 	area := MustArea(123, 211)
 	m := getSampleMapArea(area)
 
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
+	containerSecond := getSampleContainerSecond()
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectFirst
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
 
-	m.RemoveObject(dot1, wrappedObjectSecond)
-	m.RemoveObject(dot2, wrappedObjectSecond)
-	m.RemoveObject(dot3, wrappedObjectSecond)
+	m.RemoveContainer(dot1, containerSecond)
+	m.RemoveContainer(dot2, containerSecond)
+	m.RemoveContainer(dot3, containerSecond)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		pointer := *m.fields[dot.Y][dot.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
+		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
 	}
 }
 
@@ -518,16 +518,16 @@ func Test_Map_HasAny_ReturnsCorrectResult(t *testing.T) {
 	area := MustArea(123, 211)
 	m := getSampleMapArea(area)
 
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectFirst
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
 
 	location1 := []Dot{
 		// Dot to be skipped
@@ -615,23 +615,23 @@ func Test_Map_HasAll_returnsCorrectResult(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	tests := []struct {
 		dots     []Dot
@@ -665,28 +665,28 @@ func Test_Map_HasAll_returnsCorrectResult(t *testing.T) {
 	}
 }
 
-func Test_Map_MGet_returnsValidDotObjectMap(t *testing.T) {
+func Test_Map_MGet_returnsValidDotContainerMap(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	dots := []Dot{
 		{200, 66}, // Dot to be skipped
@@ -703,24 +703,24 @@ func Test_Map_MGet_returnsValidDotObjectMap(t *testing.T) {
 
 	require.Len(t, result, 3)
 
-	// Check the objects
+	// Check the containers
 
 	{
-		resultObjectFirst, ok := result[dotFirst]
+		resultContainerFirst, ok := result[dotFirst]
 		require.True(t, ok)
-		require.Equal(t, wrappedObjectFirst, resultObjectFirst)
+		require.Equal(t, containerFirst, resultContainerFirst)
 	}
 
 	{
-		resultObjectSecond, ok := result[dotSecond]
+		resultContainerSecond, ok := result[dotSecond]
 		require.True(t, ok)
-		require.Equal(t, wrappedObjectSecond, resultObjectSecond)
+		require.Equal(t, containerSecond, resultContainerSecond)
 	}
 
 	{
-		resultObjectThird, ok := result[dotThird]
+		resultContainerThird, ok := result[dotThird]
 		require.True(t, ok)
-		require.Equal(t, wrappedObjectThird, resultObjectThird)
+		require.Equal(t, containerThird, resultContainerThird)
 	}
 
 	{
@@ -735,23 +735,23 @@ func Test_Map_MRemove_removes(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -772,28 +772,28 @@ func Test_Map_MRemove_removes(t *testing.T) {
 	}
 }
 
-func Test_Map_MRemoveObject_removesCertainObjects(t *testing.T) {
+func Test_Map_MRemoveContainer_removesCertainContainers(t *testing.T) {
 	area := MustArea(200, 100)
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -806,11 +806,11 @@ func Test_Map_MRemoveObject_removesCertainObjects(t *testing.T) {
 		{20, 4},
 	}
 
-	m.MRemoveObject(dots, wrappedObjectSecond)
+	m.MRemoveContainer(dots, containerSecond)
 
 	{
 		pointer := *m.fields[dotFirst.Y][dotFirst.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer))
+		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer))
 	}
 
 	{
@@ -820,7 +820,7 @@ func Test_Map_MRemoveObject_removesCertainObjects(t *testing.T) {
 
 	{
 		pointer := *m.fields[dotThird.Y][dotThird.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectThird), uintptr(pointer))
+		require.Equal(t, uintptr(pointerToContainerThird), uintptr(pointer))
 	}
 }
 
@@ -829,23 +829,23 @@ func Test_Map_MSet(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -858,30 +858,30 @@ func Test_Map_MSet(t *testing.T) {
 		{20, 4},
 	}
 
-	m.MSet(dots, wrappedObjectSecond)
+	m.MSet(dots, containerSecond)
 
 	for i, dot := range dots {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
-			require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 }
 
-func Test_Map_MSetIfAllAbsent_SetsObjectOnMapCorrectly(t *testing.T) {
+func Test_Map_MSetIfAllAbsent_SetsContainerOnMapCorrectly(t *testing.T) {
 	area := MustArea(56, 45)
 	m := getSampleMapArea(area)
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerFirst := getSampleContainerFirst()
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{11, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectSecond
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
 
 	location := []Dot{
 		// Dot to be skipped
@@ -908,7 +908,7 @@ func Test_Map_MSetIfAllAbsent_SetsObjectOnMapCorrectly(t *testing.T) {
 		},
 	}
 
-	ok := m.MSetIfAllAbsent(location, wrappedObjectFirst)
+	ok := m.MSetIfAllAbsent(location, containerFirst)
 
 	require.True(t, ok)
 
@@ -921,24 +921,24 @@ func Test_Map_MSetIfAllAbsent_SetsObjectOnMapCorrectly(t *testing.T) {
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		pointer := *m.fields[dot.Y][dot.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+		require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 	}
 }
 
 func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 	area := MustArea(56, 45)
 	m := getSampleMapArea(area)
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerFirst := getSampleContainerFirst()
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 
 	dot1 := Dot{6, 12}
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToWrappedObjectSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToWrappedObjectSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToWrappedObjectSecond
+	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
+	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
+	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
 
 	location := []Dot{
 		// Dot to be skipped
@@ -962,7 +962,7 @@ func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 		dot3,
 	}
 
-	ok := m.MSetIfAllAbsent(location, wrappedObjectFirst)
+	ok := m.MSetIfAllAbsent(location, containerFirst)
 
 	require.False(t, ok)
 
@@ -971,7 +971,7 @@ func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 			pointer := *m.fields[dot.Y][dot.X]
 
 			if dot.Equals(dot3) {
-				require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+				require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 			} else {
 				require.Equal(t, uintptr(0), uintptr(pointer), "number "+strconv.Itoa(i))
 			}
@@ -981,7 +981,7 @@ func Test_Map_MSetIfAllAbsent_RollbacksChangesAndReturnsFalse(t *testing.T) {
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
-			require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 }
@@ -991,23 +991,23 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 	m := getSampleMapArea(area)
 
 	// First
-	wrappedObjectFirst := getSampleWrappedObjectFirst()
-	pointerToWrappedObjectFirst := unsafe.Pointer(wrappedObjectFirst)
+	containerFirst := getSampleContainerFirst()
+	pointerToContainerFirst := unsafe.Pointer(containerFirst)
 	dotFirst := Dot{120, 66}
 
 	// Second
-	wrappedObjectSecond := getSampleWrappedObjectSecond()
-	pointerToWrappedObjectSecond := unsafe.Pointer(wrappedObjectSecond)
+	containerSecond := getSampleContainerSecond()
+	pointerToContainerSecond := unsafe.Pointer(containerSecond)
 	dotSecond := Dot{22, 4}
 
 	// Second
-	wrappedObjectThird := getSampleWrappedObjectThird()
-	pointerToWrappedObjectThird := unsafe.Pointer(wrappedObjectThird)
+	containerThird := getSampleContainerThird()
+	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToWrappedObjectFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToWrappedObjectSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToWrappedObjectThird
+	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
+	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
+	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -1020,7 +1020,7 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 		{20, 4},
 	}
 
-	resultDots := m.MSetIfAbsent(dots, wrappedObjectSecond)
+	resultDots := m.MSetIfAbsent(dots, containerSecond)
 
 	require.Len(t, resultDots, 3)
 
@@ -1028,26 +1028,26 @@ func Test_Map_MSetIfAbsent(t *testing.T) {
 	for i, dot := range resultDots {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
-			require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 
-	t.Log("Check if objects has been linked correclty on the map")
+	t.Log("Check if containers has been linked correclty on the map")
 	for i, dot := range []Dot{{11, 66}, {4, 2}, {20, 4}, dotSecond} {
 		if area.ContainsDot(dot) {
 			pointer := *m.fields[dot.Y][dot.X]
-			require.Equal(t, uintptr(pointerToWrappedObjectSecond), uintptr(pointer), "number "+strconv.Itoa(i))
+			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 
-	t.Log("Check another objects")
+	t.Log("Check other containers")
 	{
 		pointer := *m.fields[dotFirst.Y][dotFirst.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectFirst), uintptr(pointer))
+		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer))
 	}
 
 	{
 		pointer := *m.fields[dotThird.Y][dotThird.X]
-		require.Equal(t, uintptr(pointerToWrappedObjectThird), uintptr(pointer))
+		require.Equal(t, uintptr(pointerToContainerThird), uintptr(pointer))
 	}
 }

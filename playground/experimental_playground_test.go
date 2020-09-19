@@ -44,7 +44,7 @@ func Test_NewExperimentalPlayground_CreatesPlayground(t *testing.T) {
 func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
 	area := engine.MustArea(100, 100)
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		a int
 	}{
 		10,
@@ -54,7 +54,7 @@ func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
 
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
@@ -70,7 +70,7 @@ func Test_ExperimentalPlayground_CreateObject(t *testing.T) {
 func Test_ExperimentalPlayground_CreateObjectRandomRect(t *testing.T) {
 	area := engine.MustArea(100, 100)
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		str string
 	}{
 		"ok",
@@ -78,7 +78,7 @@ func Test_ExperimentalPlayground_CreateObjectRandomRect(t *testing.T) {
 
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
@@ -121,7 +121,7 @@ func Benchmark_ExperimentalPlayground_UpdateObject(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	object := engine.NewObject(&TestStructure{})
+	object := engine.NewContainer(&TestStructure{})
 
 	locations := [count]engine.Location{
 		first:  engine.NewRect(0, 0, areaWidth, areaHeight/2).Location(),
@@ -147,11 +147,11 @@ func Test_ExperimentalPlayground_DeleteObject(t *testing.T) {
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct{}{})
+	object := engine.NewContainer(&struct{}{})
 
 	pg.gameMap.MSet(engine.Location{{1, 1}}, object)
 	pg.objects = append(pg.objects, object)
@@ -169,11 +169,11 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_EmptySquareScene(t *t
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 
@@ -211,12 +211,12 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_NotEmptyScene(t *test
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	// Object to create
-	object1 := engine.NewObject(&struct {
+	// Container to create
+	object1 := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 	location1 := engine.Location{
@@ -229,7 +229,7 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_NotEmptyScene(t *test
 	}
 
 	// Located object
-	object2 := engine.NewObject(&struct {
+	object2 := engine.NewContainer(&struct {
 		data string
 	}{"second"})
 	location2 := engine.Location{
@@ -274,12 +274,12 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_LocationNotAvailable(
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	// Object to create
-	object1 := engine.NewObject(&struct {
+	// Container to create
+	object1 := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 	location1 := engine.Location{
@@ -292,7 +292,7 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_LocationNotAvailable(
 	}
 
 	// Located object
-	object2 := engine.NewObject(&struct {
+	object2 := engine.NewContainer(&struct {
 		data string
 	}{"second"})
 	location2 := location1.Copy()
@@ -324,12 +324,12 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_LocationsIntersects(t
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	// Object to create
-	object1 := engine.NewObject(&struct {
+	// Container to create
+	object1 := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 	location1 := engine.Location{
@@ -347,7 +347,7 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_LocationsIntersects(t
 	}
 
 	// Located object
-	object2 := engine.NewObject(&struct {
+	object2 := engine.NewContainer(&struct {
 		data string
 	}{"second"})
 	location2 := engine.Location{
@@ -392,11 +392,11 @@ func Test_ExperimentalPlayground_UpdateObjectAvailableDots_EmptyMap(t *testing.T
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct{}{})
+	object := engine.NewContainer(&struct{}{})
 
 	pg.gameMap.MSet(engine.Location{{1, 1}}, object)
 	pg.objects = append(pg.objects, object)
@@ -414,11 +414,11 @@ func Test_ExperimentalPlayground_UpdateObjectAvailableDots_NotEmptyMap(t *testin
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object1 := engine.NewObject(&struct {
+	object1 := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 
@@ -427,7 +427,7 @@ func Test_ExperimentalPlayground_UpdateObjectAvailableDots_NotEmptyMap(t *testin
 
 	require.NotEmpty(t, pg.gameMap.MGet(engine.Location{{1, 1}}))
 
-	object2 := engine.NewObject(&struct {
+	object2 := engine.NewContainer(&struct {
 		data string
 	}{"second"})
 
@@ -447,11 +447,11 @@ func Test_ExperimentalPlayground_UpdateObjectAvailableDots_NotEmptyMap_BigObject
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object1 := engine.NewObject(&struct {
+	object1 := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 	location1Old := engine.Location{
@@ -489,7 +489,7 @@ func Test_ExperimentalPlayground_UpdateObjectAvailableDots_NotEmptyMap_BigObject
 		require.Equal(t, object1, actual)
 	}
 
-	object2 := engine.NewObject(&struct {
+	object2 := engine.NewContainer(&struct {
 		data string
 	}{"second"})
 	location2 := engine.Location{
@@ -534,11 +534,11 @@ func Test_ExperimentalPlayground_CreateObjectRandomDot_SquareEmptyPlayground(t *
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 
@@ -563,11 +563,11 @@ func Test_ExperimentalPlayground_CreateObjectRandomDot_EmptyPlayground(t *testin
 	area := engine.MustArea(200, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 
@@ -592,11 +592,11 @@ func Test_ExperimentalPlayground_CreateObjectRandomRect_SquareEmptyPlayground_Sq
 	area := engine.MustArea(100, 100)
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 
@@ -622,11 +622,11 @@ func Test_ExperimentalPlayground_CreateObjectRandomRect_SquareEmptyPlayground(t 
 
 	pg := &ExperimentalPlayground{
 		gameMap:    engine.NewMap(area),
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}
 
-	object := engine.NewObject(&struct {
+	object := engine.NewContainer(&struct {
 		data string
 	}{"first"})
 

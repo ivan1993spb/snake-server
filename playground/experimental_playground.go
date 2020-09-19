@@ -18,7 +18,7 @@ const (
 type ExperimentalPlayground struct {
 	gameMap *engine.Map
 
-	objects    []*engine.Object
+	objects    []*engine.Container
 	objectsMux *sync.RWMutex
 }
 
@@ -32,12 +32,12 @@ func NewExperimentalPlayground(width, height uint8) (*ExperimentalPlayground, er
 
 	return &ExperimentalPlayground{
 		gameMap:    gameMap,
-		objects:    make([]*engine.Object, 0),
+		objects:    make([]*engine.Container, 0),
 		objectsMux: &sync.RWMutex{},
 	}, nil
 }
 
-func (p *ExperimentalPlayground) unsafeObjectExists(object *engine.Object) bool {
+func (p *ExperimentalPlayground) unsafeObjectExists(object *engine.Container) bool {
 	for i := range p.objects {
 		if p.objects[i] == object {
 			return true
@@ -46,7 +46,7 @@ func (p *ExperimentalPlayground) unsafeObjectExists(object *engine.Object) bool 
 	return false
 }
 
-func (p *ExperimentalPlayground) unsafeAddObject(object *engine.Object) error {
+func (p *ExperimentalPlayground) unsafeAddObject(object *engine.Container) error {
 	if p.unsafeObjectExists(object) {
 		return errors.New("cannot add object: object already exists")
 	}
@@ -55,7 +55,7 @@ func (p *ExperimentalPlayground) unsafeAddObject(object *engine.Object) error {
 	return nil
 }
 
-func (p *ExperimentalPlayground) addObject(object *engine.Object) error {
+func (p *ExperimentalPlayground) addObject(object *engine.Container) error {
 	p.objectsMux.Lock()
 	defer p.objectsMux.Unlock()
 	return p.unsafeAddObject(object)
@@ -77,19 +77,19 @@ func (p *ExperimentalPlayground) deleteObject(object interface{}) error {
 	return p.unsafeDeleteObject(object)
 }
 
-func (p *ExperimentalPlayground) GetObjectByDot(dot engine.Dot) *engine.Object {
+func (p *ExperimentalPlayground) GetObjectByDot(dot engine.Dot) *engine.Container {
 	if object, ok := p.gameMap.Get(dot); ok {
 		return object
 	}
 	return nil
 }
 
-func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []*engine.Object {
+func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []*engine.Container {
 	if len(dots) == 0 {
 		return nil
 	}
 
-	objects := make([]*engine.Object, 0)
+	objects := make([]*engine.Container, 0)
 
 	for _, object := range p.gameMap.MGet(dots) {
 		flagObjectCreated := false
@@ -109,7 +109,7 @@ func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []*engine.O
 	return objects
 }
 
-func (p *ExperimentalPlayground) CreateObject(object *engine.Object, location engine.Location) error {
+func (p *ExperimentalPlayground) CreateObject(object *engine.Container, location engine.Location) error {
 	if location.Empty() {
 		return errCreateObject(errEmptyLocationMessage)
 	}
@@ -132,7 +132,7 @@ func (p *ExperimentalPlayground) CreateObject(object *engine.Object, location en
 	return nil
 }
 
-func (p *ExperimentalPlayground) CreateObjectAvailableDots(object *engine.Object, location engine.Location) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectAvailableDots(object *engine.Container, location engine.Location) (engine.Location, error) {
 	if location.Empty() {
 		return nil, errCreateObjectAvailableDots(errEmptyLocationMessage)
 	}
@@ -157,9 +157,9 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object *engine.Object
 	return resultLocation, nil
 }
 
-func (p *ExperimentalPlayground) DeleteObject(object *engine.Object, location engine.Location) error {
+func (p *ExperimentalPlayground) DeleteObject(object *engine.Container, location engine.Location) error {
 	if !location.Empty() {
-		p.gameMap.MRemoveObject(location, object)
+		p.gameMap.MRemoveContainer(location, object)
 	}
 
 	if err := p.deleteObject(object); err != nil {
@@ -169,7 +169,7 @@ func (p *ExperimentalPlayground) DeleteObject(object *engine.Object, location en
 	return nil
 }
 
-func (p *ExperimentalPlayground) UpdateObject(object *engine.Object, old, new engine.Location) error {
+func (p *ExperimentalPlayground) UpdateObject(object *engine.Container, old, new engine.Location) error {
 	diff := old.Difference(new)
 
 	dotsToRemove := make([]engine.Dot, 0, len(diff))
@@ -187,12 +187,12 @@ func (p *ExperimentalPlayground) UpdateObject(object *engine.Object, old, new en
 		return errUpdateObject("cannot occupy new location")
 	}
 
-	p.gameMap.MRemoveObject(dotsToRemove, object)
+	p.gameMap.MRemoveContainer(dotsToRemove, object)
 
 	return nil
 }
 
-func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object *engine.Object, old, new engine.Location) (engine.Location, error) {
+func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object *engine.Container, old, new engine.Location) (engine.Location, error) {
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
@@ -217,7 +217,7 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object *engine.Object
 	}
 
 	if len(dotsToRemove) > 0 {
-		p.gameMap.MRemoveObject(dotsToRemove, object)
+		p.gameMap.MRemoveContainer(dotsToRemove, object)
 		for _, dot := range dotsToRemove {
 			actualLocation = actualLocation.Delete(dot)
 		}
@@ -230,7 +230,7 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object *engine.Object
 	return actualLocation, nil
 }
 
-func (p *ExperimentalPlayground) CreateObjectRandomDot(object *engine.Object) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomDot(object *engine.Container) (engine.Location, error) {
 	for i := 0; i < findRetriesNumber; i++ {
 		dot := p.gameMap.Area().NewRandomDot(0, 0)
 
@@ -249,7 +249,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object *engine.Object) (e
 	return nil, errCreateObjectRandomDot(errRetriesLimitMessage)
 }
 
-func (p *ExperimentalPlayground) CreateObjectRandomRect(object *engine.Object, rw, rh uint8) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomRect(object *engine.Container, rw, rh uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRect("invalid rect size: 0")
 	}
@@ -280,7 +280,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object *engine.Object, r
 	return nil, errCreateObjectRandomRect(errRetriesLimitMessage)
 }
 
-func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object *engine.Object, rw, rh, margin uint8) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object *engine.Container, rw, rh, margin uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRectMargin("invalid rect size: 0")
 	}
@@ -304,7 +304,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object *engine.Obj
 		if p.gameMap.MSetIfAllAbsent(location, object) {
 			if err := p.addObject(object); err != nil {
 				// Rollback map if cannot add object.
-				p.gameMap.MRemoveObject(location, object)
+				p.gameMap.MRemoveContainer(location, object)
 
 				return nil, errCreateObjectRandomRectMargin(err.Error())
 			}
@@ -316,7 +316,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object *engine.Obj
 	return nil, errCreateObjectRandomRectMargin(errRetriesLimitMessage)
 }
 
-func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object *engine.Object, dm *engine.DotsMask) (engine.Location, error) {
+func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object *engine.Container, dm *engine.DotsMask) (engine.Location, error) {
 	if !p.gameMap.Area().ContainsRect(engine.NewRect(0, 0, dm.Width(), dm.Height())) {
 		return nil, errCreateObjectRandomByDotsMask("area cannot contain located by dots mask object")
 	}
@@ -336,7 +336,7 @@ func (p *ExperimentalPlayground) CreateObjectRandomByDotsMask(object *engine.Obj
 		if p.gameMap.MSetIfAllAbsent(location, object) {
 			if err := p.addObject(object); err != nil {
 				// Rollback map if cannot add object.
-				p.gameMap.MRemoveObject(location, object)
+				p.gameMap.MRemoveContainer(location, object)
 
 				return nil, errCreateObjectRandomByDotsMask(err.Error())
 			}
@@ -356,13 +356,13 @@ func (p *ExperimentalPlayground) Area() engine.Area {
 	return p.gameMap.Area()
 }
 
-func (p *ExperimentalPlayground) unsafeGetObjects() []*engine.Object {
-	objects := make([]*engine.Object, len(p.objects))
+func (p *ExperimentalPlayground) unsafeGetObjects() []*engine.Container {
+	objects := make([]*engine.Container, len(p.objects))
 	copy(objects, p.objects)
 	return objects
 }
 
-func (p *ExperimentalPlayground) GetObjects() []*engine.Object {
+func (p *ExperimentalPlayground) GetObjects() []*engine.Container {
 	p.objectsMux.RLock()
 	defer p.objectsMux.RUnlock()
 	return p.unsafeGetObjects()
