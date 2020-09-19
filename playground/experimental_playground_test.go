@@ -316,8 +316,8 @@ func Test_ExperimentalPlayground_CreateObjectAvailableDots_LocationNotAvailable(
 	}
 
 	location1Actual, err := pg.CreateObjectAvailableDots(object1, location1)
-	require.NotNil(t, err)
-	require.Nil(t, location1Actual)
+	require.Nil(t, err)
+	require.Empty(t, location1Actual)
 
 	for _, dot := range pg.Area().Dots() {
 		actualContainer, ok := pg.gameMap.Get(dot)

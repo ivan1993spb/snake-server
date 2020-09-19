@@ -12,7 +12,6 @@ const findRetriesNumber = 64
 const (
 	errRetriesLimitMessage               = "retries limit was reached"
 	errAreaDoesNotContainLocationMessage = "area does not contain location"
-	errEmptyLocationMessage              = "empty location"
 )
 
 // Object is a game object
@@ -139,18 +138,15 @@ func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []Object {
 
 // CreateObject creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the operation will be turn down with an error.
+// Initial location could be empty.
 func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Location) error {
-	if location.Empty() {
-		return errCreateObject(errEmptyLocationMessage)
-	}
-
 	if !p.gameMap.Area().ContainsLocation(location) {
 		return errCreateObject(errAreaDoesNotContainLocationMessage)
 	}
 
 	container := engine.NewContainer(object)
 
-	if !p.gameMap.MSetIfAllAbsent(location, container) {
+	if !location.Empty() && !p.gameMap.MSetIfAllAbsent(location, container) {
 		return errCreateObject("location is occupied")
 	}
 
@@ -166,22 +162,14 @@ func (p *ExperimentalPlayground) CreateObject(object Object, location engine.Loc
 
 // CreateObjectAvailableDots creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the dots will be ignored. If all dots are occupied
-// the operation will fail with an error.
+// the object will be registered without location and no error will be returned.
 func (p *ExperimentalPlayground) CreateObjectAvailableDots(object Object, location engine.Location) (engine.Location, error) {
-	if location.Empty() {
-		return nil, errCreateObjectAvailableDots(errEmptyLocationMessage)
-	}
-
 	if !p.gameMap.Area().ContainsLocation(location) {
 		return nil, errCreateObjectAvailableDots(errAreaDoesNotContainLocationMessage)
 	}
 
 	container := engine.NewContainer(object)
 	resultLocation := p.gameMap.MSetIfAbsent(location, container)
-
-	if len(resultLocation) == 0 {
-		return nil, errCreateObjectAvailableDots("all dots in location are occupied")
-	}
 
 	if err := p.addObject(object, container); err != nil {
 		// Rollback map if cannot add object.
