@@ -6,20 +6,17 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
+	"github.com/ivan1993spb/snake-server/config"
 	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/server/http"
 )
 
-const (
-	defaultAddress     = ":8080"
-	defaultGroupsLimit = 100
-	defaultConnsLimit  = 1000
-)
+const ServerName = "Snake-Server"
 
 var (
 	Version = "dev"
@@ -28,26 +25,7 @@ var (
 	License = "MIT"
 )
 
-var (
-	address string
-
-	flagEnableTLS bool
-	certFile      string
-	keyFile       string
-
-	groupsLimit int
-	connsLimit  int
-	seed        int64
-
-	flagJSONLog bool
-	logLevel    string
-
-	enableBroadcast bool
-
-	enableWeb bool
-
-	forbidCORS bool
-)
+const logName = "api"
 
 func usage() {
 	fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
@@ -56,26 +34,16 @@ func usage() {
 	flag.PrintDefaults()
 }
 
-func init() {
-	flag.StringVar(&address, "address", defaultAddress, "address to serve")
-	flag.BoolVar(&flagEnableTLS, "tls-enable", false, "enable TLS")
-	flag.StringVar(&certFile, "tls-cert", "", "path to certificate file")
-	flag.StringVar(&keyFile, "tls-key", "", "path to key file")
-	flag.IntVar(&groupsLimit, "groups-limit", defaultGroupsLimit, "game groups limit")
-	flag.IntVar(&connsLimit, "conns-limit", defaultConnsLimit, "web-socket connections limit")
-	flag.Int64Var(&seed, "seed", time.Now().UnixNano(), "random seed")
-	flag.BoolVar(&flagJSONLog, "log-json", false, "use json format for logger")
-	flag.StringVar(&logLevel, "log-level", "info", "set log level: panic, fatal, error, warning (warn), info or debug")
-	flag.BoolVar(&enableBroadcast, "enable-broadcast", false, "enable broadcasting API method")
-	flag.BoolVar(&enableWeb, "enable-web", false, "enable web client")
-	flag.BoolVar(&forbidCORS, "forbid-cors", false, "forbid cross-origin resource sharing")
-	flag.Usage = usage
-	flag.Parse()
+func configurate() (config.Config, error) {
+	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	f.Usage = usage
+	cfg, err := config.Configurate(afero.NewOsFs(), f, os.Args[1:])
+	return cfg, err
 }
 
-func logger() *logrus.Logger {
+func logger(configLog config.Log) *logrus.Logger {
 	logger := logrus.New()
-	if flagJSONLog {
+	if configLog.EnableJSON {
 		logger.Formatter = &logrus.JSONFormatter{}
 	} else if runtime.GOOS == "windows" {
 		// Log Output on Windows shows Bash format
@@ -85,7 +53,7 @@ func logger() *logrus.Logger {
 			DisableColors: true,
 		}
 	}
-	if level, err := logrus.ParseLevel(logLevel); err != nil {
+	if level, err := logrus.ParseLevel(configLog.Level); err != nil {
 		logger.SetLevel(logrus.InfoLevel)
 	} else {
 		logger.SetLevel(level)
@@ -93,16 +61,20 @@ func logger() *logrus.Logger {
 	return logger
 }
 
-func RunServer(server *http.Server) error {
+func RunServer(server *http.Server, configTLS config.TLS) error {
 	// TODO: Refactor this function.
-	if flagEnableTLS {
-		return server.ListenAndServeTLS(certFile, keyFile)
+	if configTLS.Enable {
+		return server.ListenAndServeTLS(configTLS.Cert, configTLS.Key)
 	}
 	return server.ListenAndServe()
 }
 
 func main() {
-	logger := logger()
+	cfg, err := configurate()
+	logger := logger(cfg.Server.Log)
+	if err != nil {
+		logger.Fatalln("cannot load config:", err)
+	}
 
 	logger.WithFields(logrus.Fields{
 		"author":  Author,
@@ -118,22 +90,22 @@ func main() {
 	}).Info("golang info")
 
 	logger.WithFields(logrus.Fields{
-		"conns_limit":  connsLimit,
-		"groups_limit": groupsLimit,
-		"seed":         seed,
-		"log_level":    logLevel,
-		"broadcast":    enableBroadcast,
-		"web":          enableWeb,
-		"cors":         !forbidCORS,
+		"conns_limit":  cfg.Server.Limits.Conns,
+		"groups_limit": cfg.Server.Limits.Groups,
+		"seed":         cfg.Server.Seed,
+		"log_level":    cfg.Server.Log.Level,
+		"broadcast":    cfg.Server.EnableBroadcast,
+		"web":          cfg.Server.EnableWeb,
+		"cors":         !cfg.Server.ForbidCORS,
 	}).Info("preparing to start server")
 
-	if enableBroadcast {
+	if cfg.Server.EnableBroadcast {
 		logger.Warning("broadcasting API method is enabled!")
 	}
 
-	rand.Seed(seed)
+	rand.Seed(cfg.Server.Seed)
 
-	groupManager, err := connections.NewConnectionGroupManager(logger, groupsLimit, connsLimit)
+	groupManager, err := connections.NewConnectionGroupManager(logger, cfg.Server.Limits.Groups, cfg.Server.Limits.Conns)
 	if err != nil {
 		logger.Fatalln("cannot create connections group manager:", err)
 	}
@@ -142,19 +114,27 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:         address,
+		Addr:         cfg.Server.Address,
 		Logger:       logger,
 		GroupManager: groupManager,
 	}
 
-	server.InitRoutes(enableWeb, enableBroadcast, forbidCORS, Author, License, Version, Build)
+	server.InitRoutes(
+		cfg.Server.EnableWeb,
+		cfg.Server.EnableBroadcast,
+		cfg.Server.ForbidCORS,
+		Author,
+		License,
+		Version,
+		Build,
+	)
 
 	logger.WithFields(logrus.Fields{
-		"address": address,
-		"tls":     flagEnableTLS,
+		"address": cfg.Server.Address,
+		"tls":     cfg.Server.TLS.Enable,
 	}).Info("starting server")
 
-	if err := RunServer(server); err != nil {
+	if err := RunServer(server, cfg.Server.TLS); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
