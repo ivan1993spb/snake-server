@@ -59,14 +59,6 @@ func logger(configLog config.Log) *logrus.Logger {
 	return logger
 }
 
-func RunServer(server *http.Server, configTLS config.TLS) error {
-	// TODO: Refactor this function.
-	if configTLS.Enable {
-		return server.ListenAndServeTLS(configTLS.Cert, configTLS.Key)
-	}
-	return server.ListenAndServe()
-}
-
 func main() {
 	cfg, err := configurate()
 	logger := logger(cfg.Server.Log)
@@ -118,7 +110,7 @@ func main() {
 		"tls":     cfg.Server.TLS.Enable,
 	}).Info("starting server")
 
-	if err := RunServer(server, cfg.Server.TLS); err != nil {
+	if err := server.Run(); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }

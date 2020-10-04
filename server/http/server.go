@@ -26,6 +26,8 @@ type Server struct {
 	Logger  *logrus.Logger
 
 	GroupManager *connections.ConnectionGroupManager
+
+	Config config.Config
 }
 
 func NewServer(cfg config.Config, groupManager *connections.ConnectionGroupManager, logger *logrus.Logger,
@@ -34,6 +36,7 @@ func NewServer(cfg config.Config, groupManager *connections.ConnectionGroupManag
 		Addr:         cfg.Server.Address,
 		Logger:       logger,
 		GroupManager: groupManager,
+		Config:       cfg,
 	}
 
 	// TODO: Refactor this function.
@@ -98,10 +101,9 @@ func (srv *Server) InitRoutes(enableWeb, enableBroadcast, forbidCORS bool, autho
 	srv.Handler = n
 }
 
-func (srv *Server) ListenAndServe() error {
+func (srv *Server) Run() error {
+	if srv.Config.Server.TLS.Enable {
+		return http.ListenAndServeTLS(srv.Addr, srv.Config.Server.TLS.Cert, srv.Config.Server.TLS.Key, srv.Handler)
+	}
 	return http.ListenAndServe(srv.Addr, srv.Handler)
-}
-
-func (srv *Server) ListenAndServeTLS(certFile, keyFile string) error {
-	return http.ListenAndServeTLS(srv.Addr, certFile, keyFile, srv.Handler)
 }
