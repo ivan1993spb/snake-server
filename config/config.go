@@ -165,6 +165,8 @@ func (c Config) Fields() map[string]interface{} {
 	}
 }
 
+var seed = generateSeed()
+
 // Default settings
 var defaultConfig = Config{
 	Server: Server{
@@ -181,7 +183,7 @@ var defaultConfig = Config{
 			Conns:  defaultConnsLimit,
 		},
 
-		Seed: generateSeed(),
+		Seed: seed,
 
 		Log: Log{
 			EnableJSON: defaultLogEnableJSON,
