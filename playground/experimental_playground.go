@@ -201,7 +201,7 @@ func (p *ExperimentalPlayground) DeleteObject(object engine.Object, location eng
 func (p *ExperimentalPlayground) UpdateObject(object engine.Object, old, new engine.Location) error {
 	diff := old.Difference(new)
 
-	// Nothing changed
+	// Nothing has changed
 	if len(diff) == 0 {
 		return nil
 	}
@@ -237,7 +237,7 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object engine.Object,
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
-	// Nothing changed
+	// Nothing has changed
 	if len(diff) == 0 {
 		return actualLocation, nil
 	}
