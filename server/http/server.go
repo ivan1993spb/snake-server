@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/negroni"
 
 	"github.com/ivan1993spb/snake-server/client"
+	"github.com/ivan1993spb/snake-server/config"
 	"github.com/ivan1993spb/snake-server/connections"
 	"github.com/ivan1993spb/snake-server/server/http/handlers"
 	"github.com/ivan1993spb/snake-server/server/http/middlewares"
@@ -25,6 +26,29 @@ type Server struct {
 	Logger  *logrus.Logger
 
 	GroupManager *connections.ConnectionGroupManager
+}
+
+func NewServer(cfg config.Config, groupManager *connections.ConnectionGroupManager, logger *logrus.Logger,
+	author, license, version, build string) *Server {
+	srv := &Server{
+		Addr:         cfg.Server.Address,
+		Logger:       logger,
+		GroupManager: groupManager,
+	}
+
+	// TODO: Refactor this function.
+
+	srv.InitRoutes(
+		cfg.Server.EnableWeb,
+		cfg.Server.EnableBroadcast,
+		cfg.Server.ForbidCORS,
+		author,
+		license,
+		version,
+		build,
+	)
+
+	return srv
 }
 
 func (srv *Server) InitRoutes(enableWeb, enableBroadcast, forbidCORS bool, author, license, version, build string) {

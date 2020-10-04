@@ -111,21 +111,7 @@ func main() {
 		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
-	server := &http.Server{
-		Addr:         cfg.Server.Address,
-		Logger:       logger,
-		GroupManager: groupManager,
-	}
-
-	server.InitRoutes(
-		cfg.Server.EnableWeb,
-		cfg.Server.EnableBroadcast,
-		cfg.Server.ForbidCORS,
-		Author,
-		License,
-		Version,
-		Build,
-	)
+	server := http.NewServer(cfg, groupManager, logger, Author, License, Version, Build)
 
 	logger.WithFields(logrus.Fields{
 		"address": cfg.Server.Address,
