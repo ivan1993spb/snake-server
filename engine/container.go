@@ -5,7 +5,7 @@ type Object interface{}
 
 // Container contains an object placed on a map.
 //
-// As objects are addressed with unsafe's pointers, it is neccessary
+// As objects are addressed with unsafe's pointers, it is necessary
 // to know the exact type of the stored object. However, as there are
 // a lot of different types of objects, you never know what you find
 // at a dot. Therefore, a container type is needed to wrap an unknown
