@@ -25,8 +25,6 @@ var (
 	License = "MIT"
 )
 
-const logName = "api"
-
 func usage() {
 	fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
 	fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
