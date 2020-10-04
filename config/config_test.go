@@ -96,7 +96,7 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	configTest5.Server.Address = "snakeonline.xyz:3211"
 	configTest5.Server.Seed = 32
 	configTest5.Server.Log.EnableJSON = true
-	configTest5.Server.EnableWeb = true
+	configTest5.Server.Flags.EnableWeb = true
 	configTest5.Server.Limits.Conns = 321
 
 	tests = append(tests, &Test{
@@ -286,9 +286,9 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelLogEnableJSON: false,
 		fieldLabelLogLevel:      "warning",
 
-		fieldLabelEnableBroadcast: true,
-		fieldLabelEnableWeb:       false,
-		fieldLabelForbidCORS:      true,
+		fieldLabelFlagsEnableBroadcast: true,
+		fieldLabelFlagsEnableWeb:       false,
+		fieldLabelFlagsForbidCORS:      true,
 	}, Config{
 		Server: Server{
 			Address: ":9999",
@@ -311,9 +311,11 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 				Level:      "warning",
 			},
 
-			EnableBroadcast: true,
-			EnableWeb:       false,
-			ForbidCORS:      true,
+			Flags: Flags{
+				EnableBroadcast: true,
+				EnableWeb:       false,
+				ForbidCORS:      true,
+			},
 		},
 	}.Fields())
 }
@@ -392,8 +394,8 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	configTest5.Server.TLS.Key = "path/to/key"
 	configTest5.Server.Limits.Groups = 144
 	configTest5.Server.Limits.Conns = 4123
-	configTest5.Server.EnableBroadcast = true
-	configTest5.Server.ForbidCORS = true
+	configTest5.Server.Flags.EnableBroadcast = true
+	configTest5.Server.Flags.ForbidCORS = true
 
 	tests = append(tests, &Test{
 		msg: "a valid config with address, TLS settings, limits, and flags of broadcast and CORS",
@@ -544,9 +546,9 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 	configTest6.Server.TLS.Key = "path/to/key"
 	configTest6.Server.Limits.Groups = 422
 	configTest6.Server.Limits.Conns = 4123
-	configTest6.Server.EnableBroadcast = false
+	configTest6.Server.Flags.EnableBroadcast = false
 	configTest6.Server.Log.EnableJSON = true
-	configTest6.Server.EnableWeb = true
+	configTest6.Server.Flags.EnableWeb = true
 
 	tests = append(tests, &Test{
 		msg: "overwrite configuration in file config and with flags",

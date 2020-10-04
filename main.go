@@ -100,12 +100,12 @@ func main() {
 		"groups_limit": cfg.Server.Limits.Groups,
 		"seed":         cfg.Server.Seed,
 		"log_level":    cfg.Server.Log.Level,
-		"broadcast":    cfg.Server.EnableBroadcast,
-		"web":          cfg.Server.EnableWeb,
-		"cors":         !cfg.Server.ForbidCORS,
+		"broadcast":    cfg.Server.Flags.EnableBroadcast,
+		"web":          cfg.Server.Flags.EnableWeb,
+		"cors":         !cfg.Server.Flags.ForbidCORS,
 	}).Info("preparing to start server")
 
-	if cfg.Server.EnableBroadcast {
+	if cfg.Server.Flags.EnableBroadcast {
 		logger.Warning("broadcasting API method is enabled!")
 	}
 
@@ -122,7 +122,7 @@ func main() {
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path("/metrics").Handler(promhttp.Handler())
 	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
-	if cfg.Server.EnableWeb {
+	if cfg.Server.Flags.EnableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
 		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
 	} else {
@@ -142,7 +142,7 @@ func main() {
 	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	if cfg.Server.EnableBroadcast {
+	if cfg.Server.Flags.EnableBroadcast {
 		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
 	}
 	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
@@ -154,7 +154,7 @@ func main() {
 		middlewares.NewLogger(logger, logName),
 	)
 
-	if !cfg.Server.ForbidCORS {
+	if !cfg.Server.Flags.ForbidCORS {
 		n.Use(middlewares.NewCORS())
 	}
 

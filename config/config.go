@@ -26,9 +26,9 @@ const (
 	defaultLogEnableJSON = false
 	defaultLogLevel      = "info"
 
-	defaultEnableBroadcast = false
-	defaultEnableWeb       = false
-	defaultForbidCORS      = false
+	defaultFlagsEnableBroadcast = false
+	defaultFlagsEnableWeb       = false
+	defaultFlagsForbidCORS      = false
 )
 
 // Flag labels
@@ -47,9 +47,9 @@ const (
 	flagLabelLogEnableJSON = "log-json"
 	flagLabelLogLevel      = "log-level"
 
-	flagLabelEnableBroadcast = "enable-broadcast"
-	flagLabelEnableWeb       = "enable-web"
-	flagLabelForbidCORS      = "forbid-cors"
+	flagLabelFlagsEnableBroadcast = "enable-broadcast"
+	flagLabelFlagsEnableWeb       = "enable-web"
+	flagLabelFlagsForbidCORS      = "forbid-cors"
 )
 
 // Flag usage descriptions
@@ -68,9 +68,9 @@ const (
 	flagUsageLogEnableJSON = "use json format for logger"
 	flagUsageLogLevel      = "set log level: panic, fatal, error, warning (warn), info or debug"
 
-	flagUsageEnableBroadcast = "enable broadcasting API method"
-	flagUsageEnableWeb       = "enable web client"
-	flagUsageForbidCORS      = "forbid cross-origin resource sharing"
+	flagUsageFlagsEnableBroadcast = "enable broadcasting API method"
+	flagUsageFlagsEnableWeb       = "enable web client"
+	flagUsageFlagsForbidCORS      = "forbid cross-origin resource sharing"
 )
 
 // Label names
@@ -89,9 +89,9 @@ const (
 	fieldLabelLogEnableJSON = "log-json"
 	fieldLabelLogLevel      = "log-level"
 
-	fieldLabelEnableBroadcast = "enable-broadcast"
-	fieldLabelEnableWeb       = "enable-web"
-	fieldLabelForbidCORS      = "forbid-cors"
+	fieldLabelFlagsEnableBroadcast = "enable-broadcast"
+	fieldLabelFlagsEnableWeb       = "enable-web"
+	fieldLabelFlagsForbidCORS      = "forbid-cors"
 )
 
 const envVarSnakeServerConfigPath = "SNAKE_SERVER_CONFIG_PATH"
@@ -119,6 +119,12 @@ type Log struct {
 	Level      string `yaml:"level"`
 }
 
+type Flags struct {
+	EnableBroadcast bool `yaml:"enable_broadcast"`
+	EnableWeb       bool `yaml:"enable_web"`
+	ForbidCORS      bool `yaml:"forbid_cors"`
+}
+
 // Server structure contains configurations for the server
 type Server struct {
 	Address string `yaml:"address"`
@@ -128,9 +134,7 @@ type Server struct {
 	Seed   int64  `yaml:"seed"`
 	Log    Log    `yaml:"log"`
 
-	EnableBroadcast bool `yaml:"enable_broadcast"`
-	EnableWeb       bool `yaml:"enable_web"`
-	ForbidCORS      bool `yaml:"forbid_cors"`
+	Flags Flags `yaml:"flags"`
 }
 
 // Config is a base server configuration structure
@@ -155,9 +159,9 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelLogEnableJSON: c.Server.Log.EnableJSON,
 		fieldLabelLogLevel:      c.Server.Log.Level,
 
-		fieldLabelEnableBroadcast: c.Server.EnableBroadcast,
-		fieldLabelEnableWeb:       c.Server.EnableWeb,
-		fieldLabelForbidCORS:      c.Server.ForbidCORS,
+		fieldLabelFlagsEnableBroadcast: c.Server.Flags.EnableBroadcast,
+		fieldLabelFlagsEnableWeb:       c.Server.Flags.EnableWeb,
+		fieldLabelFlagsForbidCORS:      c.Server.Flags.ForbidCORS,
 	}
 }
 
@@ -184,9 +188,11 @@ var defaultConfig = Config{
 			Level:      defaultLogLevel,
 		},
 
-		EnableBroadcast: defaultEnableBroadcast,
-		EnableWeb:       defaultEnableWeb,
-		ForbidCORS:      defaultForbidCORS,
+		Flags: Flags{
+			EnableBroadcast: defaultFlagsEnableBroadcast,
+			EnableWeb:       defaultFlagsEnableWeb,
+			ForbidCORS:      defaultFlagsForbidCORS,
+		},
 	},
 }
 
@@ -234,9 +240,24 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 	flagSet.StringVar(&config.Server.Log.Level, flagLabelLogLevel, defaults.Server.Log.Level, flagUsageLogLevel)
 
 	// Flags
-	flagSet.BoolVar(&config.Server.EnableBroadcast, flagLabelEnableBroadcast, defaults.Server.EnableBroadcast, flagUsageEnableBroadcast)
-	flagSet.BoolVar(&config.Server.EnableWeb, flagLabelEnableWeb, defaults.Server.EnableWeb, flagUsageEnableWeb)
-	flagSet.BoolVar(&config.Server.ForbidCORS, flagLabelForbidCORS, defaults.Server.ForbidCORS, flagUsageForbidCORS)
+	flagSet.BoolVar(
+		&config.Server.Flags.EnableBroadcast,
+		flagLabelFlagsEnableBroadcast,
+		defaults.Server.Flags.EnableBroadcast,
+		flagUsageFlagsEnableBroadcast,
+	)
+	flagSet.BoolVar(
+		&config.Server.Flags.EnableWeb,
+		flagLabelFlagsEnableWeb,
+		defaults.Server.Flags.EnableWeb,
+		flagUsageFlagsEnableWeb,
+	)
+	flagSet.BoolVar(
+		&config.Server.Flags.ForbidCORS,
+		flagLabelFlagsForbidCORS,
+		defaults.Server.Flags.ForbidCORS,
+		flagUsageFlagsForbidCORS,
+	)
 
 	if err := flagSet.Parse(args); err != nil {
 		return defaults, fmt.Errorf("cannot parse flags: %s", err)
