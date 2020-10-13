@@ -42,9 +42,9 @@ func NewServer(cfg config.Config, groupManager *connections.ConnectionGroupManag
 	// TODO: Refactor this function.
 
 	srv.InitRoutes(
-		cfg.Server.EnableWeb,
-		cfg.Server.EnableBroadcast,
-		cfg.Server.ForbidCORS,
+		cfg.Server.Flags.EnableWeb,
+		cfg.Server.Flags.EnableBroadcast,
+		cfg.Server.Flags.ForbidCORS,
 		author,
 		license,
 		version,

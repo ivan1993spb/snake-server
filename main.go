@@ -84,12 +84,12 @@ func main() {
 		"groups_limit": cfg.Server.Limits.Groups,
 		"seed":         cfg.Server.Seed,
 		"log_level":    cfg.Server.Log.Level,
-		"broadcast":    cfg.Server.EnableBroadcast,
-		"web":          cfg.Server.EnableWeb,
-		"cors":         !cfg.Server.ForbidCORS,
+		"broadcast":    cfg.Server.Flags.EnableBroadcast,
+		"web":          cfg.Server.Flags.EnableWeb,
+		"cors":         !cfg.Server.Flags.ForbidCORS,
 	}).Info("preparing to start server")
 
-	if cfg.Server.EnableBroadcast {
+	if cfg.Server.Flags.EnableBroadcast {
 		logger.Warning("broadcasting API method is enabled!")
 	}
 

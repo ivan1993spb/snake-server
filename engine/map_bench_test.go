@@ -13,7 +13,7 @@ func rawBenchmarkMapSet(b *testing.B, width, height uint8) {
 
 	a := MustArea(width, height)
 	m := NewMap(a)
-	object := NewObject("value")
+	container := NewContainer("object")
 
 	b.ResetTimer()
 
@@ -22,7 +22,7 @@ func rawBenchmarkMapSet(b *testing.B, width, height uint8) {
 		dot := a.NewRandomDot(0, 0)
 		b.StartTimer()
 
-		m.Set(dot, object)
+		m.Set(dot, container)
 	}
 }
 
@@ -68,7 +68,7 @@ func rawBenchmarkMapGet(b *testing.B, width, height uint8) {
 				Y: y,
 			}
 			if dot.Hash()&1 == 1 {
-				m.Set(dot, NewObject("value"))
+				m.Set(dot, NewContainer("object"))
 			}
 		}
 	}
@@ -118,7 +118,7 @@ func rawBenchmarkMapMSetMRemove(b *testing.B, width, height uint8, dotsCount int
 
 	a := MustArea(width, height)
 	m := NewMap(a)
-	object := NewObject("value")
+	container := NewContainer("object")
 
 	b.ResetTimer()
 
@@ -138,7 +138,7 @@ func rawBenchmarkMapMSetMRemove(b *testing.B, width, height uint8, dotsCount int
 
 		b.StartTimer()
 
-		m.MSet(dots, object)
+		m.MSet(dots, container)
 		m.MRemove(dots)
 	}
 }
@@ -187,14 +187,14 @@ func Benchmark_Map_MSet_MRemove_255x255_d256(b *testing.B) {
 	rawBenchmarkMapMSetMRemove(b, width, height, dotsCount)
 }
 
-func rawBenchmarkMapMSetIfAbsentMRemoveObject(b *testing.B, width, height uint8, dotsCount int) {
+func rawBenchmarkMapMSetIfVacantMRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
 	b.ReportAllocs()
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	a := MustArea(width, height)
 	m := NewMap(a)
-	object := NewObject("value")
+	container := NewContainer("object")
 
 	b.ResetTimer()
 
@@ -214,12 +214,12 @@ func rawBenchmarkMapMSetIfAbsentMRemoveObject(b *testing.B, width, height uint8,
 
 		b.StartTimer()
 
-		m.MSetIfAbsent(dots, object)
-		m.MRemoveObject(dots, object)
+		m.MSetIfVacant(dots, container)
+		m.MRemoveContainer(dots, container)
 	}
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveObject_64x64_d12(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_64x64_d12(b *testing.B) {
 	const (
 		width  = 64
 		height = 64
@@ -227,10 +227,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject_64x64_d12(b *testing.B) {
 		dotsCount = 12
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveObject_128x128_d32(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_128x128_d32(b *testing.B) {
 	const (
 		width  = 128
 		height = 128
@@ -238,10 +238,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject_128x128_d32(b *testing.B) {
 		dotsCount = 32
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveObject_255x255_d64(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_255x255_d64(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -249,10 +249,10 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject_255x255_d64(b *testing.B) {
 		dotsCount = 64
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_MSetIfAbsent_MRemoveObject_255x255_d256(b *testing.B) {
+func Benchmark_Map_MSetIfVacant_MRemoveContainer_255x255_d256(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -260,17 +260,17 @@ func Benchmark_Map_MSetIfAbsent_MRemoveObject_255x255_d256(b *testing.B) {
 		dotsCount = 256
 	)
 
-	rawBenchmarkMapMSetIfAbsentMRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapMSetIfVacantMRemoveContainer(b, width, height, dotsCount)
 }
 
-func rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b *testing.B, width, height uint8, dotsCount int) {
+func rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b *testing.B, width, height uint8, dotsCount int) {
 	b.ReportAllocs()
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	a := MustArea(width, height)
 	m := NewMap(a)
-	object := NewObject("value")
+	container := NewContainer("object")
 
 	b.ResetTimer()
 
@@ -292,13 +292,13 @@ func rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b *testing.B, width, height u
 
 		b.StartTimer()
 
-		m.Set(dotSpoiler, object)
-		m.MSetIfAllAbsent(dots, object)
-		m.RemoveObject(dotSpoiler, object)
+		m.Set(dotSpoiler, container)
+		m.MSetIfAllVacant(dots, container)
+		m.RemoveContainer(dotSpoiler, container)
 	}
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_64x64_d12(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_64x64_d12(b *testing.B) {
 	const (
 		width  = 64
 		height = 64
@@ -306,10 +306,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_64x64_d12(b *testing.B) {
 		dotsCount = 12
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_128x128_d32(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_128x128_d32(b *testing.B) {
 	const (
 		width  = 128
 		height = 128
@@ -317,10 +317,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_128x128_d32(b *testing.B) {
 		dotsCount = 32
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_255x255_d64(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_255x255_d64(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -328,10 +328,10 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_255x255_d64(b *testing.B) {
 		dotsCount = 64
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
 
-func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_255x255_d256(b *testing.B) {
+func Benchmark_Map_Set_MSetIfAllVacant_RemoveContainer_255x255_d256(b *testing.B) {
 	const (
 		width  = 255
 		height = 255
@@ -339,5 +339,5 @@ func Benchmark_Map_Set_MSetIfAllAbsent_RemoveObject_255x255_d256(b *testing.B) {
 		dotsCount = 256
 	)
 
-	rawBenchmarkMapSetMSetIfAllAbsentRemoveObject(b, width, height, dotsCount)
+	rawBenchmarkMapSetMSetIfAllVacantRemoveContainer(b, width, height, dotsCount)
 }
