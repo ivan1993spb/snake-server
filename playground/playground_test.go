@@ -10,7 +10,7 @@ import (
 	"github.com/ivan1993spb/snake-server/engine"
 )
 
-func Test_NewPlayground_CreatesPlayground(t *testing.T) {
+func Test_NewPlaygroundCMap_CreatesPlaygroundCMap(t *testing.T) {
 	tests := []struct {
 		width, height uint8
 	}{
@@ -33,7 +33,7 @@ func Test_NewPlayground_CreatesPlayground(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		pg, err := NewPlayground(test.width, test.height)
+		pg, err := NewPlaygroundCMap(test.width, test.height)
 		require.Nil(t, err, "test %d", i)
 		require.NotNil(t, pg, "test %d", i)
 		require.Equal(t, test.width, pg.area.Width(), "test %d", i)
@@ -42,7 +42,7 @@ func Test_NewPlayground_CreatesPlayground(t *testing.T) {
 	}
 }
 
-func Test_Playground_CreateObject(t *testing.T) {
+func Test_PlaygroundCMap_CreateObject(t *testing.T) {
 	object := &struct {
 		a int
 	}{
@@ -50,7 +50,7 @@ func Test_Playground_CreateObject(t *testing.T) {
 	}
 	location := engine.Location{engine.Dot{0, 0}}
 
-	pg := &Playground{
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -66,14 +66,14 @@ func Test_Playground_CreateObject(t *testing.T) {
 	require.Equal(t, object, actual)
 }
 
-func Test_Playground_CreateObjectRandomRect(t *testing.T) {
+func Test_PlaygroundCMap_CreateObjectRandomRect(t *testing.T) {
 	object := &struct {
 		str string
 	}{
 		"ok",
 	}
 
-	pg := &Playground{
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -92,7 +92,7 @@ func Test_Playground_CreateObjectRandomRect(t *testing.T) {
 	}
 }
 
-func Test_Playground_UpdateObject(t *testing.T) {
+func Test_PlaygroundCMap_UpdateObject(t *testing.T) {
 	t.SkipNow()
 }
 
@@ -101,7 +101,7 @@ type TestStructure struct {
 	e, f, g, h float64
 }
 
-func Benchmark_Playground_UpdateObject(b *testing.B) {
+func Benchmark_PlaygroundCMap_UpdateObject(b *testing.B) {
 	const (
 		areaWidth  = 150
 		areaHeight = 100
@@ -113,7 +113,7 @@ func Benchmark_Playground_UpdateObject(b *testing.B) {
 		count
 	)
 
-	pg, err := NewPlayground(areaWidth, areaHeight)
+	pg, err := NewPlaygroundCMap(areaWidth, areaHeight)
 
 	if err != nil {
 		b.Fatal(err)
@@ -141,8 +141,8 @@ func Benchmark_Playground_UpdateObject(b *testing.B) {
 	}
 }
 
-func Test_Playground_DeleteObject(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_DeleteObject(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -163,8 +163,8 @@ func Test_Playground_DeleteObject(t *testing.T) {
 	require.Empty(t, pg.cMap.MGet(engine.Location{{1, 1}}.Hash()))
 }
 
-func Test_Playground_CreateObjectAvailableDots_EmptySquareScene(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectAvailableDots_EmptySquareScene(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -205,8 +205,8 @@ func Test_Playground_CreateObjectAvailableDots_EmptySquareScene(t *testing.T) {
 	}
 }
 
-func Test_Playground_CreateObjectAvailableDots_NotEmptyScene(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectAvailableDots_NotEmptyScene(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -268,8 +268,8 @@ func Test_Playground_CreateObjectAvailableDots_NotEmptyScene(t *testing.T) {
 	}
 }
 
-func Test_Playground_CreateObjectAvailableDots_LocationNotAvailable(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectAvailableDots_LocationNotAvailable(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -318,8 +318,8 @@ func Test_Playground_CreateObjectAvailableDots_LocationNotAvailable(t *testing.T
 	}
 }
 
-func Test_Playground_CreateObjectAvailableDots_LocationsIntersects(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectAvailableDots_LocationsIntersects(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -386,8 +386,8 @@ func Test_Playground_CreateObjectAvailableDots_LocationsIntersects(t *testing.T)
 	}
 }
 
-func Test_Playground_UpdateObjectAvailableDots_EmptyMap(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_UpdateObjectAvailableDots_EmptyMap(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -408,8 +408,8 @@ func Test_Playground_UpdateObjectAvailableDots_EmptyMap(t *testing.T) {
 	require.NotEmpty(t, pg.cMap.MGet(engine.Location{{1, 2}}.Hash()))
 }
 
-func Test_Playground_UpdateObjectAvailableDots_NotEmptyMap(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_UpdateObjectAvailableDots_NotEmptyMap(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -441,8 +441,8 @@ func Test_Playground_UpdateObjectAvailableDots_NotEmptyMap(t *testing.T) {
 	require.NotEmpty(t, pg.cMap.MGet(engine.Location{{1, 2}}.Hash()))
 }
 
-func Test_Playground_UpdateObjectAvailableDots_NotEmptyMap_BigObjects(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_UpdateObjectAvailableDots_NotEmptyMap_BigObjects(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -528,8 +528,8 @@ func Test_Playground_UpdateObjectAvailableDots_NotEmptyMap_BigObjects(t *testing
 	}
 }
 
-func Test_Playground_CreateObjectRandomDot_SquareEmptyPlayground(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectRandomDot_SquareEmptyPlaygroundCMap(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -557,8 +557,8 @@ func Test_Playground_CreateObjectRandomDot_SquareEmptyPlayground(t *testing.T) {
 	}
 }
 
-func Test_Playground_CreateObjectRandomDot_EmptyPlayground(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectRandomDot_EmptyPlaygroundCMap(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -586,8 +586,8 @@ func Test_Playground_CreateObjectRandomDot_EmptyPlayground(t *testing.T) {
 	}
 }
 
-func Test_Playground_CreateObjectRandomRect_SquareEmptyPlayground_SquareRect(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectRandomRect_SquareEmptyPlaygroundCMap_SquareRect(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
@@ -615,8 +615,8 @@ func Test_Playground_CreateObjectRandomRect_SquareEmptyPlayground_SquareRect(t *
 	}
 }
 
-func Test_Playground_CreateObjectRandomRect_SquareEmptyPlayground(t *testing.T) {
-	pg := &Playground{
+func Test_PlaygroundCMap_CreateObjectRandomRect_SquareEmptyPlaygroundCMap(t *testing.T) {
+	pg := &PlaygroundCMap{
 		cMap:       cmap.NewDefault(),
 		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
