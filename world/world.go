@@ -17,7 +17,7 @@ const (
 const worldEventsSendTimeout = time.Millisecond
 
 type World struct {
-	pg          *playground.PlaygroundCMap
+	pg          playground.Playground
 	chMain      chan Event
 	chsProxy    []chan Event
 	chsProxyMux *sync.RWMutex
