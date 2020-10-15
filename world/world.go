@@ -189,7 +189,7 @@ func (w *World) stop() {
 	w.chsProxy = w.chsProxy[:0]
 }
 
-func (w *World) GetObjectByDot(dot engine.Dot) interface{} {
+func (w *World) GetObjectByDot(dot engine.Dot) engine.Object {
 	if object := w.pg.GetObjectByDot(dot); object != nil {
 		w.event(Event{
 			Type:    EventTypeObjectChecked,
@@ -200,7 +200,7 @@ func (w *World) GetObjectByDot(dot engine.Dot) interface{} {
 	return nil
 }
 
-func (w *World) GetObjectsByDots(dots []engine.Dot) []interface{} {
+func (w *World) GetObjectsByDots(dots []engine.Dot) []engine.Object {
 	if objects := w.pg.GetObjectsByDots(dots); len(objects) > 0 {
 		for _, object := range objects {
 			w.event(Event{
@@ -213,7 +213,7 @@ func (w *World) GetObjectsByDots(dots []engine.Dot) []interface{} {
 	return nil
 }
 
-func (w *World) CreateObject(object interface{}, location engine.Location) error {
+func (w *World) CreateObject(object engine.Object, location engine.Location) error {
 	if err := w.pg.CreateObject(object, location); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -228,7 +228,7 @@ func (w *World) CreateObject(object interface{}, location engine.Location) error
 	return nil
 }
 
-func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
+func (w *World) CreateObjectAvailableDots(object engine.Object, location engine.Location) (engine.Location, error) {
 	location, err := w.pg.CreateObjectAvailableDots(object, location)
 	if err != nil {
 		w.event(Event{
@@ -244,7 +244,7 @@ func (w *World) CreateObjectAvailableDots(object interface{}, location engine.Lo
 	return location, nil
 }
 
-func (w *World) DeleteObject(object interface{}, location engine.Location) error {
+func (w *World) DeleteObject(object engine.Object, location engine.Location) error {
 	err := w.pg.DeleteObject(object, location)
 	if err != nil {
 		w.event(Event{
@@ -260,7 +260,7 @@ func (w *World) DeleteObject(object interface{}, location engine.Location) error
 	return nil
 }
 
-func (w *World) UpdateObject(object interface{}, old, new engine.Location) error {
+func (w *World) UpdateObject(object engine.Object, old, new engine.Location) error {
 	if err := w.pg.UpdateObject(object, old, new); err != nil {
 		w.event(Event{
 			Type:    EventTypeError,
@@ -275,7 +275,7 @@ func (w *World) UpdateObject(object interface{}, old, new engine.Location) error
 	return nil
 }
 
-func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
+func (w *World) UpdateObjectAvailableDots(object engine.Object, old, new engine.Location) (engine.Location, error) {
 	location, err := w.pg.UpdateObjectAvailableDots(object, old, new)
 	if err != nil {
 		w.event(Event{
@@ -291,7 +291,7 @@ func (w *World) UpdateObjectAvailableDots(object interface{}, old, new engine.Lo
 	return location, nil
 }
 
-func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
+func (w *World) CreateObjectRandomDot(object engine.Object) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomDot(object)
 	if err != nil {
 		w.event(Event{
@@ -307,7 +307,7 @@ func (w *World) CreateObjectRandomDot(object interface{}) (engine.Location, erro
 	return location, nil
 }
 
-func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
+func (w *World) CreateObjectRandomRect(object engine.Object, rw, rh uint8) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomRect(object, rw, rh)
 	if err != nil {
 		w.event(Event{
@@ -323,7 +323,7 @@ func (w *World) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine
 	return location, nil
 }
 
-func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
+func (w *World) CreateObjectRandomRectMargin(object engine.Object, rw, rh, margin uint8) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomRectMargin(object, rw, rh, margin)
 	if err != nil {
 		w.event(Event{
@@ -339,7 +339,7 @@ func (w *World) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin 
 	return location, nil
 }
 
-func (w *World) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+func (w *World) CreateObjectRandomByDotsMask(object engine.Object, dm *engine.DotsMask) (engine.Location, error) {
 	location, err := w.pg.CreateObjectRandomByDotsMask(object, dm)
 	if err != nil {
 		w.event(Event{
@@ -363,7 +363,7 @@ func (w *World) Area() engine.Area {
 	return w.pg.Area()
 }
 
-func (w *World) GetObjects() []interface{} {
+func (w *World) GetObjects() []engine.Object {
 	return w.pg.GetObjects()
 }
 
