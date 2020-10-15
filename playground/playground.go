@@ -23,7 +23,7 @@ func prepareMap(object interface{}, location engine.Location) map[uint16]interfa
 type Playground struct {
 	cMap *cmap.ConcurrentMap
 
-	objects    []interface{}
+	objects    []engine.Object
 	objectsMux *sync.RWMutex
 
 	area engine.Area
@@ -50,13 +50,13 @@ func NewPlayground(width, height uint8) (*Playground, error) {
 
 	return &Playground{
 		cMap:       cMap,
-		objects:    make([]interface{}, 0),
+		objects:    make([]engine.Object, 0),
 		objectsMux: &sync.RWMutex{},
 		area:       area,
 	}, nil
 }
 
-func (pg *Playground) unsafeObjectExists(object interface{}) bool {
+func (pg *Playground) unsafeObjectExists(object engine.Object) bool {
 	for i := range pg.objects {
 		if pg.objects[i] == object {
 			return true
@@ -65,7 +65,7 @@ func (pg *Playground) unsafeObjectExists(object interface{}) bool {
 	return false
 }
 
-func (pg *Playground) unsafeAddObject(object interface{}) error {
+func (pg *Playground) unsafeAddObject(object engine.Object) error {
 	if pg.unsafeObjectExists(object) {
 		return errors.New("cannot add object: object already exists")
 	}
@@ -74,13 +74,13 @@ func (pg *Playground) unsafeAddObject(object interface{}) error {
 	return nil
 }
 
-func (pg *Playground) addObject(object interface{}) error {
+func (pg *Playground) addObject(object engine.Object) error {
 	pg.objectsMux.Lock()
 	defer pg.objectsMux.Unlock()
 	return pg.unsafeAddObject(object)
 }
 
-func (pg *Playground) unsafeDeleteObject(object interface{}) error {
+func (pg *Playground) unsafeDeleteObject(object engine.Object) error {
 	for i := range pg.objects {
 		if pg.objects[i] == object {
 			pg.objects = append(pg.objects[:i], pg.objects[i+1:]...)
@@ -90,20 +90,20 @@ func (pg *Playground) unsafeDeleteObject(object interface{}) error {
 	return errors.New("delete object error: object to delete not found")
 }
 
-func (pg *Playground) deleteObject(object interface{}) error {
+func (pg *Playground) deleteObject(object engine.Object) error {
 	pg.objectsMux.Lock()
 	defer pg.objectsMux.Unlock()
 	return pg.unsafeDeleteObject(object)
 }
 
-func (pg *Playground) GetObjectByDot(dot engine.Dot) interface{} {
+func (pg *Playground) GetObjectByDot(dot engine.Dot) engine.Object {
 	if object, ok := pg.cMap.Get(dot.Hash()); ok {
 		return object
 	}
 	return nil
 }
 
-func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
+func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []engine.Object {
 	if len(dots) == 0 {
 		return nil
 	}
@@ -113,7 +113,7 @@ func (pg *Playground) GetObjectsByDots(dots []engine.Dot) []interface{} {
 		keys[i] = dot.Hash()
 	}
 
-	objects := make([]interface{}, 0)
+	objects := make([]engine.Object, 0)
 
 	for _, object := range pg.cMap.MGet(keys) {
 		flagObjectCreated := false
@@ -139,7 +139,7 @@ func (e errCreateObject) Error() string {
 	return "error create object: " + string(e)
 }
 
-func (pg *Playground) CreateObject(object interface{}, location engine.Location) error {
+func (pg *Playground) CreateObject(object engine.Object, location engine.Location) error {
 	if location.Empty() {
 		return errCreateObject("passed empty location")
 	}
@@ -168,7 +168,7 @@ func (e errCreateObjectAvailableDots) Error() string {
 	return "error create object available dots: " + string(e)
 }
 
-func (pg *Playground) CreateObjectAvailableDots(object interface{}, location engine.Location) (engine.Location, error) {
+func (pg *Playground) CreateObjectAvailableDots(object engine.Object, location engine.Location) (engine.Location, error) {
 	if location.Empty() {
 		return nil, errCreateObjectAvailableDots("passed empty location")
 	}
@@ -201,7 +201,7 @@ func (e errDeleteObject) Error() string {
 	return "error delete object: " + string(e)
 }
 
-func (pg *Playground) DeleteObject(object interface{}, location engine.Location) error {
+func (pg *Playground) DeleteObject(object engine.Object, location engine.Location) error {
 	if !location.Empty() {
 		pg.cMap.MRemoveCb(location.Hash(), func(key uint16, v interface{}, exists bool) bool {
 			return exists && v == object
@@ -221,7 +221,7 @@ func (e errUpdateObject) Error() string {
 	return "error update object: " + string(e)
 }
 
-func (pg *Playground) UpdateObject(object interface{}, old, new engine.Location) error {
+func (pg *Playground) UpdateObject(object engine.Object, old, new engine.Location) error {
 	diff := old.Difference(new)
 
 	keysToRemove := make([]uint16, 0, len(diff))
@@ -252,7 +252,7 @@ func (e errUpdateObjectAvailableDots) Error() string {
 	return "error update object available dots: " + string(e)
 }
 
-func (pg *Playground) UpdateObjectAvailableDots(object interface{}, old, new engine.Location) (engine.Location, error) {
+func (pg *Playground) UpdateObjectAvailableDots(object engine.Object, old, new engine.Location) (engine.Location, error) {
 	actualLocation := old.Copy()
 	diff := old.Difference(new)
 
@@ -298,7 +298,7 @@ func (e errCreateObjectRandomDot) Error() string {
 	return "error create object random dot: " + string(e)
 }
 
-func (pg *Playground) CreateObjectRandomDot(object interface{}) (engine.Location, error) {
+func (pg *Playground) CreateObjectRandomDot(object engine.Object) (engine.Location, error) {
 	for i := 0; i < FindRetriesNumber; i++ {
 		dot := pg.area.NewRandomDot(0, 0)
 
@@ -323,7 +323,7 @@ func (e errCreateObjectRandomRect) Error() string {
 	return "error create object random rect: " + string(e)
 }
 
-func (pg *Playground) CreateObjectRandomRect(object interface{}, rw, rh uint8) (engine.Location, error) {
+func (pg *Playground) CreateObjectRandomRect(object engine.Object, rw, rh uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRect("invalid rect size: 0")
 	}
@@ -360,7 +360,7 @@ func (e errCreateObjectRandomRectMargin) Error() string {
 	return "error create object random rect with margin: " + string(e)
 }
 
-func (pg *Playground) CreateObjectRandomRectMargin(object interface{}, rw, rh, margin uint8) (engine.Location, error) {
+func (pg *Playground) CreateObjectRandomRectMargin(object engine.Object, rw, rh, margin uint8) (engine.Location, error) {
 	if rw*rh == 0 {
 		return nil, errCreateObjectRandomRectMargin("invalid rect size: 0")
 	}
@@ -402,7 +402,7 @@ func (e errCreateObjectRandomByDotsMask) Error() string {
 	return "error create object random by dots mask: " + string(e)
 }
 
-func (pg *Playground) CreateObjectRandomByDotsMask(object interface{}, dm *engine.DotsMask) (engine.Location, error) {
+func (pg *Playground) CreateObjectRandomByDotsMask(object engine.Object, dm *engine.DotsMask) (engine.Location, error) {
 	if !pg.area.ContainsRect(engine.NewRect(0, 0, dm.Width(), dm.Height())) {
 		return nil, errCreateObjectRandomByDotsMask("area cannot contain located by dots mask object")
 	}
@@ -442,13 +442,13 @@ func (pg *Playground) Area() engine.Area {
 	return pg.area
 }
 
-func (pg *Playground) unsafeGetObjects() []interface{} {
-	objects := make([]interface{}, len(pg.objects))
+func (pg *Playground) unsafeGetObjects() []engine.Object {
+	objects := make([]engine.Object, len(pg.objects))
 	copy(objects, pg.objects)
 	return objects
 }
 
-func (pg *Playground) GetObjects() []interface{} {
+func (pg *Playground) GetObjects() []engine.Object {
 	pg.objectsMux.RLock()
 	defer pg.objectsMux.RUnlock()
 	return pg.unsafeGetObjects()
