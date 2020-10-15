@@ -17,7 +17,7 @@ const (
 const worldEventsSendTimeout = time.Millisecond
 
 type World struct {
-	pg          *playground.Playground
+	pg          *playground.PlaygroundCMap
 	chMain      chan Event
 	chsProxy    []chan Event
 	chsProxyMux *sync.RWMutex
@@ -29,7 +29,7 @@ type World struct {
 }
 
 func NewWorld(width, height uint8) (*World, error) {
-	pg, err := playground.NewPlayground(width, height)
+	pg, err := playground.NewPlaygroundCMap(width, height)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create world: %s", err)
 	}
