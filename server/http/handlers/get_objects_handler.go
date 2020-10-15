@@ -26,7 +26,7 @@ type responseGetObjectsMap struct {
 }
 
 type responseGetObjectsHandler struct {
-	Objects []interface{}         `json:"objects"`
+	Objects interface{}           `json:"objects"`
 	Map     responseGetObjectsMap `json:"map"`
 }
 
