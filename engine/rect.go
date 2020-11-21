@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// Rect struct represents a rectangle object
 type Rect struct {
 	x uint8
 	y uint8
@@ -12,7 +13,7 @@ type Rect struct {
 	h uint8
 }
 
-// NewRect creates rect
+// NewRect returns a new rectangle
 func NewRect(x, y, w, h uint8) Rect {
 	return Rect{
 		x: x,
@@ -22,38 +23,47 @@ func NewRect(x, y, w, h uint8) Rect {
 	}
 }
 
+// Width returns rectangle's width
 func (r Rect) Width() uint8 {
 	return r.w
 }
 
+// Height returns rectangle's height
 func (r Rect) Height() uint8 {
 	return r.h
 }
 
+// X returns the X-coordinate of a rectangle
 func (r Rect) X() uint8 {
 	return r.x
 }
 
+// Y returns the Y-coordinate of a rectangle
 func (r Rect) Y() uint8 {
 	return r.y
 }
 
+// ContainsDot returns true if a rectangle contains a given dot
 func (r Rect) ContainsDot(d Dot) bool {
 	return r.x <= d.X && r.y <= d.Y && r.x+r.w > d.X && r.y+r.h > d.Y
 }
 
-func (r1 Rect) ContainsRect(r2 Rect) bool {
-	return r1.x <= r2.x && r1.y <= r2.y && r1.x+r1.w >= r2.x+r2.w && r1.y+r1.h >= r2.y+r2.h
+// ContainsRect returns true if a rectangle contains another rectangle
+func (r Rect) ContainsRect(rect Rect) bool {
+	return r.x <= rect.x && r.y <= rect.y && r.x+r.w >= rect.x+rect.w && r.y+r.h >= rect.y+rect.h
 }
 
-func (r1 Rect) Equals(r2 Rect) bool {
-	return r1 == r2
+// Equals returns true if rectangles are equal
+func (r Rect) Equals(rect Rect) bool {
+	return r == rect
 }
 
+// DotCount returns a dot number of a rectangle
 func (r Rect) DotCount() uint16 {
 	return uint16(r.w) * uint16(r.h)
 }
 
+// Dot returns a dot on a rectangle by its index
 func (r Rect) Dot(i uint16) Dot {
 	return Dot{uint8(i%uint16(r.w)) + r.x, uint8(i/uint16(r.w)) + r.y}
 }
@@ -75,6 +85,7 @@ func (r Rect) MarshalJSON() ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
+// Dots returns a slice of all dots in a rectangle
 func (r Rect) Dots() []Dot {
 	dots := make([]Dot, 0, r.DotCount())
 
@@ -85,6 +96,7 @@ func (r Rect) Dots() []Dot {
 	return dots
 }
 
+// Location returns the location of a rectangle
 func (r Rect) Location() Location {
 	object := make(Location, 0, r.DotCount())
 

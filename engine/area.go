@@ -153,14 +153,15 @@ func (e *ErrAreaNotContainsDot) Error() string {
 	return "area does not contain dot: " + e.Dot.String()
 }
 
-// Navigate calculates and returns dot placed on distance dis dots from passed dot in direction dir
+// Navigate calculates and returns a dot placed on a distance dis dots from a
+// given dot in a direction dir
 func (a Area) Navigate(dot Dot, dir Direction, dis uint8) (Dot, error) {
-	// If distance is zero return passed dot
+	// If the distance is zero return the given dot
 	if dis == 0 {
 		return dot, nil
 	}
 
-	// Area must contain passed dot
+	// Area must contain the given dot
 	if !a.ContainsDot(dot) {
 		return Dot{}, &ErrNavigation{
 			Err: &ErrAreaNotContainsDot{
