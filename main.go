@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/evalphobia/logrus_sentry"
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
 	"github.com/prometheus/client_golang/prometheus"
@@ -80,6 +81,18 @@ func main() {
 	logger := logger(cfg.Server.Log)
 	if err != nil {
 		logger.Fatalln("cannot load config:", err)
+	}
+
+	if cfg.Server.Sentry.Enable {
+		hook, err := logrus_sentry.NewAsyncSentryHook(cfg.Server.Sentry.DSN, []logrus.Level{
+			logrus.PanicLevel,
+			logrus.FatalLevel,
+			logrus.ErrorLevel,
+		})
+
+		if err == nil {
+			logger.Hooks.Add(hook)
+		}
 	}
 
 	logger.WithFields(logrus.Fields{

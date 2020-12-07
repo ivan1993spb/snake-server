@@ -3,7 +3,10 @@ module github.com/ivan1993spb/snake-server
 go 1.14
 
 require (
+	github.com/certifi/gocertifi v0.0.0-20200922220541-2c3bb06c6054 // indirect
 	github.com/elazarl/go-bindata-assetfs v0.0.0-20180223160309-38087fe4dafb
+	github.com/evalphobia/logrus_sentry v0.8.2
+	github.com/getsentry/raven-go v0.2.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v0.0.0-20170704074345-ac112f7d75a0
 	github.com/gorilla/websocket v0.0.0-20180420171612-21ab95fa12b9
