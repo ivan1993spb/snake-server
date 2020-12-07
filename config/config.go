@@ -29,6 +29,9 @@ const (
 	defaultFlagsEnableBroadcast = false
 	defaultFlagsEnableWeb       = false
 	defaultFlagsForbidCORS      = false
+
+	defaultSentryEnable = false
+	defaultSentryDSN    = ""
 )
 
 // Flag labels
@@ -50,6 +53,9 @@ const (
 	flagLabelFlagsEnableBroadcast = "enable-broadcast"
 	flagLabelFlagsEnableWeb       = "enable-web"
 	flagLabelFlagsForbidCORS      = "forbid-cors"
+
+	flagLabelSentryEnable = "sentry-enable"
+	flagLabelSentryDSN    = "sentry-dsn"
 )
 
 // Flag usage descriptions
@@ -71,6 +77,9 @@ const (
 	flagUsageFlagsEnableBroadcast = "enable broadcasting API method"
 	flagUsageFlagsEnableWeb       = "enable web client"
 	flagUsageFlagsForbidCORS      = "forbid cross-origin resource sharing"
+
+	flagUsageSentryEnable = "enable sending logs to sentry"
+	flagUsageSentryDSN    = "sentry's DSN"
 )
 
 // Label names
@@ -92,6 +101,9 @@ const (
 	fieldLabelFlagsEnableBroadcast = "enable-broadcast"
 	fieldLabelFlagsEnableWeb       = "enable-web"
 	fieldLabelFlagsForbidCORS      = "forbid-cors"
+
+	fieldLabelSentryEnable = "sentry-enable"
+	fieldLabelSentryDSN    = "sentry-dsn"
 )
 
 const envVarSnakeServerConfigPath = "SNAKE_SERVER_CONFIG_PATH"
@@ -125,6 +137,11 @@ type Flags struct {
 	ForbidCORS      bool `yaml:"forbid_cors"`
 }
 
+type Sentry struct {
+	Enable bool   `yaml:"enable"`
+	DSN    string `yaml:"dsn"`
+}
+
 // Server structure contains configurations for the server
 type Server struct {
 	Address string `yaml:"address"`
@@ -135,6 +152,8 @@ type Server struct {
 	Log    Log    `yaml:"log"`
 
 	Flags Flags `yaml:"flags"`
+
+	Sentry `yaml:"sentry"`
 }
 
 // Config is a base server configuration structure
@@ -162,6 +181,9 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelFlagsEnableBroadcast: c.Server.Flags.EnableBroadcast,
 		fieldLabelFlagsEnableWeb:       c.Server.Flags.EnableWeb,
 		fieldLabelFlagsForbidCORS:      c.Server.Flags.ForbidCORS,
+
+		fieldLabelSentryEnable: c.Server.Sentry.Enable,
+		fieldLabelSentryDSN:    c.Server.Sentry.DSN,
 	}
 }
 
@@ -194,6 +216,11 @@ var defaultConfig = Config{
 			EnableBroadcast: defaultFlagsEnableBroadcast,
 			EnableWeb:       defaultFlagsEnableWeb,
 			ForbidCORS:      defaultFlagsForbidCORS,
+		},
+
+		Sentry: Sentry{
+			Enable: defaultSentryEnable,
+			DSN:    defaultSentryDSN,
 		},
 	},
 }
@@ -260,6 +287,10 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 		defaults.Server.Flags.ForbidCORS,
 		flagUsageFlagsForbidCORS,
 	)
+
+	// Sentry
+	flagSet.BoolVar(&config.Server.Sentry.Enable, flagLabelSentryEnable, defaults.Server.Sentry.Enable, flagUsageSentryEnable)
+	flagSet.StringVar(&config.Server.Sentry.DSN, flagLabelSentryDSN, defaults.Server.Sentry.DSN, flagUsageSentryDSN)
 
 	if err := flagSet.Parse(args); err != nil {
 		return defaults, fmt.Errorf("cannot parse flags: %s", err)
