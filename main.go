@@ -34,16 +34,18 @@ var (
 
 const logName = "api"
 
-func usage() {
-	fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
-	fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
-	fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
-	flag.PrintDefaults()
+func usage(f *flag.FlagSet) func() {
+	return func() {
+		fmt.Fprint(os.Stderr, "Welcome to snake-server!\n\n")
+		fmt.Fprintf(os.Stderr, "Server version %s, build %s\n\n", Version, Build)
+		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
+		f.PrintDefaults()
+	}
 }
 
 func configurate() (config.Config, error) {
 	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	f.Usage = usage
+	f.Usage = usage(f)
 	cfg, err := config.Configurate(afero.NewOsFs(), f, os.Args[1:])
 	return cfg, err
 }
