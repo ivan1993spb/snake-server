@@ -13,7 +13,7 @@ COPY . .
 
 ENV CGO_ENABLED=0
 
-RUN go build -ldflags "-X main.Version=$VERSION -X main.Build=$BUILD" \
+RUN go build -ldflags "-s -w -X main.Version=$VERSION -X main.Build=$BUILD" \
     -v -x -o /snake-server github.com/ivan1993spb/snake-server
 
 FROM scratch
