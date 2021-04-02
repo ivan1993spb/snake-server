@@ -159,6 +159,26 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 		expectErr:    false,
 	})
 
+	// Test case 9
+	configTest9 := defaultConfig
+	configTest9.Server.Address = "snakeonline.xyz:3211"
+	configTest9.Server.Sentry.Enable = true
+	configTest9.Server.Sentry.DSN = "https://public@sentry.example.com/44"
+
+	tests = append(tests, &Test{
+		msg: "change address, sentry settings",
+
+		args: []string{
+			"-address", "snakeonline.xyz:3211",
+			"-sentry-enable",
+			"-sentry-dsn", "https://public@sentry.example.com/44",
+		},
+		defaults: defaultConfig,
+
+		expectConfig: configTest9,
+		expectErr:    false,
+	})
+
 	for n, test := range tests {
 		t.Log(test.msg)
 
@@ -254,6 +274,23 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 		expectErr:    false,
 	})
 
+	// Test case 6
+	configTest6 := defaultConfig
+	configTest6.Server.Limits.Groups = 144
+	configTest6.Server.Limits.Conns = 4123
+	configTest6.Server.Sentry.Enable = true
+	configTest6.Server.Sentry.DSN = "https://public@sentry.example.com/1"
+
+	tests = append(tests, &Test{
+		msg: "limits and sentry",
+
+		input:    ConfigYAMLSampleLimitsAndSentry,
+		defaults: defaultConfig,
+
+		expectConfig: configTest6,
+		expectErr:    false,
+	})
+
 	for n, test := range tests {
 		t.Log(test.msg)
 
@@ -289,6 +326,9 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelFlagsEnableBroadcast: true,
 		fieldLabelFlagsEnableWeb:       false,
 		fieldLabelFlagsForbidCORS:      true,
+
+		fieldLabelSentryEnable: true,
+		fieldLabelSentryDSN:    "https://public@sentry.example.com/1",
 	}, Config{
 		Server: Server{
 			Address: ":9999",
@@ -315,6 +355,11 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 				EnableBroadcast: true,
 				EnableWeb:       false,
 				ForbidCORS:      true,
+			},
+
+			Sentry: Sentry{
+				Enable: true,
+				DSN:    "https://public@sentry.example.com/1",
 			},
 		},
 	}.Fields())
