@@ -2,10 +2,7 @@
 
 package player
 
-import (
-	"github.com/ivan1993spb/snake-server/engine"
-	"github.com/ivan1993spb/snake-server/world"
-)
+import "github.com/ivan1993spb/snake-server/world"
 
 type MessageType uint8
 
@@ -108,9 +105,9 @@ func NewMessageCountdown(countdown uint) Message {
 	}
 }
 
-type MessageObjects []engine.Object
+type MessageObjects interface{}
 
-func NewMessageObjects(objects []engine.Object) Message {
+func NewMessageObjects(objects interface{}) Message {
 	return Message{
 		Type:    MessageTypeObjects,
 		Payload: MessageObjects(objects),
