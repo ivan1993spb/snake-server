@@ -28,26 +28,22 @@ func fieldIsEmpty(p unsafe.Pointer) bool {
 
 // Map structure represents core map
 type Map struct {
-	fields [][]*unsafe.Pointer
-	area   Area
+	field map[Dot]*unsafe.Pointer
+	area  Area
 }
 
 // NewMap creates and returns a new empty Map with area a
 func NewMap(a Area) *Map {
-	m := make([][]*unsafe.Pointer, a.height)
+	field := make(map[Dot]*unsafe.Pointer, a.Size())
 
-	for y := uint8(0); y < a.height; y++ {
-		m[y] = make([]*unsafe.Pointer, a.width)
-
-		for x := uint8(0); x < a.width; x++ {
-			var emptyFieldPointer = unsafe.Pointer(uintptr(0))
-			m[y][x] = &emptyFieldPointer
-		}
+	for _, dot := range a.Dots() {
+		var emptyFieldPointer = unsafe.Pointer(uintptr(0))
+		field[dot] = &emptyFieldPointer
 	}
 
 	return &Map{
-		fields: m,
-		area:   a,
+		field: field,
+		area:  a,
 	}
 }
 
@@ -64,7 +60,7 @@ func (m *Map) Print() {
 		fmt.Printf("%4d |", y)
 
 		for x := uint8(0); x < m.area.width; x++ {
-			if p := atomic.LoadPointer(m.fields[y][x]); fieldIsEmpty(p) {
+			if p := atomic.LoadPointer(m.field[Dot{x, y}]); fieldIsEmpty(p) {
 				fmt.Print(" .")
 			} else {
 				fmt.Print(" x")
@@ -77,14 +73,14 @@ func (m *Map) Print() {
 
 // Has returns true if there is a container under the dot dot, otherwise returns false
 func (m *Map) Has(dot Dot) bool {
-	p := atomic.LoadPointer(m.fields[dot.Y][dot.X])
+	p := atomic.LoadPointer(m.field[dot])
 	return !fieldIsEmpty(p)
 }
 
 // Set sets given container under specified dot
 func (m *Map) Set(dot Dot, container *Container) {
 	if m.area.ContainsDot(dot) {
-		atomic.SwapPointer(m.fields[dot.Y][dot.X], unsafe.Pointer(container))
+		atomic.SwapPointer(m.field[dot], unsafe.Pointer(container))
 	}
 }
 
@@ -94,7 +90,7 @@ func (m *Map) Get(dot Dot) (*Container, bool) {
 		return nil, false
 	}
 
-	p := atomic.LoadPointer(m.fields[dot.Y][dot.X])
+	p := atomic.LoadPointer(m.field[dot])
 
 	if fieldIsEmpty(p) {
 		return nil, false
@@ -111,20 +107,20 @@ func (m *Map) SetIfVacant(dot Dot, container *Container) bool {
 	if !m.area.ContainsDot(dot) {
 		return false
 	}
-	return storeContainer(m.fields[dot.Y][dot.X], container)
+	return storeContainer(m.field[dot], container)
 }
 
 // Remove removes a container under the specified dot
 func (m *Map) Remove(dot Dot) {
 	if m.area.ContainsDot(dot) {
-		empty(m.fields[dot.Y][dot.X])
+		empty(m.field[dot])
 	}
 }
 
 // RemoveContainer removes a certain passed container
 func (m *Map) RemoveContainer(dot Dot, container *Container) {
 	if m.area.ContainsDot(dot) {
-		emptyContainer(m.fields[dot.Y][dot.X], container)
+		emptyContainer(m.field[dot], container)
 	}
 }
 
@@ -133,7 +129,7 @@ func (m *Map) RemoveContainer(dot Dot, container *Container) {
 func (m *Map) HasAny(dots []Dot) bool {
 	for _, dot := range dots {
 		if m.area.ContainsDot(dot) {
-			p := atomic.LoadPointer(m.fields[dot.Y][dot.X])
+			p := atomic.LoadPointer(m.field[dot])
 			if !fieldIsEmpty(p) {
 				return true
 			}
@@ -151,7 +147,7 @@ func (m *Map) HasAll(dots []Dot) bool {
 			return false
 		}
 
-		p := atomic.LoadPointer(m.fields[dot.Y][dot.X])
+		p := atomic.LoadPointer(m.field[dot])
 		if p == unsafe.Pointer(uintptr(0)) {
 			return false
 		}
@@ -169,7 +165,7 @@ func (m *Map) MGet(dots []Dot) map[Dot]*Container {
 			continue
 		}
 
-		p := atomic.LoadPointer(m.fields[dot.Y][dot.X])
+		p := atomic.LoadPointer(m.field[dot])
 		if !fieldIsEmpty(p) {
 			container := (*Container)(p)
 			items[dot] = container
@@ -183,7 +179,7 @@ func (m *Map) MGet(dots []Dot) map[Dot]*Container {
 func (m *Map) MRemove(dots []Dot) {
 	for _, dot := range dots {
 		if m.area.ContainsDot(dot) {
-			empty(m.fields[dot.Y][dot.X])
+			empty(m.field[dot])
 		}
 	}
 }
@@ -192,7 +188,7 @@ func (m *Map) MRemove(dots []Dot) {
 func (m *Map) MRemoveContainer(dots []Dot, container *Container) {
 	for _, dot := range dots {
 		if m.area.ContainsDot(dot) {
-			emptyContainer(m.fields[dot.Y][dot.X], container)
+			emptyContainer(m.field[dot], container)
 		}
 	}
 }
@@ -201,7 +197,7 @@ func (m *Map) MRemoveContainer(dots []Dot, container *Container) {
 func (m *Map) MSet(dots []Dot, container *Container) {
 	for _, dot := range dots {
 		if m.area.ContainsDot(dot) {
-			atomic.SwapPointer(m.fields[dot.Y][dot.X], unsafe.Pointer(container))
+			atomic.SwapPointer(m.field[dot], unsafe.Pointer(container))
 		}
 	}
 }
@@ -217,7 +213,7 @@ func (m *Map) MSetIfAllVacant(dots []Dot, container *Container) bool {
 			continue
 		}
 
-		if !storeContainer(m.fields[dot.Y][dot.X], container) {
+		if !storeContainer(m.field[dot], container) {
 			break
 		}
 	}
@@ -226,7 +222,7 @@ func (m *Map) MSetIfAllVacant(dots []Dot, container *Container) bool {
 		return true
 	}
 
-	i -= 1
+	i--
 
 	// Rollback
 	for ; i >= 0; i-- {
@@ -234,7 +230,7 @@ func (m *Map) MSetIfAllVacant(dots []Dot, container *Container) bool {
 		if !m.area.ContainsDot(dot) {
 			continue
 		}
-		emptyContainer(m.fields[dot.Y][dot.X], container)
+		emptyContainer(m.field[dot], container)
 	}
 
 	return false
@@ -251,7 +247,7 @@ func (m *Map) MSetIfVacant(dots []Dot, container *Container) []Dot {
 			continue
 		}
 
-		if storeContainer(m.fields[dot.Y][dot.X], container) {
+		if storeContainer(m.field[dot], container) {
 			result = append(result, dot)
 		}
 	}

@@ -57,20 +57,16 @@ func getSampleContainerThird() *Container {
 }
 
 func getSampleMapArea(a Area) *Map {
-	m := make([][]*unsafe.Pointer, a.height)
+	field := make(map[Dot]*unsafe.Pointer)
 
-	for y := uint8(0); y < a.height; y++ {
-		m[y] = make([]*unsafe.Pointer, a.width)
-
-		for x := uint8(0); x < a.width; x++ {
-			var emptyFieldPointer = unsafe.Pointer(uintptr(0))
-			m[y][x] = &emptyFieldPointer
-		}
+	for _, dot := range a.Dots() {
+		var emptyFieldPointer = unsafe.Pointer(uintptr(0))
+		field[dot] = &emptyFieldPointer
 	}
 
 	return &Map{
-		fields: m,
-		area:   a,
+		field: field,
+		area:  a,
 	}
 }
 
@@ -169,7 +165,7 @@ func Test_NewMap_CreatesEmptyMap(t *testing.T) {
 
 	for y := uint8(0); y < area.height; y++ {
 		for x := uint8(0); x < area.width; x++ {
-			p := atomic.LoadPointer(m.fields[y][x])
+			p := atomic.LoadPointer(m.field[Dot{x, y}])
 			require.True(t, uintptr(0) == uintptr(p))
 		}
 	}
@@ -199,9 +195,9 @@ func Test_Map_Print_Prints(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(getSampleContainerThird())
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	m.Print()
 }
@@ -222,9 +218,9 @@ func Test_Map_Has_ReturnsValidIndicator(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(getSampleContainerThird())
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	for _, dot := range area.Dots() {
 		if dot.Equals(dotFirst) || dot.Equals(dotSecond) || dot.Equals(dotThird) {
@@ -244,7 +240,7 @@ func Test_Map_Set(t *testing.T) {
 	m.Set(dotFirst, containerFirst)
 
 	for _, dot := range area.Dots() {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 
 		if dot.Equals(dotFirst) {
 			require.Equal(t, uintptr(unsafe.Pointer(containerFirst)), uintptr(pointer))
@@ -273,9 +269,9 @@ func Test_Map_Get_ReturnsValidContainer(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	for _, dot := range area.Dots() {
 		result, ok := m.Get(dot)
@@ -353,9 +349,9 @@ func Test_Map_SetIfVacant_OccupiedDots(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{11, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
+	m.field[dot1] = &pointerToContainerSecond
+	m.field[dot2] = &pointerToContainerSecond
+	m.field[dot3] = &pointerToContainerSecond
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		ok := m.SetIfVacant(dot, containerFirst)
@@ -382,16 +378,16 @@ func Test_Map_Remove_RemovesContainers(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	m.Remove(dotFirst)
 	m.Remove(dotSecond)
 	m.Remove(dotThird)
 
 	for _, dot := range area.Dots() {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(0), uintptr(pointer))
 	}
 }
@@ -415,16 +411,16 @@ func Test_Map_Remove_DoesNothingInCaseOfInvalidDots(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	m.Remove(Dot{201, 0})
 	m.Remove(Dot{202, 105})
 	m.Remove(Dot{203, 0})
 
 	for _, dot := range area.Dots() {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 
 		switch {
 		case dot.Equals(dotFirst):
@@ -450,14 +446,14 @@ func Test_Map_RemoveContainer_IgnoresInvalidDot(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
+	m.field[dot1] = &pointerToContainerFirst
+	m.field[dot2] = &pointerToContainerFirst
+	m.field[dot3] = &pointerToContainerFirst
 
 	m.RemoveContainer(Dot{124, 212}, containerFirst)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
 	}
 }
@@ -473,16 +469,16 @@ func Test_Map_RemoveContainer_RemovesContainer(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
+	m.field[dot1] = &pointerToContainerFirst
+	m.field[dot2] = &pointerToContainerFirst
+	m.field[dot3] = &pointerToContainerFirst
 
 	m.RemoveContainer(dot1, containerFirst)
 	m.RemoveContainer(dot2, containerFirst)
 	m.RemoveContainer(dot3, containerFirst)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(0), uintptr(pointer), "dot number "+strconv.Itoa(i))
 	}
 }
@@ -500,16 +496,16 @@ func Test_Map_RemoveContainer_DoesNotRemoveMismatchedContainer(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
+	m.field[dot1] = &pointerToContainerFirst
+	m.field[dot2] = &pointerToContainerFirst
+	m.field[dot3] = &pointerToContainerFirst
 
 	m.RemoveContainer(dot1, containerSecond)
 	m.RemoveContainer(dot2, containerSecond)
 	m.RemoveContainer(dot3, containerSecond)
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer), "dot number "+strconv.Itoa(i))
 	}
 }
@@ -525,9 +521,9 @@ func Test_Map_HasAny_ReturnsCorrectResult(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerFirst
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerFirst
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerFirst
+	m.field[dot1] = &pointerToContainerFirst
+	m.field[dot2] = &pointerToContainerFirst
+	m.field[dot3] = &pointerToContainerFirst
 
 	location1 := []Dot{
 		// Dot to be skipped
@@ -629,9 +625,9 @@ func Test_Map_HasAll_returnsCorrectResult(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	tests := []struct {
 		dots     []Dot
@@ -684,9 +680,9 @@ func Test_Map_MGet_returnsValidDotContainerMap(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	dots := []Dot{
 		{200, 66}, // Dot to be skipped
@@ -749,9 +745,9 @@ func Test_Map_MRemove_removes(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -767,7 +763,7 @@ func Test_Map_MRemove_removes(t *testing.T) {
 	m.MRemove(dots)
 
 	for _, dot := range area.Dots() {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(0), uintptr(pointer))
 	}
 }
@@ -791,9 +787,9 @@ func Test_Map_MRemoveContainer_removesCertainContainers(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -809,17 +805,17 @@ func Test_Map_MRemoveContainer_removesCertainContainers(t *testing.T) {
 	m.MRemoveContainer(dots, containerSecond)
 
 	{
-		pointer := *m.fields[dotFirst.Y][dotFirst.X]
+		pointer := *m.field[dotFirst]
 		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer))
 	}
 
 	{
-		pointer := *m.fields[dotSecond.Y][dotSecond.X]
+		pointer := *m.field[dotSecond]
 		require.Equal(t, uintptr(0), uintptr(pointer))
 	}
 
 	{
-		pointer := *m.fields[dotThird.Y][dotThird.X]
+		pointer := *m.field[dotThird]
 		require.Equal(t, uintptr(pointerToContainerThird), uintptr(pointer))
 	}
 }
@@ -843,9 +839,9 @@ func Test_Map_MSet(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -862,7 +858,7 @@ func Test_Map_MSet(t *testing.T) {
 
 	for i, dot := range dots {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
@@ -879,9 +875,9 @@ func Test_Map_MSetIfAllVacant_SetsContainerOnMapCorrectly(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{11, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
+	m.field[dot1] = &pointerToContainerSecond
+	m.field[dot2] = &pointerToContainerSecond
+	m.field[dot3] = &pointerToContainerSecond
 
 	location := []Dot{
 		// Dot to be skipped
@@ -914,13 +910,13 @@ func Test_Map_MSetIfAllVacant_SetsContainerOnMapCorrectly(t *testing.T) {
 
 	for i, dot := range location {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 			require.NotEqual(t, uintptr(0), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
-		pointer := *m.fields[dot.Y][dot.X]
+		pointer := *m.field[dot]
 		require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 	}
 }
@@ -936,9 +932,9 @@ func Test_Map_MSetIfAllVacant_RollbacksChangesAndReturnsFalse(t *testing.T) {
 	dot2 := Dot{2, 30}
 	dot3 := Dot{1, 5}
 
-	m.fields[dot1.Y][dot1.X] = &pointerToContainerSecond
-	m.fields[dot2.Y][dot2.X] = &pointerToContainerSecond
-	m.fields[dot3.Y][dot3.X] = &pointerToContainerSecond
+	m.field[dot1] = &pointerToContainerSecond
+	m.field[dot2] = &pointerToContainerSecond
+	m.field[dot3] = &pointerToContainerSecond
 
 	location := []Dot{
 		// Dot to be skipped
@@ -968,7 +964,7 @@ func Test_Map_MSetIfAllVacant_RollbacksChangesAndReturnsFalse(t *testing.T) {
 
 	for i, dot := range location {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 
 			if dot.Equals(dot3) {
 				require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
@@ -980,7 +976,7 @@ func Test_Map_MSetIfAllVacant_RollbacksChangesAndReturnsFalse(t *testing.T) {
 
 	for i, dot := range []Dot{dot1, dot2, dot3} {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
@@ -1005,9 +1001,9 @@ func Test_Map_MSetIfVacant(t *testing.T) {
 	pointerToContainerThird := unsafe.Pointer(containerThird)
 	dotThird := Dot{12, 0}
 
-	m.fields[dotFirst.Y][dotFirst.X] = &pointerToContainerFirst
-	m.fields[dotSecond.Y][dotSecond.X] = &pointerToContainerSecond
-	m.fields[dotThird.Y][dotThird.X] = &pointerToContainerThird
+	m.field[dotFirst] = &pointerToContainerFirst
+	m.field[dotSecond] = &pointerToContainerSecond
+	m.field[dotThird] = &pointerToContainerThird
 
 	dots := []Dot{
 		{201, 66}, // Dot to be skipped
@@ -1027,7 +1023,7 @@ func Test_Map_MSetIfVacant(t *testing.T) {
 	t.Log("Check result dot set")
 	for i, dot := range resultDots {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
@@ -1035,19 +1031,19 @@ func Test_Map_MSetIfVacant(t *testing.T) {
 	t.Log("Check if containers has been linked correclty on the map")
 	for i, dot := range []Dot{{11, 66}, {4, 2}, {20, 4}, dotSecond} {
 		if area.ContainsDot(dot) {
-			pointer := *m.fields[dot.Y][dot.X]
+			pointer := *m.field[dot]
 			require.Equal(t, uintptr(pointerToContainerSecond), uintptr(pointer), "number "+strconv.Itoa(i))
 		}
 	}
 
 	t.Log("Check other containers")
 	{
-		pointer := *m.fields[dotFirst.Y][dotFirst.X]
+		pointer := *m.field[dotFirst]
 		require.Equal(t, uintptr(pointerToContainerFirst), uintptr(pointer))
 	}
 
 	{
-		pointer := *m.fields[dotThird.Y][dotThird.X]
+		pointer := *m.field[dotThird]
 		require.Equal(t, uintptr(pointerToContainerThird), uintptr(pointer))
 	}
 }
