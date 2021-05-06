@@ -105,9 +105,9 @@ func NewMessageCountdown(countdown uint) Message {
 	}
 }
 
-type MessageObjects []interface{}
+type MessageObjects interface{}
 
-func NewMessageObjects(objects []interface{}) Message {
+func NewMessageObjects(objects interface{}) Message {
 	return Message{
 		Type:    MessageTypeObjects,
 		Payload: MessageObjects(objects),

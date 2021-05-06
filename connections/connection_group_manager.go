@@ -2,8 +2,10 @@ package connections
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -148,20 +150,110 @@ func (m *ConnectionGroupManager) GroupLimit() int {
 	return m.groupLimit
 }
 
+func (m *ConnectionGroupManager) unsafeGroupCount() int {
+	return len(m.groups)
+}
+
 func (m *ConnectionGroupManager) GroupCount() int {
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
-	return len(m.groups)
+	return m.unsafeGroupCount()
+}
+
+func (m *ConnectionGroupManager) unsafeConnCount() int {
+	var count = 0
+	for _, group := range m.groups {
+		count += group.GetCount()
+	}
+	return count
+}
+
+func (m *ConnectionGroupManager) unsafeCapacity() float32 {
+	var count = m.unsafeConnCount()
+	return float32(count) / float32(m.connsLimit)
 }
 
 func (m *ConnectionGroupManager) Capacity() float32 {
 	m.groupsMutex.RLock()
 	defer m.groupsMutex.RUnlock()
+	return m.unsafeCapacity()
+}
 
-	var count = 0
-	for _, group := range m.groups {
-		count += group.GetCount()
+const (
+	metricServerCapacityFQName     = "server_capacity"
+	metricServerGamesFQName        = "server_games"
+	metricServerGamesPlayersFQName = "server_games_players"
+	metricServerGamesRateFQName    = "server_games_rate"
+
+	metricServerCapacityHelp     = "Capacity of the server"
+	metricServerGamesHelp        = "Games number"
+	metricServerGamesPlayersHelp = "Players number"
+	metricServerGamesRateHelp    = "Game rate"
+
+	metricServerGamesPlayersGameIdLabel = "game_id"
+	metricServerGamesRateGameIdLabel    = "game_id"
+)
+
+var (
+	metricServerCapacityDesc = prometheus.NewDesc(
+		metricServerCapacityFQName,
+		metricServerCapacityHelp,
+		nil,
+		nil,
+	)
+	metricServerGamesDesc = prometheus.NewDesc(
+		metricServerGamesFQName,
+		metricServerGamesHelp,
+		nil,
+		nil,
+	)
+	metricServerGamesPlayersDesc = prometheus.NewDesc(
+		metricServerGamesPlayersFQName,
+		metricServerGamesPlayersHelp,
+		[]string{metricServerGamesPlayersGameIdLabel},
+		nil,
+	)
+	metricServerGamesRateDesc = prometheus.NewDesc(
+		metricServerGamesRateFQName,
+		metricServerGamesRateHelp,
+		[]string{metricServerGamesRateGameIdLabel},
+		nil,
+	)
+)
+
+// Describe implements prometheus.Collector.Describe by sending metrics' descriptors
+func (m *ConnectionGroupManager) Describe(ch chan<- *prometheus.Desc) {
+	var descriptors = [...]*prometheus.Desc{
+		metricServerCapacityDesc,
+		metricServerGamesDesc,
+		metricServerGamesPlayersDesc,
+		metricServerGamesRateDesc,
+	}
+	for _, desc := range descriptors {
+		ch <- desc
+	}
+}
+
+// Collect implements prometheus.Collector.Collect by sending const metrics
+func (m *ConnectionGroupManager) Collect(ch chan<- prometheus.Metric) {
+	send := func(desc *prometheus.Desc, valueType prometheus.ValueType, value float64, labelValues ...string) {
+		metric, err := prometheus.NewConstMetric(desc, valueType, value, labelValues...)
+		if err != nil {
+			m.logger.Errorln("cannot create a metric:", err)
+		} else {
+			ch <- metric
+		}
 	}
 
-	return float32(count) / float32(m.connsLimit)
+	m.groupsMutex.RLock()
+	defer m.groupsMutex.RUnlock()
+
+	send(metricServerCapacityDesc, prometheus.GaugeValue, float64(m.unsafeCapacity()))
+	send(metricServerGamesDesc, prometheus.GaugeValue, float64(m.unsafeGroupCount()))
+
+	for id, group := range m.groups {
+		gameId := strconv.Itoa(id)
+		send(metricServerGamesPlayersDesc, prometheus.GaugeValue, float64(group.GetCount()), gameId)
+		send(metricServerGamesRateDesc, prometheus.GaugeValue, float64(group.GetRate()), gameId)
+	}
 }

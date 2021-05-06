@@ -1,8 +1,11 @@
 package engine
 
 import (
+	"fmt"
 	"math"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -115,6 +118,34 @@ func Test_DotsMask_Copy(t *testing.T) {
 		{0, 1, 1, 0, 0},
 		{0, 0, 0, 1, 1},
 	}, dm2Copy.mask)
+}
+
+func Test_DotsMask_Copy_CopyingLongRows(t *testing.T) {
+	// Test row lengths have to be more than 255
+	var rowsLengths = [...]int{321, 3331, 102021, 3123, 1010, 321, 123312, 2212, 777}
+
+	dm := &DotsMask{
+		mask: make([][]uint8, len(rowsLengths)),
+	}
+
+	for i := 0; i < len(rowsLengths); i++ {
+		dm.mask[i] = make([]uint8, rowsLengths[i])
+		for j := 0; j < rowsLengths[i]; j++ {
+			dm.mask[i][j] = 1
+		}
+	}
+
+	expectedMask := make([][]uint8, len(rowsLengths))
+	for i := 0; i < len(rowsLengths); i++ {
+		expectedMask[i] = make([]uint8, math.MaxUint8+1)
+		for j := 0; j < math.MaxUint8+1; j++ {
+			expectedMask[i][j] = 1
+		}
+	}
+
+	result := dm.Copy()
+
+	require.Equal(t, expectedMask, result.mask)
 }
 
 func Test_DotsMask_Width(t *testing.T) {
@@ -509,4 +540,141 @@ func Test_DotsMask_DotCount(t *testing.T) {
 		},
 	}
 	require.Equal(t, uint16(3), dm4.DotCount())
+}
+
+func Test_DotsMask_TurnRandom(t *testing.T) {
+	const (
+		SeedCopy      = 3
+		SeedTurnRight = 1
+		SeedTurnLeft  = 2
+		SeedTurnOver  = 15
+	)
+
+	type Test struct {
+		inputDotMask    *DotsMask
+		expectedDotMask *DotsMask
+
+		seed   int64
+		always bool
+	}
+
+	var tests = make([]*Test, 0)
+
+	// Test case 1
+	tests = append(tests, &Test{
+		inputDotMask: &DotsMask{
+			mask: [][]uint8{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+			},
+		},
+		expectedDotMask: &DotsMask{
+			mask: [][]uint8{
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0},
+			},
+		},
+
+		seed:   0,
+		always: true,
+	})
+
+	// Test case 2
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskHome1,
+		expectedDotMask: DotsMaskHome1.TurnRight(),
+
+		seed:   SeedTurnRight,
+		always: false,
+	})
+
+	// Test case 3
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskHome1,
+		expectedDotMask: DotsMaskHome1.TurnLeft(),
+
+		seed:   SeedTurnLeft,
+		always: false,
+	})
+
+	// Test case 4
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskHome1,
+		expectedDotMask: DotsMaskHome1.TurnOver(),
+
+		seed:   SeedTurnOver,
+		always: false,
+	})
+
+	// Test case 5
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskHome1,
+		expectedDotMask: DotsMaskHome1.Copy(),
+
+		seed:   SeedCopy,
+		always: false,
+	})
+
+	// Test case 6
+	tests = append(tests, &Test{
+		inputDotMask: &DotsMask{
+			mask: [][]uint8{
+				{1, 0, 0, 0, 0, 1},
+				{0, 1, 0, 0, 1, 0},
+				{0, 0, 1, 1, 0, 0},
+				{0, 0, 1, 1, 0, 0},
+				{0, 1, 0, 0, 1, 0},
+				{1, 0, 0, 0, 0, 1},
+			},
+		},
+		expectedDotMask: &DotsMask{
+			mask: [][]uint8{
+				{1, 0, 0, 0, 0, 1},
+				{0, 1, 0, 0, 1, 0},
+				{0, 0, 1, 1, 0, 0},
+				{0, 0, 1, 1, 0, 0},
+				{0, 1, 0, 0, 1, 0},
+				{1, 0, 0, 0, 0, 1},
+			},
+		},
+
+		seed:   0,
+		always: true,
+	})
+
+	// Test case 7
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskDiagonal,
+		expectedDotMask: DotsMaskDiagonal.TurnOver(),
+
+		seed:   SeedTurnOver,
+		always: false,
+	})
+
+	// Test case 8
+	tests = append(tests, &Test{
+		inputDotMask:    DotsMaskTunnel1,
+		expectedDotMask: DotsMaskTunnel1.TurnRight(),
+
+		seed:   SeedTurnRight,
+		always: false,
+	})
+
+	for n, test := range tests {
+		seed := test.seed
+		if test.always {
+			rand.Seed(time.Now().UnixNano())
+		}
+		rand.Seed(seed)
+		msg := fmt.Sprintf("case number %d failed with seed %d", n+1, seed)
+		require.Equal(t, test.expectedDotMask, test.inputDotMask.TurnRandom(), msg)
+	}
 }

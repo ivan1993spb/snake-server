@@ -221,7 +221,7 @@ func (cg *ConnectionGroup) GetWorldHeight() uint8 {
 	return cg.game.World().Area().Height()
 }
 
-func (cg *ConnectionGroup) GetObjects() []interface{} {
+func (cg *ConnectionGroup) GetObjects() interface{} {
 	return cg.game.World().GetObjects()
 }
 

@@ -7,7 +7,6 @@ _=$(foreach exec,$(EXECUTABLES), \
 IMAGE=ivan1993spb/snake-server
 
 IMAGE_GOLANG=golang:1.14-alpine3.11
-IMAGE_ALPINE=alpine:3.11
 
 REPO=github.com/ivan1993spb/snake-server
 
@@ -21,12 +20,11 @@ BUILD=$(shell git rev-parse --short HEAD)
 PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 
-LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
+LDFLAGS=-ldflags "-s -w -X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 DOCKER_BUILD_ARGS=\
  --build-arg VERSION=$(VERSION) \
  --build-arg BUILD=$(BUILD) \
- --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
- --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE)
+ --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG)
 
 default: build
 

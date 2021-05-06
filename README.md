@@ -131,9 +131,12 @@ Arguments:
 * `--groups-limit` - **integer** - to limit the number of games for a server instance (default: *100*)
 * `--enable-web` - **bool** - to enable the embedded web client (default: *false*)
 * `--enable-broadcast` - **bool** - to enable the broadcasting API method (default: *false*)
+* `--forbid-cors` - **bool** - to forbid cross-origin resource sharing (default: *false*)
 * `--log-json` - **bool** - to enable JSON log output format (default: *false*)
 * `--log-level` - **string** - to set the log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
 * `--seed` - **integer** - to specify a random seed (default: *the number of nanoseconds elapsed since January 1, 1970 UTC*)
+* `--sentry-enable` - **bool** - to enable sending logs to sentry (default: *false*)
+* `--sentry-dsn` - **string** - sentry's DSN (default: ""). For example: `https://public@sentry.example.com/44`
 * `--tls-cert` - **string** - to specify a path to a certificate file
 * `--tls-enable` - **bool** - to enable TLS
 * `--tls-key` - **string** - to specify a path to a key file
