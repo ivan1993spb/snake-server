@@ -1,6 +1,6 @@
 
 # See Makefile
-ARG IMAGE_GOLANG=golang:1.14-alpine3.11
+ARG IMAGE_GOLANG=golang:1.16.4-alpine3.13
 
 FROM $IMAGE_GOLANG AS intermediate
 
