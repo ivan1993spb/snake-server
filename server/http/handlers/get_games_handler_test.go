@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/negroni"
 
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/middlewares"
+	"github.com/ivan1993spb/snake-server/server/http/middlewares"
 )
 
 func Test_GetGamesHandler_ServeHTTP_ReturnsBadRequestErrorWithInvalidLimit(t *testing.T) {

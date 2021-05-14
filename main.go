@@ -4,24 +4,17 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"os"
 	"runtime"
 
 	"github.com/evalphobia/logrus_sentry"
-	"github.com/gorilla/mux"
-	"github.com/phyber/negroni-gzip/gzip"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"github.com/urfave/negroni"
 
-	"github.com/ivan1993spb/snake-server/client"
 	"github.com/ivan1993spb/snake-server/config"
 	"github.com/ivan1993spb/snake-server/connections"
-	"github.com/ivan1993spb/snake-server/handlers"
-	"github.com/ivan1993spb/snake-server/middlewares"
+	"github.com/ivan1993spb/snake-server/server/http"
 )
 
 const ServerName = "Snake-Server"
@@ -69,13 +62,6 @@ func logger(configLog config.Log) *logrus.Logger {
 		logger.SetLevel(level)
 	}
 	return logger
-}
-
-func serve(h http.Handler, address string, configTLS config.TLS) error {
-	if configTLS.Enable {
-		return http.ListenAndServeTLS(address, configTLS.Cert, configTLS.Key, h)
-	}
-	return http.ListenAndServe(address, h)
 }
 
 func main() {
@@ -134,53 +120,14 @@ func main() {
 		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
-	rootRouter := mux.NewRouter().StrictSlash(true)
-	rootRouter.Path("/metrics").Handler(promhttp.Handler())
-	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
-	if cfg.Server.Flags.EnableWeb {
-		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
-		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
-	} else {
-		rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
-	}
-	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
-
-	// Web-Socket routes
-	wsRouter := rootRouter.PathPrefix("/ws").Subrouter()
-	wsRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
-
-	// API routes
-	apiRouter := rootRouter.PathPrefix("/api").Subrouter()
-	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
-	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	if cfg.Server.Flags.EnableBroadcast {
-		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
-	}
-	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
-
-	n := negroni.New(
-		middlewares.NewRecovery(logger),
-		middlewares.NewServerInfo(ServerName, Version, Build),
-		middlewares.NewLogger(logger, logName),
-	)
-
-	if !cfg.Server.Flags.ForbidCORS {
-		n.Use(middlewares.NewCORS())
-	}
-
-	n.UseHandler(rootRouter)
+	server := http.NewServer(cfg, groupManager, logger, Author, License, Version, Build)
 
 	logger.WithFields(logrus.Fields{
 		"address": cfg.Server.Address,
 		"tls":     cfg.Server.TLS.Enable,
 	}).Info("starting server")
 
-	if err := serve(n, cfg.Server.Address, cfg.Server.TLS); err != nil {
+	if err := server.Run(); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
 }
