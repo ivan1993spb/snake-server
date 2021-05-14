@@ -20,7 +20,7 @@ BUILD=$(shell git rev-parse --short HEAD)
 PLATFORMS=darwin linux windows
 ARCHITECTURES=386 amd64
 
-LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
+LDFLAGS=-ldflags "-s -w -X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 DOCKER_BUILD_ARGS=\
  --build-arg VERSION=$(VERSION) \
  --build-arg BUILD=$(BUILD) \

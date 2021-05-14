@@ -66,3 +66,13 @@ server:
     enable_broadcast: True
     forbid_cors: True
 `)
+
+var ConfigYAMLSampleLimitsAndSentry = []byte(`
+server:
+  limits:
+    groups: 144
+    conns: 4123
+  sentry:
+    enable: True
+    dsn: https://public@sentry.example.com/1
+`)

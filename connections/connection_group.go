@@ -11,7 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/broadcast"
-	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/game"
 )
 
@@ -222,7 +221,7 @@ func (cg *ConnectionGroup) GetWorldHeight() uint8 {
 	return cg.game.World().Area().Height()
 }
 
-func (cg *ConnectionGroup) GetObjects() []engine.Object {
+func (cg *ConnectionGroup) GetObjects() interface{} {
 	return cg.game.World().GetObjects()
 }
 
