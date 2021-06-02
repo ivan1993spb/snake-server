@@ -1,6 +1,6 @@
 module github.com/ivan1993spb/snake-server
 
-go 1.14
+go 1.16
 
 require (
 	github.com/certifi/gocertifi v0.0.0-20200922220541-2c3bb06c6054 // indirect

@@ -143,7 +143,7 @@ Arguments:
 
 ## Build
 
-To build the Snake-Server you need Git and [Go](https://golang.org/) (version 1.14+ is required). You can also build the server without Go using Docker.
+To build the Snake-Server you need Git and [Go](https://golang.org/) (version 1.16.4+ is required). You can also build the server without Go using Docker.
 
 Firstly, you need to clone the repo:
 
