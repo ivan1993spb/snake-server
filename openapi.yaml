@@ -3,7 +3,7 @@ openapi: 3.0.0
 info:
   title: The Snake-Server API
   description: The Snake-Server is a server for online arcade game - snake.
-  version: 4.4.0
+  version: 4.5.0
   license:
     name: MIT
   contact:
