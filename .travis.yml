@@ -1,7 +1,7 @@
 language: go
 sudo: false
 go:
-  - 1.14.x
+  - 1.16.4
 env:
   global:
     - GOARCH=amd64

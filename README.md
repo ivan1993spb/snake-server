@@ -9,7 +9,7 @@ Take a look at a working instance here - http://snakeonline.xyz
 
 ## Table of contents
 
-- [Game rules](#game-rules)
+- [Rules](#rules)
 - [Demo](#demo)
 - [Basic usage](#basic-usage)
 - [Install](#install)
@@ -25,13 +25,12 @@ Take a look at a working instance here - http://snakeonline.xyz
   * [Game messages](#game-messages)
 - [License](#license)
 
-## Game rules
+## Rules
 
-* A player controls a snake
-* The task of the game is to rise the biggest snake and keep your dominating
-* To achieve the goal players may eat apples, mice, watermelons, small snakes and remains of dead snakes
-* If a snake hits a wall, it dies, and the player starts again with a new small snake
-* A snake can eat smaller snakes
+* You control a snake
+* You need to grow the biggest snake
+* You can eat apples, mice, watermelons, small and dead snakes
+* If you hit a wall, your snake will die and you will start over
 
 ## Demo
 
@@ -143,7 +142,7 @@ Arguments:
 
 ## Build
 
-To build the Snake-Server you need Git and [Go](https://golang.org/) (version 1.14+ is required). You can also build the server without Go using Docker.
+To build the Snake-Server you need Git and [Go](https://golang.org/) (version 1.16.4+ is required). You can also build the server without Go using Docker.
 
 Firstly, you need to clone the repo:
 
