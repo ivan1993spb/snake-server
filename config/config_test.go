@@ -179,6 +179,24 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 		expectErr:    false,
 	})
 
+	// Test case 10
+	configTest10 := defaultConfig
+	configTest10.Server.Address = "snakeonline.xyz:3211"
+	configTest10.Server.Flags.Debug = true
+
+	tests = append(tests, &Test{
+		msg: "change address, debug trace",
+
+		args: []string{
+			"-address", "snakeonline.xyz:3211",
+			"-debug",
+		},
+		defaults: defaultConfig,
+
+		expectConfig: configTest10,
+		expectErr:    false,
+	})
+
 	for n, test := range tests {
 		t.Log(test.msg)
 
@@ -326,6 +344,7 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelFlagsEnableBroadcast: true,
 		fieldLabelFlagsEnableWeb:       false,
 		fieldLabelFlagsForbidCORS:      true,
+		fieldLabelFlagsDebug:           true,
 
 		fieldLabelSentryEnable: true,
 		fieldLabelSentryDSN:    "https://public@sentry.example.com/1",
@@ -355,6 +374,7 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 				EnableBroadcast: true,
 				EnableWeb:       false,
 				ForbidCORS:      true,
+				Debug:           true,
 			},
 
 			Sentry: Sentry{
@@ -449,6 +469,22 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 		defaults: defaultConfig,
 
 		expectConfig: configTest5,
+		expectErr:    false,
+	})
+
+	// Test case 6
+	configTest6 := defaultConfig
+	configTest6.Server.Sentry.Enable = true
+	configTest6.Server.Sentry.DSN = "https://public@sentry.example.com/1"
+	configTest6.Server.Flags.Debug = true
+
+	tests = append(tests, &Test{
+		msg: "a valid config with sentry and debug settings",
+
+		input:    ConfigYAMLSampleSentryAndDebug,
+		defaults: defaultConfig,
+
+		expectConfig: configTest6,
 		expectErr:    false,
 	})
 
