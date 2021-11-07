@@ -1,8 +1,15 @@
 
 # See Makefile
 ARG IMAGE_GOLANG=golang:1.16.4-alpine3.13
+ARG IMAGE_ALPINE=alpine:3.13
 
-FROM $IMAGE_GOLANG AS intermediate
+FROM $IMAGE_ALPINE AS helper
+
+RUN adduser -u 10001 -h /dev/null -H -D -s /sbin/nologin snake
+
+RUN sed -i '/^snake/!d' /etc/passwd
+
+FROM $IMAGE_GOLANG AS builder
 
 ARG VERSION=unknown
 ARG BUILD=unknown
@@ -18,6 +25,10 @@ RUN go build -ldflags "-s -w -X main.Version=$VERSION -X main.Build=$BUILD" \
 
 FROM scratch
 
-COPY --from=intermediate /snake-server /usr/local/bin/snake-server
+COPY --from=helper /etc/passwd /etc/passwd
+
+USER snake
+
+COPY --from=builder /snake-server /usr/local/bin/snake-server
 
 ENTRYPOINT ["snake-server"]
