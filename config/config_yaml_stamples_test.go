@@ -76,3 +76,12 @@ server:
     enable: True
     dsn: https://public@sentry.example.com/1
 `)
+
+var ConfigYAMLSampleSentryAndDebug = []byte(`
+server:
+  sentry:
+    enable: True
+    dsn: https://public@sentry.example.com/1
+  flags:
+    debug: True
+`)

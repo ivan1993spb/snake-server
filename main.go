@@ -170,6 +170,9 @@ func main() {
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path("/metrics").Handler(promhttp.Handler())
+	if cfg.Server.Flags.Debug {
+		rootRouter.PathPrefix(handlers.URLRouteDebug).Handler(handlers.NewDebugHandler())
+	}
 	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
 	if cfg.Server.Flags.EnableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))

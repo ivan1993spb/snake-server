@@ -90,6 +90,7 @@ Options:
 * `--tls-cert` - **string** - to specify a path to a certificate file
 * `--tls-enable` - **bool** - to enable TLS
 * `--tls-key` - **string** - to specify a path to a key file
+* `--debug` - **bool** - to enable profiling routes
 
 ## Clients
 
