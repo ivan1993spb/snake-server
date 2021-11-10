@@ -1,9 +1,9 @@
 openapi: 3.0.0
 
 info:
-  title: The Snake-Server API
-  description: The Snake-Server is a server for online arcade game - snake.
-  version: 4.5.0
+  title: Snake-Server API
+  description: Snake-Server is a server for multiplayer snake game.
+  version: 4.6.0
   license:
     name: MIT
   contact:
@@ -22,19 +22,19 @@ paths:
   /games:
     get:
       summary: Get a list of games
-      description: Get all games on a server
+      description: Get all games on the server
       tags:
         - Games
       parameters:
         - name: limit
           in: query
-          description: Games limit to receive in a response
+          description: Games limit in the server's response
           schema:
             type: integer
             format: int32
         - name: sorting
           in: query
-          description: Games sorting type
+          description: Games sorting rule
           schema:
             type: string
             enum:
@@ -42,7 +42,7 @@ paths:
               - random
       responses:
         200:
-          description: Games list on server and additional information
+          description: A list of games and additional information
           content:
             application/json:
               schema:
@@ -50,8 +50,8 @@ paths:
         400:
           $ref: '#/components/responses/InvalidParameters'
     post:
-      summary: Start a new game
-      description: Create a new game on a server with given map parameters and limits
+      summary: Create a new game
+      description: Create a new game on the server with given map parameters and limits
       tags:
         - Games
       requestBody:
@@ -62,7 +62,7 @@ paths:
               type: object
               properties:
                 limit:
-                  description: Players limit for new game
+                  description: Players limit for the new game
                   type: integer
                   format: int32
                   minimum: 1
@@ -86,7 +86,7 @@ paths:
                 - height
       responses:
         201:
-          description: Information about created game
+          description: Information about the created game
           content:
             application/json:
               schema:
@@ -96,7 +96,7 @@ paths:
         500:
           $ref: '#/components/responses/ServerError'
         503:
-          description: Service unavailable, cannot create a new game
+          description: Service unavailable, cannot create a game
           content:
             application/json:
               schema:
@@ -143,7 +143,7 @@ paths:
         500:
           $ref: '#/components/responses/ServerError'
         503:
-          description: Service unavailable, cannot delete the game right now
+          description: Service unavailable, cannot delete
           content:
             application/json:
               schema:
@@ -153,23 +153,23 @@ paths:
       summary: Server capacity
       tags:
         - Server
-      description: Get server capacity. Capacity is the number of opened connections divided on limit of the server
+      description: Get server capacity. Capacity is the number of opened connections divided by the server's limit
       responses:
         200:
-          description: Return capacity of a server
+          description: Capacity of the server
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Capacity'
   /info:
     get:
-      summary: Information about a server
+      summary: Information about the server
       tags:
         - Server
-      description: Get information about a server
+      description: Get information about the server
       responses:
         200:
-          description: Returns information about a server
+          description: Returns information about the server
           content:
             application/json:
               schema:
@@ -179,7 +179,8 @@ paths:
       summary: Broadcast a message
       tags:
         - Games
-      description: Broadcast a message to all players in a game with passed identificator
+      description: Broadcast a message to all players in a game with given identificator
+      deprecated: true
       parameters:
         - $ref: '#/components/parameters/GameID'
       requestBody:
@@ -190,7 +191,7 @@ paths:
               type: object
               properties:
                 message:
-                  description: Message to broadcast for players in selected game
+                  description: Message to be broadcasted for players in a selected game
                   type: string
               required:
                 - message
@@ -215,15 +216,15 @@ paths:
                 $ref: '#/components/schemas/Error'
   /games/{id}/objects:
     get:
-      summary: List objects on a map
+      summary: A list of objects on the map
       tags:
         - Games
-      description: Get all objects on a map
+      description: Get all objects on the map
       parameters:
         - $ref: '#/components/parameters/GameID'
       responses:
         200:
-          description: All objects on map
+          description: All objects on the map
           content:
             application/json:
               schema:
@@ -239,7 +240,7 @@ paths:
       summary: Ping-pong requesting
       tags:
         - Server
-      description: Ping request to check up a server
+      description: Ping request to check the server's availability
       responses:
         200:
           description: Pong response
@@ -267,7 +268,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     ServerError:
-      description: An internal server error
+      description: Internal server error
       content:
         application/json:
           schema:
@@ -283,7 +284,7 @@ components:
 
     Games:
       type: object
-      description: Object contains list of games on server
+      description: Object contains a list of games on the server
       required:
         - games
         - limit
@@ -298,13 +299,13 @@ components:
           type: integer
           format: int32
         count:
-          description: Current games count on server
+          description: Current games number on the server
           type: integer
           format: int32
 
     Info:
       type: object
-      description: Object contains common information about server
+      description: Object contains basic information about the server
       required:
         - author
         - license
@@ -322,7 +323,7 @@ components:
 
     Game:
       type: object
-      description: Object contains information about game
+      description: Object contains information about a game
       required:
         - id
         - limit
@@ -332,15 +333,15 @@ components:
         - rate
       properties:
         id:
-          description: Game identificator
+          description: Identificator
           type: integer
           format: int32
         limit:
-          description: Game players limit
+          description: Players limit
           type: integer
           format: int32
         count:
-          description: Current players count in game
+          description: Current players number in the game
           type: integer
           format: int32
         width:
@@ -352,7 +353,7 @@ components:
           type: integer
           format: int32
         rate:
-          description: Game rate
+          description: Rate
           type: integer
           format: int32
 
@@ -363,7 +364,7 @@ components:
         - success
       properties:
         success:
-          description: Flag is true if broadcast is succeed and flag is false if broadcast is failed
+          description: If the flag is true, broadcasting has succeeded
           type: boolean
 
     Capacity:
@@ -373,13 +374,13 @@ components:
         - capacity
       properties:
         capacity:
-          description: Capacity is the number of opened connections divided by the number of allowed connections for server instance
+          description: Capacity is the number of opened connections divided by the number of allowed connections for the server
           type: number
           format: double
 
     Error:
       type: object
-      description: Contains code of error and short description text
+      description: Contains an error code and description
       required:
         - code
         - text
@@ -389,12 +390,12 @@ components:
           type: integer
           format: int32
         text:
-          description: Short error description
+          description: description
           type: string
 
     Deleted:
       type: object
-      description: Object contains information about deleted game
+      description: Object contains information about the deleted game
       required:
         - id
       properties:
@@ -405,12 +406,12 @@ components:
 
     Objects:
       type: object
-      description: Object contains all game objects on map and map properties
+      description: Contains all game objects and the map's properties
       required:
         - objects
       properties:
         objects:
-          description: List of all game objects on map
+          description: A list of all objects on the map
           type: array
           items:
             oneOf:
@@ -544,7 +545,7 @@ components:
     ObjectId:
       type: integer
       format: int64
-      description: An object identifier
+      description: An object's identifier
       example: 31
 
     ObjectType:
@@ -559,7 +560,7 @@ components:
 
     Pong:
       type: object
-      description: Pong message from server
+      description: Pong message
       required:
         - pong
       properties:
