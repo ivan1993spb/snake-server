@@ -7,6 +7,7 @@ _=$(foreach exec,$(EXECUTABLES), \
 IMAGE=ivan1993spb/snake-server
 
 IMAGE_GOLANG=golang:1.16.4-alpine3.13
+IMAGE_ALPINE=alpine:3.13
 
 REPO=github.com/ivan1993spb/snake-server
 
@@ -24,7 +25,8 @@ LDFLAGS=-ldflags "-s -w -X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 DOCKER_BUILD_ARGS=\
  --build-arg VERSION=$(VERSION) \
  --build-arg BUILD=$(BUILD) \
- --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG)
+ --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
+ --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE)
 
 default: build
 

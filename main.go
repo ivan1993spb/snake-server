@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
+	"time"
 
 	"github.com/evalphobia/logrus_sentry"
 	"github.com/gorilla/mux"
@@ -71,14 +75,44 @@ func logger(configLog config.Log) *logrus.Logger {
 	return logger
 }
 
-func serve(h http.Handler, address string, configTLS config.TLS) error {
-	if configTLS.Enable {
-		return http.ListenAndServeTLS(address, configTLS.Cert, configTLS.Key, h)
+const serverShutdownTimeout = time.Second
+
+func serve(ctx context.Context, logger logrus.FieldLogger,
+	handler http.Handler, address string, configTLS config.TLS) error {
+	server := &http.Server{
+		Addr:    address,
+		Handler: handler,
+		BaseContext: func(net.Listener) context.Context {
+			return ctx
+		},
 	}
-	return http.ListenAndServe(address, h)
+
+	go func() {
+		<-ctx.Done()
+		logger.Info("shutting down")
+		ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil && err != context.Canceled {
+			logger.Errorln("server shutdown error:", err)
+		}
+	}()
+
+	var err error
+	if configTLS.Enable {
+		err = server.ListenAndServeTLS(configTLS.Cert, configTLS.Key)
+	} else {
+		err = server.ListenAndServe()
+	}
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
 }
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
 	cfg, err := configurate()
 	logger := logger(cfg.Server.Log)
 	if err != nil {
@@ -136,6 +170,9 @@ func main() {
 
 	rootRouter := mux.NewRouter().StrictSlash(true)
 	rootRouter.Path("/metrics").Handler(promhttp.Handler())
+	if cfg.Server.Flags.Debug {
+		rootRouter.PathPrefix(handlers.URLRouteDebug).Handler(handlers.NewDebugHandler())
+	}
 	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
 	if cfg.Server.Flags.EnableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
@@ -180,7 +217,9 @@ func main() {
 		"tls":     cfg.Server.TLS.Enable,
 	}).Info("starting server")
 
-	if err := serve(n, cfg.Server.Address, cfg.Server.TLS); err != nil {
+	if err := serve(ctx, logger, n, cfg.Server.Address, cfg.Server.TLS); err != nil {
 		logger.Fatalf("server error: %s", err)
 	}
+
+	logger.Info("buh bye!")
 }

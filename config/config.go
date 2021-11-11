@@ -29,6 +29,7 @@ const (
 	defaultFlagsEnableBroadcast = false
 	defaultFlagsEnableWeb       = false
 	defaultFlagsForbidCORS      = false
+	defaultFlagsDebug           = false
 
 	defaultSentryEnable = false
 	defaultSentryDSN    = ""
@@ -53,6 +54,7 @@ const (
 	flagLabelFlagsEnableBroadcast = "enable-broadcast"
 	flagLabelFlagsEnableWeb       = "enable-web"
 	flagLabelFlagsForbidCORS      = "forbid-cors"
+	flagLabelFlagsDebug           = "debug"
 
 	flagLabelSentryEnable = "sentry-enable"
 	flagLabelSentryDSN    = "sentry-dsn"
@@ -77,6 +79,7 @@ const (
 	flagUsageFlagsEnableBroadcast = "enable broadcasting API method"
 	flagUsageFlagsEnableWeb       = "enable web client"
 	flagUsageFlagsForbidCORS      = "forbid cross-origin resource sharing"
+	flagUsageFlagsDebug           = "enable profiling routes"
 
 	flagUsageSentryEnable = "enable sending logs to sentry"
 	flagUsageSentryDSN    = "sentry's DSN"
@@ -101,6 +104,7 @@ const (
 	fieldLabelFlagsEnableBroadcast = "enable-broadcast"
 	fieldLabelFlagsEnableWeb       = "enable-web"
 	fieldLabelFlagsForbidCORS      = "forbid-cors"
+	fieldLabelFlagsDebug           = "debug"
 
 	fieldLabelSentryEnable = "sentry-enable"
 	fieldLabelSentryDSN    = "sentry-dsn"
@@ -135,6 +139,7 @@ type Flags struct {
 	EnableBroadcast bool `yaml:"enable_broadcast"`
 	EnableWeb       bool `yaml:"enable_web"`
 	ForbidCORS      bool `yaml:"forbid_cors"`
+	Debug           bool `yaml:"debug"`
 }
 
 type Sentry struct {
@@ -181,6 +186,7 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelFlagsEnableBroadcast: c.Server.Flags.EnableBroadcast,
 		fieldLabelFlagsEnableWeb:       c.Server.Flags.EnableWeb,
 		fieldLabelFlagsForbidCORS:      c.Server.Flags.ForbidCORS,
+		fieldLabelFlagsDebug:           c.Server.Flags.Debug,
 
 		fieldLabelSentryEnable: c.Server.Sentry.Enable,
 		fieldLabelSentryDSN:    c.Server.Sentry.DSN,
@@ -216,6 +222,7 @@ var defaultConfig = Config{
 			EnableBroadcast: defaultFlagsEnableBroadcast,
 			EnableWeb:       defaultFlagsEnableWeb,
 			ForbidCORS:      defaultFlagsForbidCORS,
+			Debug:           defaultFlagsDebug,
 		},
 
 		Sentry: Sentry{
@@ -286,6 +293,12 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 		flagLabelFlagsForbidCORS,
 		defaults.Server.Flags.ForbidCORS,
 		flagUsageFlagsForbidCORS,
+	)
+	flagSet.BoolVar(
+		&config.Server.Flags.Debug,
+		flagLabelFlagsDebug,
+		defaults.Server.Flags.Debug,
+		flagUsageFlagsDebug,
 	)
 
 	// Sentry
