@@ -180,8 +180,13 @@ func (m *Mouse) Run(stop <-chan struct{}) {
 	}()
 
 	go func() {
-		for range ticker.C {
-			m.move()
+		for {
+			select {
+			case <-m.stop:
+				return
+			case <-ticker.C:
+				m.move()
+			}
 		}
 	}()
 }
