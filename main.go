@@ -173,7 +173,7 @@ func main() {
 	if cfg.Server.Flags.Debug {
 		rootRouter.PathPrefix(handlers.URLRouteDebug).Handler(handlers.NewDebugHandler())
 	}
-	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler())
+	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler(logger, OpenAPISpec))
 	if cfg.Server.Flags.EnableWeb {
 		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
 		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
