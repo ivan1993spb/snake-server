@@ -2,6 +2,8 @@ name: Docker
 
 on:
   push:
+    branches:
+      - test_test
     tags:
       - 'v*'
 
@@ -39,5 +41,8 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            BUILD=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
