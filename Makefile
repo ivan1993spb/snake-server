@@ -8,6 +8,7 @@ IMAGE=ivan1993spb/snake-server
 
 IMAGE_GOLANG=golang:1.16.4-alpine3.13
 IMAGE_ALPINE=alpine:3.13
+IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.4.0
 
 REPO=github.com/ivan1993spb/snake-server
 
@@ -26,7 +27,8 @@ DOCKER_BUILD_ARGS=\
  --build-arg VERSION=$(VERSION) \
  --build-arg BUILD=$(BUILD) \
  --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
- --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE)
+ --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE) \
+ --build-arg IMAGE_CLIENT=$(IMAGE_CLIENT)
 
 default: build
 
