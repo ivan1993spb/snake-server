@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const pathToClient = "dist"
+const pathToClient = "public/dist"
 
 func adjustPath(path, prefix, root string) string {
 	relative := strings.TrimPrefix(path, prefix)
