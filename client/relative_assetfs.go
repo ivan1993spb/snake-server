@@ -1,35 +1,37 @@
-//go:generate go-bindata-assetfs -nometadata -pkg client dist/...
-
 package client
 
 import (
 	"net/http"
+	"path/filepath"
 	"strings"
-
-	"github.com/elazarl/go-bindata-assetfs"
 )
 
-const pathToClient = "dist"
+const pathToClient = "public/dist"
 
-func adjustPath(path string) string {
-	return strings.TrimPrefix(path, URLRouteClient)
+func adjustPath(path, prefix, root string) string {
+	relative := strings.TrimPrefix(path, prefix)
+
+	return filepath.Join(root, relative)
 }
 
 type relativeAssetFS struct {
-	assetFS *assetfs.AssetFS
+	fs http.FileSystem
+
+	// Place where files reside
+	root string
+
+	// URL prefix which should be removed from the path
+	prefix string
 }
 
 func newRelativeAssetFS() *relativeAssetFS {
 	return &relativeAssetFS{
-		assetFS: &assetfs.AssetFS{
-			Asset:     Asset,
-			AssetDir:  AssetDir,
-			AssetInfo: AssetInfo,
-			Prefix:    pathToClient,
-		},
+		fs:     http.FS(clientFS),
+		root:   pathToClient,
+		prefix: URLRouteClient,
 	}
 }
 
 func (fs *relativeAssetFS) Open(name string) (http.File, error) {
-	return fs.assetFS.Open(adjustPath(name))
+	return fs.fs.Open(adjustPath(name, fs.prefix, fs.root))
 }
