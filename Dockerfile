@@ -1,7 +1,7 @@
 
 # See Makefile
-ARG IMAGE_GOLANG=golang:1.16.4-alpine3.13
-ARG IMAGE_ALPINE=alpine:3.13
+ARG IMAGE_GOLANG=golang:1.19.5-alpine3.16
+ARG IMAGE_ALPINE=alpine:3.16
 ARG IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.5.0
 
 FROM $IMAGE_CLIENT AS client
