@@ -6,8 +6,8 @@ _=$(foreach exec,$(EXECUTABLES), \
 
 IMAGE=ivan1993spb/snake-server
 
-IMAGE_GOLANG=golang:1.16.4-alpine3.13
-IMAGE_ALPINE=alpine:3.13
+IMAGE_GOLANG=golang:1.19.5-alpine3.16
+IMAGE_ALPINE=alpine:3.16
 IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.5.0
 
 REPO=github.com/ivan1993spb/snake-server
