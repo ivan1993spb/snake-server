@@ -1,0 +1,7 @@
+package: server
+output: server.gen.go
+additional-imports:
+  - package: github.com/ivan1993spb/snake-server/pkg/openapi/models
+    alias: .
+generate:
+  chi-server: true

@@ -1,0 +1,4 @@
+package: models
+generate:
+  models: true
+output: models.gen.go
