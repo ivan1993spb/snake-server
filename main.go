@@ -109,6 +109,54 @@ func serve(ctx context.Context, logger logrus.FieldLogger,
 	return err
 }
 
+func handler(cfg config.Config, logger *logrus.Logger, groupManager *connections.ConnectionGroupManager) http.Handler {
+	rootRouter := mux.NewRouter().StrictSlash(true)
+	rootRouter.Path("/metrics").Handler(promhttp.Handler())
+	if cfg.Server.Flags.Debug {
+		rootRouter.PathPrefix(handlers.URLRouteDebug).Handler(handlers.NewDebugHandler())
+	}
+	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler(logger, OpenAPISpec))
+	if cfg.Server.Flags.EnableWeb {
+		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
+		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
+	} else {
+		rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
+	}
+	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
+
+	// Web-Socket routes
+	wsRouter := rootRouter.PathPrefix("/ws").Subrouter()
+	wsRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
+
+	// API routes
+	apiRouter := rootRouter.PathPrefix("/api").Subrouter()
+	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
+	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
+	if cfg.Server.Flags.EnableBroadcast {
+		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
+	}
+	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
+	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
+
+	n := negroni.New(
+		middlewares.NewRecovery(logger),
+		middlewares.NewServerInfo(ServerName, Version, Build),
+		middlewares.NewLogger(logger, logName),
+	)
+
+	if !cfg.Server.Flags.ForbidCORS {
+		n.Use(middlewares.NewCORS())
+	}
+
+	n.UseHandler(rootRouter)
+
+	return n
+}
+
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -168,49 +216,7 @@ func main() {
 		logger.Fatalln("cannot register connection group manager as a metric collector:", err)
 	}
 
-	rootRouter := mux.NewRouter().StrictSlash(true)
-	rootRouter.Path("/metrics").Handler(promhttp.Handler())
-	if cfg.Server.Flags.Debug {
-		rootRouter.PathPrefix(handlers.URLRouteDebug).Handler(handlers.NewDebugHandler())
-	}
-	rootRouter.Path(handlers.URLRouteOpenAPI).Handler(handlers.NewOpenAPIHandler(logger, OpenAPISpec))
-	if cfg.Server.Flags.EnableWeb {
-		rootRouter.Path(client.URLRouteServerEndpoint).Handler(http.RedirectHandler(client.URLRouteClient, http.StatusFound))
-		rootRouter.PathPrefix(client.URLRouteClient).Handler(negroni.New(gzip.Gzip(gzip.DefaultCompression), negroni.Wrap(client.NewHandler())))
-	} else {
-		rootRouter.Path(handlers.URLRouteWelcome).Methods(handlers.MethodWelcome).Handler(handlers.NewWelcomeHandler(logger))
-	}
-	rootRouter.NotFoundHandler = handlers.NewNotFoundHandler(logger)
-
-	// Web-Socket routes
-	wsRouter := rootRouter.PathPrefix("/ws").Subrouter()
-	wsRouter.Path(handlers.URLRouteGameWebSocketByID).Methods(handlers.MethodGame).Handler(handlers.NewGameWebSocketHandler(logger, groupManager))
-
-	// API routes
-	apiRouter := rootRouter.PathPrefix("/api").Subrouter()
-	apiRouter.Path(handlers.URLRouteGetInfo).Methods(handlers.MethodGetInfo).Handler(handlers.NewGetInfoHandler(logger, Author, License, Version, Build))
-	apiRouter.Path(handlers.URLRouteGetCapacity).Methods(handlers.MethodGetCapacity).Handler(handlers.NewGetCapacityHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteCreateGame).Methods(handlers.MethodCreateGame).Handler(handlers.NewCreateGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	if cfg.Server.Flags.EnableBroadcast {
-		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
-	}
-	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
-	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
-
-	n := negroni.New(
-		middlewares.NewRecovery(logger),
-		middlewares.NewServerInfo(ServerName, Version, Build),
-		middlewares.NewLogger(logger, logName),
-	)
-
-	if !cfg.Server.Flags.ForbidCORS {
-		n.Use(middlewares.NewCORS())
-	}
-
-	n.UseHandler(rootRouter)
+	n := handler(cfg, logger, groupManager)
 
 	logger.WithFields(logrus.Fields{
 		"address": cfg.Server.Address,
