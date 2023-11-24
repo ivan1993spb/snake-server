@@ -11,7 +11,7 @@ import (
 )
 
 func Test_World_Events(t *testing.T) {
-	pg, err := playground.NewPlaygroundCMap(100, 100)
+	pg, err := playground.NewExperimentalPlayground(100, 100)
 	require.Nil(t, err, "cannot initialize playground")
 	require.NotNil(t, pg, "cannot initialize playground")
 
@@ -59,7 +59,7 @@ func Test_World_Events(t *testing.T) {
 }
 
 func Test_World_UpdateObject(t *testing.T) {
-	pg, err := playground.NewPlaygroundCMap(100, 100)
+	pg, err := playground.NewExperimentalPlayground(100, 100)
 	require.Nil(t, err, "cannot initialize playground")
 	require.NotNil(t, pg, "cannot initialize playground")
 

@@ -29,7 +29,7 @@ type World struct {
 }
 
 func NewWorld(width, height uint8) (*World, error) {
-	pg, err := playground.NewPlaygroundCMap(width, height)
+	pg, err := playground.NewExperimentalPlayground(width, height)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create world: %s", err)
 	}
