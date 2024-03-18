@@ -46,26 +46,6 @@ Take a look at a working instance here - https://snakeonline.xyz
   docker run --rm ivan1993spb/snake-server -h
   ```
 
-* **Download and install the binary**
-
-  Take a look at the [**release page**](https://github.com/ivan1993spb/snake-server/releases/latest)
-
-  Curl:
-
-  + Set *VERSION*, *PLATFORM* and *ARCHITECTURE*:
-    ```bash
-    VERSION=v4.3.0
-    # darwin or linux or windows
-    PLATFORM=linux
-    # amd64 or 386
-    ARCHITECTURE=amd64
-    ```
-  + Download and install the binary to `/usr/local/bin/`:
-    ```bash
-    curl -sL "https://github.com/ivan1993spb/snake-server/releases/download/${VERSION}/snake-server-${VERSION}-${PLATFORM}-${ARCHITECTURE}.tar.gz" |\
-      tar xvz -C /usr/local/bin/
-    ```
-
 * **Deploy the server using the ansible playbook**
 
   https://github.com/ivan1993spb/snake-ansible.
