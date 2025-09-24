@@ -1,7 +1,7 @@
 
 # See Makefile
-ARG IMAGE_GOLANG=golang:1.19.5-alpine3.16
-ARG IMAGE_ALPINE=alpine:3.16
+ARG IMAGE_GOLANG=golang:1.25.1-alpine3.22
+ARG IMAGE_ALPINE=alpine:3.22
 ARG IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.5.0
 
 FROM $IMAGE_CLIENT AS client
@@ -26,6 +26,7 @@ COPY --from=client \
     client/public/dist
 
 ENV CGO_ENABLED=0
+ENV GODEBUG=randseednop=0
 
 RUN go build \
     -ldflags "-s -w -X main.Version=${VERSION} -X main.Build=${BUILD::7}" \
