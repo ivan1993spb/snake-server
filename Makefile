@@ -6,8 +6,8 @@ _=$(foreach exec,$(EXECUTABLES), \
 
 IMAGE=ivan1993spb/snake-server
 
-IMAGE_GOLANG=golang:1.19.5-alpine3.16
-IMAGE_ALPINE=alpine:3.16
+IMAGE_GOLANG=golang:1.25.1-alpine3.22
+IMAGE_ALPINE=alpine:3.22
 IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.5.0
 
 REPO=github.com/ivan1993spb/snake-server
@@ -51,6 +51,7 @@ go/vet:
 go/test:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
+		-e GODEBUG=randseednop=0 \
 		go test -v -cover ./...
 
 go/test/benchmarks:
@@ -62,6 +63,7 @@ go/build:
 	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
 		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
 		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
+		-e GODEBUG=randseednop=0 \
 		go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
@@ -73,6 +75,7 @@ go/crosscompile:
 				-e GOOS=$(GOOS) \
 				-e GOARCH=$(GOARCH) \
 				-e CGO_ENABLED=0 \
+				-e GODEBUG=randseednop=0 \
 				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)

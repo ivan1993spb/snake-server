@@ -1,6 +1,6 @@
 module github.com/ivan1993spb/snake-server
 
-go 1.19
+go 1.25
 
 require (
 	github.com/evalphobia/logrus_sentry v0.8.2
