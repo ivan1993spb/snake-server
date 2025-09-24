@@ -157,7 +157,7 @@ Game event types:
 
 * *delete* - contains the deleted object
 
-* *update* - contains the updated object
+* ~~*update* - contains the updated object (**deprecated**)~~
   + When the snake moves:
     ```json
     {
@@ -184,6 +184,48 @@ Game event types:
           "type": "corpse"
         }
       }
+    }
+    ```
+
+* *update_v2* - contains information about updated objects (version 2 of the
+  payload):
+
+  In an update V2 message reduces the size of message:
+
+  1. Snake update V2 payload:
+    ```json
+    {
+      "id": 12,
+      "add": [4, 3],
+      "del": [2, 3]
+    }
+    ```
+  2. Corpse update v2 payload:
+    ```json
+    {
+      "id": 12,
+      "del": [2, 3]
+    }
+    ```
+  3. Watermelon update v2 payload:
+    ```json
+    {
+      "id": 123,
+      "del": [4, 4]
+    }
+    ```
+  4. Wall update v2 payload:
+    ```json
+    {
+      "id": 351,
+      "del": [2, 3]
+    }
+    ```
+  5. Mouse update v2 payload:
+    ```json
+    {
+      "id": 123,
+      "dot": [3, 2]
     }
     ```
 
