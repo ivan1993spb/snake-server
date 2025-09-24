@@ -186,6 +186,63 @@ Game event types:
       }
     }
     ```
+* *update_v2* - contains informating about updating an object (version 2 of the payload):
+
+  In an update V2 message there are changes to reduce the message size:
+
+  TODO: Delete object types!
+
+  1. Object types for V2:
+    + `0` for unspecified
+    + `1` for snake
+    + `2` for apple
+    + `3` for corpse
+    + `4` for watermelon
+    + `5` for wall
+    + `6` for mouse
+  2. Snake update V2 payload:
+    Here `del` is optional. If not present, the snake has grown.
+
+    ```json
+    {
+      "type": 1,
+      "id": 12,
+      "add": [4, 3],
+      "del": [2, 3]
+    }
+    ```
+  3. Corpse update v2 payload:
+    ```json
+    {
+      "type": 3,
+      "id": 12,
+      "del": [2, 3]
+    }
+    ```
+  4. Watermelon update v2 payload:
+    ```json
+    {
+      "type": 4,
+      "id": 123,
+      "del": [4, 4]
+    }
+    ```
+  5. Wall update v2 payload:
+    ```json
+    {
+      "type": 5,
+      "id": 351,
+      "del": [2, 3]
+    }
+    ```
+  6. Mouse update v2 payload:
+    ```json
+    {
+      "type": 6,
+      "id": 123,
+      "dot": [3, 2]
+    }
+    ```
 
 * ~~*checked* - contains an object which was checked by another game object (**deprecated**)~~
 
