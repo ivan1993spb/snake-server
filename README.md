@@ -60,7 +60,6 @@ Options:
 * `--conns-limit` - **integer** - to limit the number of opened web-socket connections (default: *1000*)
 * `--groups-limit` - **integer** - to limit the number of games for a server instance (default: *100*)
 * `--enable-web` - **bool** - to enable the embedded web client (default: *false*)
-* ~~`--enable-broadcast` - **bool** - to enable the broadcasting API method (default: *false*)~~
 * `--forbid-cors` - **bool** - to forbid cross-origin resource sharing (default: *false*)
 * `--log-json` - **bool** - to enable JSON log output format (default: *false*)
 * `--log-level` - **string** - to set the log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)

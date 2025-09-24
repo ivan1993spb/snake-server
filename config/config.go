@@ -136,10 +136,9 @@ type Log struct {
 }
 
 type Flags struct {
-	EnableBroadcast bool `yaml:"enable_broadcast"`
-	EnableWeb       bool `yaml:"enable_web"`
-	ForbidCORS      bool `yaml:"forbid_cors"`
-	Debug           bool `yaml:"debug"`
+	EnableWeb  bool `yaml:"enable_web"`
+	ForbidCORS bool `yaml:"forbid_cors"`
+	Debug      bool `yaml:"debug"`
 }
 
 type Sentry struct {
@@ -183,10 +182,9 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelLogEnableJSON: c.Server.Log.EnableJSON,
 		fieldLabelLogLevel:      c.Server.Log.Level,
 
-		fieldLabelFlagsEnableBroadcast: c.Server.Flags.EnableBroadcast,
-		fieldLabelFlagsEnableWeb:       c.Server.Flags.EnableWeb,
-		fieldLabelFlagsForbidCORS:      c.Server.Flags.ForbidCORS,
-		fieldLabelFlagsDebug:           c.Server.Flags.Debug,
+		fieldLabelFlagsEnableWeb:  c.Server.Flags.EnableWeb,
+		fieldLabelFlagsForbidCORS: c.Server.Flags.ForbidCORS,
+		fieldLabelFlagsDebug:      c.Server.Flags.Debug,
 
 		fieldLabelSentryEnable: c.Server.Sentry.Enable,
 		fieldLabelSentryDSN:    c.Server.Sentry.DSN,
@@ -219,10 +217,9 @@ var defaultConfig = Config{
 		},
 
 		Flags: Flags{
-			EnableBroadcast: defaultFlagsEnableBroadcast,
-			EnableWeb:       defaultFlagsEnableWeb,
-			ForbidCORS:      defaultFlagsForbidCORS,
-			Debug:           defaultFlagsDebug,
+			EnableWeb:  defaultFlagsEnableWeb,
+			ForbidCORS: defaultFlagsForbidCORS,
+			Debug:      defaultFlagsDebug,
 		},
 
 		Sentry: Sentry{
@@ -276,12 +273,6 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 	flagSet.StringVar(&config.Server.Log.Level, flagLabelLogLevel, defaults.Server.Log.Level, flagUsageLogLevel)
 
 	// Flags
-	flagSet.BoolVar(
-		&config.Server.Flags.EnableBroadcast,
-		flagLabelFlagsEnableBroadcast,
-		defaults.Server.Flags.EnableBroadcast,
-		flagUsageFlagsEnableBroadcast,
-	)
 	flagSet.BoolVar(
 		&config.Server.Flags.EnableWeb,
 		flagLabelFlagsEnableWeb,

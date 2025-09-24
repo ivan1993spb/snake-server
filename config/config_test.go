@@ -341,10 +341,9 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelLogEnableJSON: false,
 		fieldLabelLogLevel:      "warning",
 
-		fieldLabelFlagsEnableBroadcast: true,
-		fieldLabelFlagsEnableWeb:       false,
-		fieldLabelFlagsForbidCORS:      true,
-		fieldLabelFlagsDebug:           true,
+		fieldLabelFlagsEnableWeb:  false,
+		fieldLabelFlagsForbidCORS: true,
+		fieldLabelFlagsDebug:      true,
 
 		fieldLabelSentryEnable: true,
 		fieldLabelSentryDSN:    "https://public@sentry.example.com/1",
@@ -371,10 +370,9 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 			},
 
 			Flags: Flags{
-				EnableBroadcast: true,
-				EnableWeb:       false,
-				ForbidCORS:      true,
-				Debug:           true,
+				EnableWeb:  false,
+				ForbidCORS: true,
+				Debug:      true,
 			},
 
 			Sentry: Sentry{
@@ -459,7 +457,6 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	configTest5.Server.TLS.Key = "path/to/key"
 	configTest5.Server.Limits.Groups = 144
 	configTest5.Server.Limits.Conns = 4123
-	configTest5.Server.Flags.EnableBroadcast = true
 	configTest5.Server.Flags.ForbidCORS = true
 
 	tests = append(tests, &Test{
@@ -627,7 +624,6 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 	configTest6.Server.TLS.Key = "path/to/key"
 	configTest6.Server.Limits.Groups = 422
 	configTest6.Server.Limits.Conns = 4123
-	configTest6.Server.Flags.EnableBroadcast = false
 	configTest6.Server.Log.EnableJSON = true
 	configTest6.Server.Flags.EnableWeb = true
 
@@ -640,7 +636,6 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 			"-enable-web",
 			"-groups-limit", "422",
 			"-tls-cert", "/etc/path/cert",
-			"-enable-broadcast=false",
 		},
 
 		expectConfig: configTest6,
