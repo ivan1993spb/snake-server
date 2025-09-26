@@ -91,10 +91,20 @@ func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 		newDots := c.location.Delete(dot)
 
 		if len(newDots) > 0 {
-			newLocation, err := c.world.UpdateObjectAvailableDots(c, c.location, newDots)
+			newLocation, err := c.world.UpdateObjectAvailableDotsV2(world.UpdateV2Params{
+				Object: c,
+				Payload: updateV2{
+					ID:  c.id,
+					Del: dot,
+				},
+				Old: c.location,
+				New: newDots,
+			})
+
 			if err != nil {
 				return 0, false, errCorpseBite(err.Error())
 			}
+
 			if len(newLocation) > 0 {
 				c.location = newLocation
 				return corpseNutritionalValue, true, nil
@@ -166,4 +176,9 @@ type corpse struct {
 	ID   world.Identifier `json:"id"`
 	Dots engine.Location  `json:"dots,omitempty"`
 	Type string           `json:"type"`
+}
+
+type updateV2 struct {
+	ID  world.Identifier `json:"id"`
+	Del engine.Dot       `json:"del"`
 }
