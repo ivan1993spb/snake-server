@@ -1,10 +1,9 @@
 package apple
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
-
-	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -12,7 +11,6 @@ import (
 
 const appleTypeLabel = "apple"
 
-// ffjson: skip
 type Apple struct {
 	id    world.Identifier
 	world world.Interface
@@ -90,16 +88,13 @@ func (a *Apple) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 func (a *Apple) MarshalJSON() ([]byte, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
-	return ffjson.Marshal(&apple{
+	return json.Marshal(&apple{
 		ID:   a.id,
 		Dot:  a.dot,
 		Type: appleTypeLabel,
 	})
 }
 
-//go:generate ffjson -force-regenerate $GOFILE
-
-// ffjson: nodecoder
 type apple struct {
 	ID   world.Identifier `json:"id"`
 	Dot  engine.Dot       `json:"dot"`

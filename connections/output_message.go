@@ -34,9 +34,6 @@ func (t OutputMessageType) MarshalJSON() ([]byte, error) {
 	return []byte(`"unknown"`), nil
 }
 
-//go:generate ffjson $GOFILE
-
-// ffjson: nodecoder
 type OutputMessage struct {
 	Type    OutputMessageType `json:"type"`
 	Payload interface{}       `json:"payload"`

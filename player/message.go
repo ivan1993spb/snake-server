@@ -1,5 +1,3 @@
-//go:generate ffjson -force-regenerate $GOFILE
-
 package player
 
 import "github.com/ivan1993spb/snake-server/world"
@@ -47,13 +45,11 @@ func (t MessageType) String() string {
 	return "unknown"
 }
 
-// ffjson: nodecoder
 type Message struct {
 	Type    MessageType `json:"type"`
 	Payload interface{} `json:"payload"`
 }
 
-// ffjson: nodecoder
 type MessageSize struct {
 	Width  uint8 `json:"width"`
 	Height uint8 `json:"height"`

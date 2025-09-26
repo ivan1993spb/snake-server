@@ -1,11 +1,11 @@
 package corpse
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -20,7 +20,6 @@ const corpseNutritionalValue uint16 = 2
 const corpseTypeLabel = "corpse"
 
 // Snakes can eat corpses
-// ffjson: skip
 type Corpse struct {
 	id       world.Identifier
 	world    world.Interface
@@ -156,16 +155,13 @@ func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 func (c *Corpse) MarshalJSON() ([]byte, error) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
-	return ffjson.Marshal(&corpse{
+	return json.Marshal(&corpse{
 		ID:   c.id,
 		Dots: c.location,
 		Type: corpseTypeLabel,
 	})
 }
 
-//go:generate ffjson -force-regenerate $GOFILE
-
-// ffjson: nodecoder
 type corpse struct {
 	ID   world.Identifier `json:"id"`
 	Dots engine.Location  `json:"dots,omitempty"`

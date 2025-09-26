@@ -1,13 +1,13 @@
 package connections
 
 import (
+	"encoding/json"
 	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/broadcast"
@@ -424,7 +424,7 @@ func (cg *ConnectionGroup) encode(stop <-chan struct{}, chins ...<-chan OutputMe
 						return
 					}
 
-					if data, err := ffjson.Marshal(message); err != nil {
+					if data, err := json.Marshal(message); err != nil {
 						cg.logger.Errorln("encode output message error:", err)
 					} else {
 						select {
