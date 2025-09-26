@@ -147,7 +147,17 @@ func (m *Mouse) move() error {
 		return fmt.Errorf("dot is occupied")
 	}
 
-	if err := m.world.UpdateObject(m, engine.Location{m.dot}, engine.Location{dot}); err != nil {
+	err = m.world.UpdateObjectV2(world.UpdateV2Params{
+		Object: m,
+		Payload: UpdateV2{
+			ID:  m.id,
+			Dot: dot,
+		},
+		Old: engine.Location{m.dot},
+		New: engine.Location{dot},
+	})
+
+	if err != nil {
 		return err
 	}
 
@@ -189,4 +199,9 @@ func (m *Mouse) Run(stop <-chan struct{}) {
 			}
 		}
 	}()
+}
+
+type UpdateV2 struct {
+	ID  world.Identifier `json:"id"`
+	Dot engine.Dot       `json:"dot"`
 }
