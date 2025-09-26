@@ -7,15 +7,17 @@ const (
 	EventTypeObjectCreate
 	EventTypeObjectDelete
 	EventTypeObjectUpdate
+	EventTypeObjectUpdateV2
 	EventTypeObjectChecked
 )
 
 var eventsLabels = map[EventType]string{
-	EventTypeError:         "error",
-	EventTypeObjectCreate:  "create",
-	EventTypeObjectDelete:  "delete",
-	EventTypeObjectUpdate:  "update",
-	EventTypeObjectChecked: "checked",
+	EventTypeError:          "error",
+	EventTypeObjectCreate:   "create",
+	EventTypeObjectDelete:   "delete",
+	EventTypeObjectUpdate:   "update",
+	EventTypeObjectUpdateV2: "update_v2",
+	EventTypeObjectChecked:  "checked",
 }
 
 func (event EventType) String() string {
@@ -26,11 +28,12 @@ func (event EventType) String() string {
 }
 
 var eventTypesJSONs = map[EventType][]byte{
-	EventTypeError:         []byte(`"error"`),
-	EventTypeObjectCreate:  []byte(`"create"`),
-	EventTypeObjectDelete:  []byte(`"delete"`),
-	EventTypeObjectUpdate:  []byte(`"update"`),
-	EventTypeObjectChecked: []byte(`"checked"`),
+	EventTypeError:          []byte(`"error"`),
+	EventTypeObjectCreate:   []byte(`"create"`),
+	EventTypeObjectDelete:   []byte(`"delete"`),
+	EventTypeObjectUpdate:   []byte(`"update"`),
+	EventTypeObjectUpdateV2: []byte(`"update_v2"`),
+	EventTypeObjectChecked:  []byte(`"checked"`),
 }
 
 func (event EventType) MarshalJSON() ([]byte, error) {
