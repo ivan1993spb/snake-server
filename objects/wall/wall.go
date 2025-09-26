@@ -85,11 +85,21 @@ func (w *Wall) Break(dot engine.Dot, force float64) (success bool, err error) {
 		location := w.location.Delete(dot)
 
 		if location.DotCount() > 0 {
-			if err := w.world.UpdateObject(w, w.location, location); err != nil {
+			err := w.world.UpdateObjectV2(world.UpdateV2Params{
+				Object: w,
+				Payload: updateV2{
+					ID:  w.id,
+					Del: dot,
+				},
+				Old: w.location,
+				New: location,
+			})
+
+			if err != nil {
 				return false, errWallBreak(err.Error())
-			} else {
-				w.location = location
 			}
+
+			w.location = location
 		} else {
 			w.world.IdentifierRegistry().Release(w.id)
 
@@ -126,4 +136,9 @@ type wall struct {
 	ID   world.Identifier `json:"id"`
 	Dots engine.Location  `json:"dots,omitempty"`
 	Type string           `json:"type"`
+}
+
+type updateV2 struct {
+	ID  world.Identifier `json:"id"`
+	Del engine.Dot       `json:"del"`
 }
