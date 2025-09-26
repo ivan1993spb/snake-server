@@ -82,10 +82,20 @@ func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 		newDots := w.location.Delete(dot)
 
 		if len(newDots) > 0 {
-			newLocation, err := w.world.UpdateObjectAvailableDots(w, w.location, newDots)
+			newLocation, err := w.world.UpdateObjectAvailableDotsV2(world.UpdateV2Params{
+				Object: w,
+				Payload: updateV2{
+					ID:  w.id,
+					Del: dot,
+				},
+				Old: w.location,
+				New: newDots,
+			})
+
 			if err != nil {
 				return 0, false, errWatermelonBite(err.Error())
 			}
+
 			if len(newLocation) > 0 {
 				w.location = newLocation
 				return watermelonNutritionalValue, true, nil
@@ -120,4 +130,9 @@ type watermelon struct {
 	ID   world.Identifier `json:"id"`
 	Dots []engine.Dot     `json:"dots,omitempty"`
 	Type string           `json:"type"`
+}
+
+type updateV2 struct {
+	ID  world.Identifier `json:"id"`
+	Del engine.Dot       `json:"del"`
 }
