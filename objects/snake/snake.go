@@ -168,7 +168,18 @@ func (s *Snake) Hit(dot engine.Dot, force float64) (success bool, err error) {
 	if s.location.Contains(dot) {
 		if force >= math.Pow(s.unsafeGetForce(), hitStrengthExp) {
 			newLocation := s.location.Delete(dot)
-			if err := s.world.UpdateObject(s, s.location, newLocation); err != nil {
+
+			err = s.world.UpdateObjectV2(world.UpdateV2Params{
+				Object: s,
+				Payload: updateV2OnlyDel{
+					ID:  s.id,
+					Del: dot,
+				},
+				Old: s.location,
+				New: newLocation,
+			})
+
+			if err != nil {
 				return false, errSnakeHit(err.Error())
 			}
 
@@ -279,10 +290,32 @@ func (s *Snake) move() error {
 	tmpLocation[0] = dot
 
 	if s.length < uint16(len(tmpLocation)) {
+		tail := tmpLocation[len(tmpLocation)-1]
 		tmpLocation = tmpLocation[:len(tmpLocation)-1]
+
+		err = s.world.UpdateObjectV2(world.UpdateV2Params{
+			Object: s,
+			Payload: updateV2{
+				ID:  s.id,
+				Add: dot,
+				Del: tail,
+			},
+			Old: s.location,
+			New: tmpLocation,
+		})
+	} else {
+		err = s.world.UpdateObjectV2(world.UpdateV2Params{
+			Object: s,
+			Payload: updateV2OnlyAdd{
+				ID:  s.id,
+				Add: dot,
+			},
+			Old: s.location,
+			New: tmpLocation,
+		})
 	}
 
-	if err := s.world.UpdateObject(s, s.location, tmpLocation); err != nil {
+	if err != nil {
 		return fmt.Errorf("update snake error: %s", err)
 	}
 
@@ -425,4 +458,20 @@ type snake struct {
 	ID   world.Identifier `json:"id"`
 	Dots []engine.Dot     `json:"dots,omitempty"`
 	Type string           `json:"type"`
+}
+
+type updateV2 struct {
+	ID  world.Identifier `json:"id"`
+	Del engine.Dot       `json:"del"`
+	Add engine.Dot       `json:"add"`
+}
+
+type updateV2OnlyAdd struct {
+	ID  world.Identifier `json:"id"`
+	Add engine.Dot       `json:"add"`
+}
+
+type updateV2OnlyDel struct {
+	ID  world.Identifier `json:"id"`
+	Del engine.Dot       `json:"del"`
 }
