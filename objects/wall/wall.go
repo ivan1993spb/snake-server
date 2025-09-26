@@ -1,10 +1,9 @@
 package wall
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
-
-	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -14,7 +13,6 @@ const wallTypeLabel = "wall"
 
 const wallMinBreakForce = 10000
 
-// ffjson: skip
 type Wall struct {
 	id       world.Identifier
 	world    world.Interface
@@ -117,16 +115,13 @@ func (w *Wall) String() string {
 func (w *Wall) MarshalJSON() ([]byte, error) {
 	w.mux.RLock()
 	defer w.mux.RUnlock()
-	return ffjson.Marshal(&wall{
+	return json.Marshal(&wall{
 		ID:   w.id,
 		Dots: w.location,
 		Type: wallTypeLabel,
 	})
 }
 
-//go:generate ffjson -force-regenerate $GOFILE
-
-// ffjson: nodecoder
 type wall struct {
 	ID   world.Identifier `json:"id"`
 	Dots engine.Location  `json:"dots,omitempty"`

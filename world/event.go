@@ -1,5 +1,3 @@
-//go:generate ffjson $GOFILE
-
 package world
 
 type EventType uint8
@@ -42,7 +40,6 @@ func (event EventType) MarshalJSON() ([]byte, error) {
 	return []byte(`"unknown"`), nil
 }
 
-// ffjson: nodecoder
 type Event struct {
 	Type    EventType
 	Payload interface{}

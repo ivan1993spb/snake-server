@@ -42,9 +42,6 @@ func (t InputMessageType) String() string {
 	return "unknown"
 }
 
-//go:generate ffjson $GOFILE
-
-// ffjson: noencoder
 type InputMessage struct {
 	Type    InputMessageType `json:"type"`
 	Payload string           `json:"payload"`
