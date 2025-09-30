@@ -7,7 +7,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/ivan1993spb/snake-server)](https://hub.docker.com/r/ivan1993spb/snake-server)
 
 Snake-Server is a multiplayer Snake game server where you and your friends can
-compete in real time. Its unique twist: snakes can eat each other!
+compete in real time. Its unique twist: snakes can hunt each other!
 
 [![Game demo](demo.gif)](https://snakeonline.xyz)
 
@@ -47,15 +47,23 @@ Use `snake-server -h` for more information.
 
 Options:
 
-* `--address` - **string** - sets an address to listen and serve (default: *:8080*). For example: *:8080*, *localhost:7070*
-* `--conns-limit` - **integer** - to limit the number of opened web-socket connections (default: *1000*)
-* `--groups-limit` - **integer** - to limit the number of games for a server instance (default: *100*)
-* `--enable-web` - **bool** - to enable the embedded web client (default: *false*)
-* `--forbid-cors` - **bool** - to forbid cross-origin resource sharing (default: *false*)
+* `--address` - **string** - sets an address to listen and serve (default:
+*:8080*). For example: *:8080*, *localhost:7070*
+* `--conns-limit` - **integer** - to limit the number of opened web-socket
+connections (default: *1000*)
+* `--groups-limit` - **integer** - to limit the number of games for a server
+instance (default: *100*)
+* `--enable-web` - **bool** - to enable the embedded web client (default:
+*false*)
+* `--forbid-cors` - **bool** - to forbid cross-origin resource sharing
+(default: *false*)
 * `--log-json` - **bool** - to enable JSON log output format (default: *false*)
-* `--log-level` - **string** - to set the log level: *panic*, *fatal*, *error*, *warning* (*warn*), *info* or *debug* (default: *info*)
-* `--sentry-enable` - **bool** - to enable sending logs to sentry (default: *false*)
-* `--sentry-dsn` - **string** - sentry's DSN (default: ""). For example: `https://public@sentry.example.com/44`
+* `--log-level` - **string** - to set the log level: *panic*, *fatal*, *error*,
+*warning* (*warn*), *info* or *debug* (default: *info*)
+* `--sentry-enable` - **bool** - to enable sending logs to sentry (default:
+*false*)
+* `--sentry-dsn` - **string** - sentry's DSN (default: ""). For example:
+`https://public@sentry.example.com/44`
 * `--tls-cert` - **string** - to specify a path to a certificate file
 * `--tls-enable` - **bool** - to enable TLS
 * `--tls-key` - **string** - to specify a path to a key file
@@ -76,9 +84,10 @@ You can find examples here:
 
 ## Docs
 
-* REST API specification: [docs/api.md](docs/api.md) and [openapi.yaml](openapi.yaml).
-* Web-Socket documentation [docs/websocket.md](docs/websocket.md).
+* REST API specification: [docs/api.md](docs/api.md) and
+[openapi.yaml](openapi.yaml) and [swagger-ui](https://snakeonline.xyz/openapi/)
+* Web-Socket documentation [docs/websocket.md](docs/websocket.md)
 
 ## License
 
-See [LICENSE](LICENSE).
+See [LICENSE](LICENSE)
