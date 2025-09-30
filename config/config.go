@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
@@ -46,8 +45,6 @@ const (
 	flagLabelGroupsLimit = "groups-limit"
 	flagLabelConnsLimit  = "conns-limit"
 
-	flagLabelSeed = "seed"
-
 	flagLabelLogEnableJSON = "log-json"
 	flagLabelLogLevel      = "log-level"
 
@@ -70,8 +67,6 @@ const (
 
 	flagUsageGroupsLimit = "game groups limit"
 	flagUsageConnsLimit  = "web-socket connections limit"
-
-	flagUsageSeed = "random seed"
 
 	flagUsageLogEnableJSON = "use json format for logger"
 	flagUsageLogLevel      = "set log level: panic, fatal, error, warning (warn), info or debug"
@@ -96,8 +91,6 @@ const (
 	fieldLabelGroupsLimit = "groups-limit"
 	fieldLabelConnsLimit  = "conns-limit"
 
-	fieldLabelSeed = "seed"
-
 	fieldLabelLogEnableJSON = "log-json"
 	fieldLabelLogLevel      = "log-level"
 
@@ -111,10 +104,6 @@ const (
 )
 
 const envVarSnakeServerConfigPath = "SNAKE_SERVER_CONFIG_PATH"
-
-func generateSeed() int64 {
-	return time.Now().UnixNano()
-}
 
 // TLS structure represents TLS config
 type TLS struct {
@@ -152,7 +141,6 @@ type Server struct {
 
 	TLS    TLS    `yaml:"tls"`
 	Limits Limits `yaml:"limits"`
-	Seed   int64  `yaml:"seed"`
 	Log    Log    `yaml:"log"`
 
 	Flags Flags `yaml:"flags"`
@@ -177,8 +165,6 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelGroupsLimit: c.Server.Limits.Groups,
 		fieldLabelConnsLimit:  c.Server.Limits.Conns,
 
-		fieldLabelSeed: c.Server.Seed,
-
 		fieldLabelLogEnableJSON: c.Server.Log.EnableJSON,
 		fieldLabelLogLevel:      c.Server.Log.Level,
 
@@ -190,8 +176,6 @@ func (c Config) Fields() map[string]interface{} {
 		fieldLabelSentryDSN:    c.Server.Sentry.DSN,
 	}
 }
-
-var seed = generateSeed()
 
 // Default settings
 var defaultConfig = Config{
@@ -208,8 +192,6 @@ var defaultConfig = Config{
 			Groups: defaultGroupsLimit,
 			Conns:  defaultConnsLimit,
 		},
-
-		Seed: seed,
 
 		Log: Log{
 			EnableJSON: defaultLogEnableJSON,
@@ -264,9 +246,6 @@ func ParseFlags(flagSet *flag.FlagSet, args []string, defaults Config) (Config, 
 	// Limits
 	flagSet.IntVar(&config.Server.Limits.Groups, flagLabelGroupsLimit, defaults.Server.Limits.Groups, flagUsageGroupsLimit)
 	flagSet.IntVar(&config.Server.Limits.Conns, flagLabelConnsLimit, defaults.Server.Limits.Conns, flagUsageConnsLimit)
-
-	// Random
-	flagSet.Int64Var(&config.Server.Seed, flagLabelSeed, defaults.Server.Seed, flagUsageSeed)
 
 	// Logging
 	flagSet.BoolVar(&config.Server.Log.EnableJSON, flagLabelLogEnableJSON, defaults.Server.Log.EnableJSON, flagUsageLogEnableJSON)

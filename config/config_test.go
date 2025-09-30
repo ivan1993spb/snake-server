@@ -59,12 +59,11 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 3
 	configTest3 := defaultConfig
 	configTest3.Server.Address = "localhost:6670"
-	configTest3.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "change address and seed",
+		msg: "change address again",
 
-		args:     []string{"-address", "localhost:6670", "-seed", "0"},
+		args:     []string{"-address", "localhost:6670"},
 		defaults: defaultConfig,
 
 		expectConfig: configTest3,
@@ -74,15 +73,13 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 4
 	configTest4 := defaultConfig
 	configTest4.Server.Address = "snakeonline.xyz:7986"
-	configTest4.Server.Seed = 0
 	configTest4.Server.Log.EnableJSON = true
 
 	tests = append(tests, &Test{
-		msg: "change address, seed and logging",
+		msg: "change address and logging",
 
 		args: []string{
 			"-address", "snakeonline.xyz:7986",
-			"-seed", "0",
 			"-log-json",
 		},
 		defaults: defaultConfig,
@@ -94,17 +91,15 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 5
 	configTest5 := defaultConfig
 	configTest5.Server.Address = "snakeonline.xyz:3211"
-	configTest5.Server.Seed = 32
 	configTest5.Server.Log.EnableJSON = true
 	configTest5.Server.Flags.EnableWeb = true
 	configTest5.Server.Limits.Conns = 321
 
 	tests = append(tests, &Test{
-		msg: "change address, seed, logging, connection limit and enable web",
+		msg: "change address, logging, connection limit and enable web",
 
 		args: []string{
 			"-address", "snakeonline.xyz:3211",
-			"-seed", "32",
 			"-log-json",
 			"-enable-web",
 			"-conns-limit", "321",
@@ -241,10 +236,9 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 
 	// Test case 2
 	configTest2 := defaultConfig
-	configTest2.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config 2",
 
 		input:    ConfigYAMLSampleDefault,
 		defaults: defaultConfig,
@@ -336,8 +330,6 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelGroupsLimit: 1000,
 		fieldLabelConnsLimit:  10000,
 
-		fieldLabelSeed: int64(321),
-
 		fieldLabelLogEnableJSON: false,
 		fieldLabelLogLevel:      "warning",
 
@@ -361,8 +353,6 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 				Groups: 1000,
 				Conns:  10000,
 			},
-
-			Seed: 321,
 
 			Log: Log{
 				EnableJSON: false,
@@ -398,10 +388,9 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 
 	// Test case 1
 	configTest1 := defaultConfig
-	configTest1.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config 1",
 
 		input:    ConfigYAMLSampleDefault,
 		defaults: defaultConfig,
@@ -527,10 +516,9 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 
 	// Test case 1
 	configTest1 := defaultConfig
-	configTest1.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config",
 
 		input: ConfigYAMLSampleDefault,
 		args:  []string{},

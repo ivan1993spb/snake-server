@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -147,13 +146,10 @@ func main() {
 	logger.WithFields(logrus.Fields{
 		"conns_limit":  cfg.Server.Limits.Conns,
 		"groups_limit": cfg.Server.Limits.Groups,
-		"seed":         cfg.Server.Seed,
 		"log_level":    cfg.Server.Log.Level,
 		"web":          cfg.Server.Flags.EnableWeb,
 		"cors":         !cfg.Server.Flags.ForbidCORS,
 	}).Info("preparing to start server")
-
-	rand.Seed(cfg.Server.Seed)
 
 	groupManager, err := connections.NewConnectionGroupManager(logger, cfg.Server.Limits.Groups, cfg.Server.Limits.Conns)
 	if err != nil {
