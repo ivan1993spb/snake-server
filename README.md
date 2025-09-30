@@ -6,24 +6,23 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ivan1993spb/snake-server)](https://goreportcard.com/report/github.com/ivan1993spb/snake-server)
 [![Docker Pulls](https://img.shields.io/docker/pulls/ivan1993spb/snake-server)](https://hub.docker.com/r/ivan1993spb/snake-server)
 
-Snake-Server is a server for multiplayer snake game. You can play with your
-friends! The special feature is that you can eat small snakes!
-
-Take a look at a working instance here - https://snakeonline.xyz
+Snake-Server is a multiplayer Snake game server where you and your friends can
+compete in real time. Its unique twist: snakes can eat each other!
 
 [![Game demo](demo.gif)](https://snakeonline.xyz)
 
 ## Usage
 
 1. `docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web`
-2. Open in the browser http://localhost:8080/.
+2. Open your browser: http://localhost:8080/.
 
 ## How to play?
 
-* You control a snake
-* You need to grow the biggest snake
-* You can eat apples, mice, watermelons, small and dead snakes
-* If the snake dies, you will have to start over
+* Create a game
+* You have a snake
+* You have to eat and grow
+* You can eat apples, mice, watermelons, smaller and dead snakes
+* If your snake dies, you start over
 
 ## Installation
 
@@ -34,23 +33,15 @@ Take a look at a working instance here - https://snakeonline.xyz
   snake-server -h
   ```
 
-* **Docker**
-
-  Check out [**the repo**](https://hub.docker.com/r/ivan1993spb/snake-server).
+* [**Via docker**](https://hub.docker.com/r/ivan1993spb/snake-server)
 
   ```bash
-  docker pull ivan1993spb/snake-server
+  docker run --rm ivan1993spb/snake-server -h
 
   docker run --rm -p 8080:8080 ivan1993spb/snake-server --enable-web
-
-  docker run --rm ivan1993spb/snake-server -h
   ```
 
-* **Deploy the server using the ansible playbook**
-
-  https://github.com/ivan1993spb/snake-ansible.
-
-## CLI options
+## CLI arguments
 
 Use `snake-server -h` for more information.
 
@@ -72,24 +63,21 @@ Options:
 
 ## Clients
 
-There is an embedded JavaScript web client compiled into the server.
-You can enable it with CLI flag `--enable-web`.
+There is an embedded JavaScript web client compiled into the server. You can
+enable it with the CLI flag `--enable-web`.
 
-You are always welcome to create your own client!
+Everyone is welcome to create a client! It's a great programming exercise if
+you want to practice and can't think of your own project.
 
 You can find examples here:
 
 * VueJS client repo: https://github.com/ivan1993spb/snake-lightweight-client
-
-  *This is the embedded web client*
-
 * Python backend repo: https://github.com/ivan1993spb/snake-backend
 
-  *Development is in progress*
+## Docs
 
-See documentation [docs/api.md](docs/api.md) and [docs/websocket.md](docs/websocket.md).
-
-REST API specification: [openapi.yaml](openapi.yaml).
+* REST API specification: [docs/api.md](docs/api.md) and [openapi.yaml](openapi.yaml).
+* Web-Socket documentation [docs/websocket.md](docs/websocket.md).
 
 ## License
 
