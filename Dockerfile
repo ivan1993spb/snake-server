@@ -19,6 +19,10 @@ ARG BUILD=unknown
 
 WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
+COPY go.mod go.sum ./
+
+RUN go mod download -x
+
 COPY . .
 
 COPY --from=client \
