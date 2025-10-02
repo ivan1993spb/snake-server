@@ -2,7 +2,7 @@
 # See Makefile
 ARG IMAGE_GOLANG=golang:1.25.1-alpine3.22
 ARG IMAGE_ALPINE=alpine:3.22
-ARG IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:2.0.0-rc.2
+ARG IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.6.0-rc.1
 
 FROM $IMAGE_CLIENT AS client
 
@@ -19,11 +19,15 @@ ARG BUILD=unknown
 
 WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
-COPY . .
+COPY go.mod go.sum ./
+
+RUN go mod download -x
 
 COPY --from=client \
     /usr/local/share/snake-lightweight-client \
     client/public/dist
+
+COPY . .
 
 ENV CGO_ENABLED=0
 ENV GODEBUG=randseednop=0
