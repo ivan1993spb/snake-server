@@ -19,15 +19,11 @@ ARG BUILD=unknown
 
 WORKDIR /go/src/github.com/ivan1993spb/snake-server
 
-COPY go.mod go.sum ./
-
-RUN go mod download -x
+COPY . .
 
 COPY --from=client \
     /usr/local/share/snake-lightweight-client \
     client/public/dist
-
-COPY . .
 
 ENV CGO_ENABLED=0
 ENV GODEBUG=randseednop=0
