@@ -8,7 +8,7 @@ IMAGE=ivan1993spb/snake-server
 
 IMAGE_GOLANG=golang:1.25.1-alpine3.22
 IMAGE_ALPINE=alpine:3.22
-IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.6.0-rc.1
+IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.6.0-rc.2
 
 REPO=github.com/ivan1993spb/snake-server
 
