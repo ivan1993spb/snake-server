@@ -10,7 +10,6 @@ server:
   limits:
     groups: 100
     conns: 1000
-  seed: 0
   log:
     enable_json: False
     level: info

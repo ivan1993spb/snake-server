@@ -3,7 +3,7 @@ openapi: 3.0.0
 info:
   title: Snake-Server API
   description: Snake-Server is a server for multiplayer snake game.
-  version: 4.6.1
+  version: 4.11.0
   license:
     name: MIT
   contact:
@@ -174,46 +174,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Info'
-  /games/{id}/broadcast:
-    post:
-      summary: Broadcast a message
-      tags:
-        - Games
-      description: Broadcast a message to all players in a game with given identificator
-      deprecated: true
-      parameters:
-        - $ref: '#/components/parameters/GameID'
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                message:
-                  description: Message to be broadcasted for players in a selected game
-                  type: string
-              required:
-                - message
-      responses:
-        200:
-          description: Object contained broadcast result flag
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Broadcast'
-        400:
-          $ref: '#/components/responses/InvalidParameters'
-        404:
-          $ref: '#/components/responses/GameNotFound'
-        500:
-          $ref: '#/components/responses/ServerError'
-        503:
-          description: Service unavailable, cannot broadcast right now
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /games/{id}/objects:
     get:
       summary: A list of objects on the map
@@ -356,16 +316,6 @@ components:
           description: Rate
           type: integer
           format: int32
-
-    Broadcast:
-      type: object
-      description: Object contains broadcast result flag
-      required:
-        - success
-      properties:
-        success:
-          description: If the flag is true, broadcasting has succeeded
-          type: boolean
 
     Capacity:
       type: object

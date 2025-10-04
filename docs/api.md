@@ -97,25 +97,6 @@ API methods:
   }
   ```
 
-* ~~**`POST /api/games/{id}/broadcast`**~~
-
-  ***DEPRECATED***
-
-  Sends a message to all players in a selected game. Returns `true` on success.
-  
-  **Request body size is limited: maximum 128 bytes**
-
-  ```
-  curl -s -X POST -d message=text http://localhost:8080/api/games/1/broadcast | jq
-  {
-    "success": true
-  }
-  ```
-
-  If request method is disabled, you will receive error 404.
-
-  It is a good idea to never ever enable this method. By default it is disabled.
-
 * **`GET /api/games/{id}/objects`**
 
   Returns all objects and map properties of a game.

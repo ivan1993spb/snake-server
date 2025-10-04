@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +30,7 @@ func (e ErrGetInfoHandler) Error() string {
 }
 
 func NewGetInfoHandler(logger logrus.FieldLogger, author, license, version, build string) http.Handler {
-	info, err := ffjson.Marshal(&responseGetInfoHandler{
+	info, err := json.Marshal(&responseGetInfoHandler{
 		Author:  author,
 		License: license,
 		Version: version,

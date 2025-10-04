@@ -1,11 +1,10 @@
 package watermelon
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
-
-	"github.com/pquerna/ffjson/ffjson"
 
 	"github.com/ivan1993spb/snake-server/engine"
 	"github.com/ivan1993spb/snake-server/world"
@@ -29,7 +28,6 @@ const watermelonTypeLabel = "watermelon"
 
 const watermelonNutritionalValue = 5
 
-// ffjson: skip
 type Watermelon struct {
 	id       world.Identifier
 	world    world.Interface
@@ -111,16 +109,13 @@ func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 func (w *Watermelon) MarshalJSON() ([]byte, error) {
 	w.mux.RLock()
 	defer w.mux.RUnlock()
-	return ffjson.Marshal(&watermelon{
+	return json.Marshal(&watermelon{
 		ID:   w.id,
 		Dots: w.location,
 		Type: watermelonTypeLabel,
 	})
 }
 
-//go:generate ffjson -force-regenerate $GOFILE
-
-// ffjson: nodecoder
 type watermelon struct {
 	ID   world.Identifier `json:"id"`
 	Dots []engine.Dot     `json:"dots,omitempty"`

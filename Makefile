@@ -8,7 +8,7 @@ IMAGE=ivan1993spb/snake-server
 
 IMAGE_GOLANG=golang:1.25.1-alpine3.22
 IMAGE_ALPINE=alpine:3.22
-IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.5.0
+IMAGE_CLIENT=ivan1993spb/snake-lightweight-client:1.6.0
 
 REPO=github.com/ivan1993spb/snake-server
 
@@ -20,7 +20,7 @@ VERSION=$(shell git describe --tags --abbrev=0)
 BUILD=$(shell git rev-parse --short HEAD)
 
 PLATFORMS=darwin linux windows
-ARCHITECTURES=386 amd64
+ARCHITECTURES=amd64 arm64
 
 LDFLAGS=-ldflags "-s -w -X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 DOCKER_BUILD_ARGS=\
@@ -29,6 +29,9 @@ DOCKER_BUILD_ARGS=\
  --build-arg IMAGE_GOLANG=$(IMAGE_GOLANG) \
  --build-arg IMAGE_ALPINE=$(IMAGE_ALPINE) \
  --build-arg IMAGE_CLIENT=$(IMAGE_CLIENT)
+
+export GODEBUG=randseednop=0
+export CGO_ENABLED=0
 
 default: build
 
@@ -45,38 +48,22 @@ docker/push:
 	@docker push $(IMAGE):latest
 
 go/vet:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) go vet ./...
+	@go vet ./...
 
 go/test:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		-e GODEBUG=randseednop=0 \
-		go test -v -cover ./...
+	@go test -count=100 -cover ./...
 
 go/test/benchmarks:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		go test -bench . -timeout 1h ./...
+	@go test -bench . -timeout 1h ./...
 
 go/build:
-	@docker run --rm -v $(PWD):/go/src/$(REPO) -w /go/src/$(REPO) \
-		-e GOOS=$(DEFAULT_GOOS) -e GOARCH=$(DEFAULT_GOARCH) \
-		-e CGO_ENABLED=0 $(IMAGE_GOLANG) \
-		-e GODEBUG=randseednop=0 \
-		go build $(LDFLAGS) -v -o $(BINARY_NAME)
+	@go build $(LDFLAGS) -v -o $(BINARY_NAME)
 
 go/crosscompile:
 	@_=$(foreach GOOS, $(PLATFORMS), \
 		$(foreach GOARCH, $(ARCHITECTURES), \
-			$(shell docker run --rm \
-				-v $(PWD):/go/src/$(REPO) \
-				-w /go/src/$(REPO) \
-				-e GOOS=$(GOOS) \
-				-e GOARCH=$(GOARCH) \
-				-e CGO_ENABLED=0 \
-				-e GODEBUG=randseednop=0 \
-				$(IMAGE_GOLANG) go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
+			$(shell GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 GODEBUG=randseednop=0 \
+				go build $(LDFLAGS) -o $(BINARY_NAME)-$(VERSION)-$(GOOS)-$(GOARCH)) \
 		) \
 	)
 	@_=$(foreach GOOS, $(PLATFORMS), \
@@ -98,7 +85,7 @@ install:
 clean:
 	@find -maxdepth 1 -type f -name '${BINARY_NAME}*' -print -delete
 
-coverprofile:
+go/coverprofile:
 	@go test -coverprofile=coverage.out ./...
 	@go tool cover -func=coverage.out
 	@go tool cover -html=coverage.out

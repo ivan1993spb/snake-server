@@ -1,11 +1,11 @@
 package connections
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/broadcast"
@@ -152,8 +152,6 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 	go func() {
 		defer close(chout)
 
-		var decoder = ffjson.NewDecoder()
-
 		for {
 			select {
 			case data, ok := <-chin:
@@ -162,7 +160,7 @@ func (cw *ConnectionWorker) decode(chin <-chan []byte, stop <-chan struct{}) <-c
 				}
 
 				var inputMessage InputMessage
-				if err := decoder.Decode(data, &inputMessage); err != nil {
+				if err := json.Unmarshal(data, &inputMessage); err != nil {
 					cw.logger.Errorln("decode input message error:", err)
 				} else {
 					select {
@@ -387,7 +385,7 @@ func (cw *ConnectionWorker) encode(stop <-chan struct{}, chins ...<-chan OutputM
 						return
 					}
 
-					if data, err := ffjson.Marshal(message); err != nil {
+					if data, err := json.Marshal(message); err != nil {
 						cw.logger.Errorln("encode output message error:", err)
 					} else {
 						select {

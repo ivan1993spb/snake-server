@@ -59,12 +59,11 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 3
 	configTest3 := defaultConfig
 	configTest3.Server.Address = "localhost:6670"
-	configTest3.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "change address and seed",
+		msg: "change address again",
 
-		args:     []string{"-address", "localhost:6670", "-seed", "0"},
+		args:     []string{"-address", "localhost:6670"},
 		defaults: defaultConfig,
 
 		expectConfig: configTest3,
@@ -74,15 +73,13 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 4
 	configTest4 := defaultConfig
 	configTest4.Server.Address = "snakeonline.xyz:7986"
-	configTest4.Server.Seed = 0
 	configTest4.Server.Log.EnableJSON = true
 
 	tests = append(tests, &Test{
-		msg: "change address, seed and logging",
+		msg: "change address and logging",
 
 		args: []string{
 			"-address", "snakeonline.xyz:7986",
-			"-seed", "0",
 			"-log-json",
 		},
 		defaults: defaultConfig,
@@ -94,17 +91,15 @@ func Test_ParseFlags_ParsesFlagsCorrectly(t *testing.T) {
 	// Test case 5
 	configTest5 := defaultConfig
 	configTest5.Server.Address = "snakeonline.xyz:3211"
-	configTest5.Server.Seed = 32
 	configTest5.Server.Log.EnableJSON = true
 	configTest5.Server.Flags.EnableWeb = true
 	configTest5.Server.Limits.Conns = 321
 
 	tests = append(tests, &Test{
-		msg: "change address, seed, logging, connection limit and enable web",
+		msg: "change address, logging, connection limit and enable web",
 
 		args: []string{
 			"-address", "snakeonline.xyz:3211",
-			"-seed", "32",
 			"-log-json",
 			"-enable-web",
 			"-conns-limit", "321",
@@ -241,10 +236,9 @@ func Test_ParseYAML_ParsesYAMLCorrectly(t *testing.T) {
 
 	// Test case 2
 	configTest2 := defaultConfig
-	configTest2.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config 2",
 
 		input:    ConfigYAMLSampleDefault,
 		defaults: defaultConfig,
@@ -336,15 +330,12 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 		fieldLabelGroupsLimit: 1000,
 		fieldLabelConnsLimit:  10000,
 
-		fieldLabelSeed: int64(321),
-
 		fieldLabelLogEnableJSON: false,
 		fieldLabelLogLevel:      "warning",
 
-		fieldLabelFlagsEnableBroadcast: true,
-		fieldLabelFlagsEnableWeb:       false,
-		fieldLabelFlagsForbidCORS:      true,
-		fieldLabelFlagsDebug:           true,
+		fieldLabelFlagsEnableWeb:  false,
+		fieldLabelFlagsForbidCORS: true,
+		fieldLabelFlagsDebug:      true,
 
 		fieldLabelSentryEnable: true,
 		fieldLabelSentryDSN:    "https://public@sentry.example.com/1",
@@ -363,18 +354,15 @@ func Test_Config_Fields_ReturnsFieldsOfTheConfig(t *testing.T) {
 				Conns:  10000,
 			},
 
-			Seed: 321,
-
 			Log: Log{
 				EnableJSON: false,
 				Level:      "warning",
 			},
 
 			Flags: Flags{
-				EnableBroadcast: true,
-				EnableWeb:       false,
-				ForbidCORS:      true,
-				Debug:           true,
+				EnableWeb:  false,
+				ForbidCORS: true,
+				Debug:      true,
 			},
 
 			Sentry: Sentry{
@@ -400,10 +388,9 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 
 	// Test case 1
 	configTest1 := defaultConfig
-	configTest1.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config 1",
 
 		input:    ConfigYAMLSampleDefault,
 		defaults: defaultConfig,
@@ -459,7 +446,6 @@ func Test_ReadYAMLConfig_ReadsConfigCorrectly(t *testing.T) {
 	configTest5.Server.TLS.Key = "path/to/key"
 	configTest5.Server.Limits.Groups = 144
 	configTest5.Server.Limits.Conns = 4123
-	configTest5.Server.Flags.EnableBroadcast = true
 	configTest5.Server.Flags.ForbidCORS = true
 
 	tests = append(tests, &Test{
@@ -530,10 +516,9 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 
 	// Test case 1
 	configTest1 := defaultConfig
-	configTest1.Server.Seed = 0
 
 	tests = append(tests, &Test{
-		msg: "a valid config with seed equal 0",
+		msg: "a valid config",
 
 		input: ConfigYAMLSampleDefault,
 		args:  []string{},
@@ -627,7 +612,6 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 	configTest6.Server.TLS.Key = "path/to/key"
 	configTest6.Server.Limits.Groups = 422
 	configTest6.Server.Limits.Conns = 4123
-	configTest6.Server.Flags.EnableBroadcast = false
 	configTest6.Server.Log.EnableJSON = true
 	configTest6.Server.Flags.EnableWeb = true
 
@@ -640,7 +624,6 @@ func Test_Configurate_ReturnsCorrectConfig(t *testing.T) {
 			"-enable-web",
 			"-groups-limit", "422",
 			"-tls-cert", "/etc/path/cert",
-			"-enable-broadcast=false",
 		},
 
 		expectConfig: configTest6,

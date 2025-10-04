@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -147,18 +146,10 @@ func main() {
 	logger.WithFields(logrus.Fields{
 		"conns_limit":  cfg.Server.Limits.Conns,
 		"groups_limit": cfg.Server.Limits.Groups,
-		"seed":         cfg.Server.Seed,
 		"log_level":    cfg.Server.Log.Level,
-		"broadcast":    cfg.Server.Flags.EnableBroadcast,
 		"web":          cfg.Server.Flags.EnableWeb,
 		"cors":         !cfg.Server.Flags.ForbidCORS,
 	}).Info("preparing to start server")
-
-	if cfg.Server.Flags.EnableBroadcast {
-		logger.Warning("broadcasting API method is enabled!")
-	}
-
-	rand.Seed(cfg.Server.Seed)
 
 	groupManager, err := connections.NewConnectionGroupManager(logger, cfg.Server.Limits.Groups, cfg.Server.Limits.Conns)
 	if err != nil {
@@ -194,9 +185,6 @@ func main() {
 	apiRouter.Path(handlers.URLRouteGetGameByID).Methods(handlers.MethodGetGame).Handler(handlers.NewGetGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteDeleteGameByID).Methods(handlers.MethodDeleteGame).Handler(handlers.NewDeleteGameHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRouteGetGames).Methods(handlers.MethodGetGames).Handler(handlers.NewGetGamesHandler(logger, groupManager))
-	if cfg.Server.Flags.EnableBroadcast {
-		apiRouter.Path(handlers.URLRouteBroadcast).Methods(handlers.MethodBroadcast).Handler(handlers.NewBroadcastHandler(logger, groupManager))
-	}
 	apiRouter.Path(handlers.URLRouteGetObjects).Methods(handlers.MethodGetObjects).Handler(handlers.NewGetObjectsHandler(logger, groupManager))
 	apiRouter.Path(handlers.URLRoutePing).Methods(handlers.MethodPing).Handler(handlers.NewPingHandler(logger))
 

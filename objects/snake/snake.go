@@ -1,13 +1,13 @@
 package snake
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"sync"
 	"time"
 
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ivan1993spb/snake-server/engine"
@@ -48,7 +48,6 @@ var snakeCommands = map[Command]engine.Direction{
 }
 
 // Snake object
-// ffjson: skip
 type Snake struct {
 	id world.Identifier
 
@@ -415,16 +414,13 @@ func (s *Snake) GetLocation() engine.Location {
 func (s *Snake) MarshalJSON() ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return ffjson.Marshal(&snake{
+	return json.Marshal(&snake{
 		ID:   s.id,
 		Dots: s.location,
 		Type: snakeTypeLabel,
 	})
 }
 
-//go:generate ffjson -force-regenerate $GOFILE
-
-// ffjson: nodecoder
 type snake struct {
 	ID   world.Identifier `json:"id"`
 	Dots []engine.Dot     `json:"dots,omitempty"`
