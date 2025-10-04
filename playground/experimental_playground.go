@@ -25,11 +25,17 @@ type ExperimentalPlayground struct {
 	objectsContainersMux *sync.RWMutex
 }
 
+type errCreatePlayground string
+
+func (e errCreatePlayground) Error() string {
+	return "failed to create playground: " + string(e)
+}
+
 // NewExperimentalPlayground creates a new empty playground of the specified area
 func NewExperimentalPlayground(width, height uint8) (*ExperimentalPlayground, error) {
 	area, err := engine.NewArea(width, height)
 	if err != nil {
-		return nil, ErrCreatePlayground{err}
+		return nil, errCreatePlayground(err.Error())
 	}
 
 	gameMap := engine.NewMap(area)
@@ -133,6 +139,12 @@ func (p *ExperimentalPlayground) GetObjectsByDots(dots []engine.Dot) []engine.Ob
 	return objects
 }
 
+type errCreateObject string
+
+func (e errCreateObject) Error() string {
+	return "failed to create object: " + string(e)
+}
+
 // CreateObject creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the operation will be turn down with an error.
 // Initial location could be empty.
@@ -158,6 +170,12 @@ func (p *ExperimentalPlayground) CreateObject(object engine.Object, location eng
 	return nil
 }
 
+type errCreateObjectAvailableDots string
+
+func (e errCreateObjectAvailableDots) Error() string {
+	return "failed to create object available dots: " + string(e)
+}
+
 // CreateObjectAvailableDots creates and registers an object at the given location on the playground.
 // If some dots are occupied by other objects, the dots will be ignored. If all dots are occupied
 // the object will be registered without location and no error will be returned.
@@ -180,6 +198,12 @@ func (p *ExperimentalPlayground) CreateObjectAvailableDots(object engine.Object,
 	return resultLocation, nil
 }
 
+type errDeleteObject string
+
+func (e errDeleteObject) Error() string {
+	return "failed to delete object: " + string(e)
+}
+
 // DeleteObject deletes an object with the given location from the playground
 func (p *ExperimentalPlayground) DeleteObject(object engine.Object, location engine.Location) error {
 	if !location.Empty() {
@@ -195,6 +219,12 @@ func (p *ExperimentalPlayground) DeleteObject(object engine.Object, location eng
 	}
 
 	return nil
+}
+
+type errUpdateObject string
+
+func (e errUpdateObject) Error() string {
+	return "failed to update object: " + string(e)
 }
 
 // UpdateObject updates the object's location. All dots of the new location must be vacant.
@@ -229,6 +259,12 @@ func (p *ExperimentalPlayground) UpdateObject(object engine.Object, old, new eng
 	p.gameMap.MRemoveContainer(dotsToRemove, container)
 
 	return nil
+}
+
+type errUpdateObjectAvailableDots string
+
+func (e errUpdateObjectAvailableDots) Error() string {
+	return "failed to update object available dots: " + string(e)
 }
 
 // UpdateObjectAvailableDots updates the object's location. If some dots of the new location are
@@ -281,6 +317,12 @@ func (p *ExperimentalPlayground) UpdateObjectAvailableDots(object engine.Object,
 	return actualLocation, nil
 }
 
+type errCreateObjectRandomDot string
+
+func (e errCreateObjectRandomDot) Error() string {
+	return "failed to create object random dot: " + string(e)
+}
+
 // CreateObjectRandomDot creates and registers an object to the playground at a random dot
 // which will be returned.
 func (p *ExperimentalPlayground) CreateObjectRandomDot(object engine.Object) (engine.Location, error) {
@@ -303,6 +345,12 @@ func (p *ExperimentalPlayground) CreateObjectRandomDot(object engine.Object) (en
 	}
 
 	return nil, errCreateObjectRandomDot(errRetriesLimitMessage)
+}
+
+type errCreateObjectRandomRect string
+
+func (e errCreateObjectRandomRect) Error() string {
+	return "failed create object random rect: " + string(e)
 }
 
 // CreateObjectRandomRect creates and registers an object to the playground at a random location
@@ -339,6 +387,12 @@ func (p *ExperimentalPlayground) CreateObjectRandomRect(object engine.Object, rw
 	}
 
 	return nil, errCreateObjectRandomRect(errRetriesLimitMessage)
+}
+
+type errCreateObjectRandomRectMargin string
+
+func (e errCreateObjectRandomRectMargin) Error() string {
+	return "failed to create object random rect with margin: " + string(e)
 }
 
 // CreateObjectRandomRectMargin creates and registers an object to the playground at a random
@@ -381,6 +435,12 @@ func (p *ExperimentalPlayground) CreateObjectRandomRectMargin(object engine.Obje
 	}
 
 	return nil, errCreateObjectRandomRectMargin(errRetriesLimitMessage)
+}
+
+type errCreateObjectRandomByDotsMask string
+
+func (e errCreateObjectRandomByDotsMask) Error() string {
+	return "failed to create object random by dots mask: " + string(e)
 }
 
 // CreateObjectRandomByDotsMask creates and registers an object to the playground at a random
