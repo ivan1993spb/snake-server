@@ -155,7 +155,18 @@ Game event types:
   }
   ```
 
-* *delete* - contains the deleted object
+* ~~*delete* - contains the deleted object (**deprecated**)~~
+
+* *delete_v2* - contains the identifier of a deleted object
+    ```json
+    {
+      "type": "game",
+      "payload": {
+        "type": "delete_v2",
+        "payload": 142
+      }
+    }
+    ```
 
 * ~~*update* - contains the updated object (**deprecated**)~~
   + When the snake moves:
