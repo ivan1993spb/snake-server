@@ -150,6 +150,9 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 
 func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}) {
 	if event.Type == EventTypeObjectUpdate || event.Type == EventTypeObjectUpdateV2 || event.Type == EventTypeObjectChecked {
+		// TODO: Test if it is a problem for partial updates.
+		// If partial updates are enabled, then this timeout can lead to lost
+		// updates.
 		w.sendEventTimeout(ch, event, stop, worldEventsSendTimeout)
 	} else {
 		w.sendEventStrict(ch, event, stop)
