@@ -60,9 +60,17 @@ func NewCorpse(w world.Interface, location engine.Location) (*Corpse, error) {
 
 	if location.Empty() {
 		w.IdentifierRegistry().Release(corpse.id)
-		if err := w.DeleteObject(corpse, location); err != nil {
+
+		err := w.DeleteObjectV2(world.DeleteV2Params{
+			Object:   corpse,
+			Payload:  DeleteV2{ID: corpse.id},
+			Location: location,
+		})
+
+		if err != nil {
 			return nil, errCreateCorpse("no location located and cannot delete corpse")
 		}
+
 		return nil, errCreateCorpse("no location located")
 	}
 
@@ -116,7 +124,12 @@ func (c *Corpse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 		c.stopper.Do(func() {
 			close(c.stop)
 			c.world.IdentifierRegistry().Release(c.id)
-			err = c.world.DeleteObject(c, c.location)
+
+			err = c.world.DeleteObjectV2(world.DeleteV2Params{
+				Object:   c,
+				Payload:  DeleteV2{ID: c.id},
+				Location: c.location,
+			})
 		})
 
 		if err != nil {
@@ -146,7 +159,12 @@ func (c *Corpse) Run(stop <-chan struct{}, logger logrus.FieldLogger) {
 			c.stopper.Do(func() {
 				close(c.stop)
 				c.world.IdentifierRegistry().Release(c.id)
-				err = c.world.DeleteObject(c, c.location)
+
+				err = c.world.DeleteObjectV2(world.DeleteV2Params{
+					Object:   c,
+					Payload:  DeleteV2{ID: c.id},
+					Location: c.location,
+				})
 			})
 
 			if err != nil {
@@ -181,4 +199,12 @@ type corpse struct {
 type UpdateV2 struct {
 	ID  world.Identifier `json:"id"`
 	Del engine.Dot       `json:"del"`
+}
+
+type DeleteV2 struct {
+	ID world.Identifier
+}
+
+func (p DeleteV2) MarshalJSON() ([]byte, error) {
+	return p.ID.MarshalJSON()
 }
