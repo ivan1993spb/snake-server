@@ -46,9 +46,16 @@ func NewApple(w world.Interface) (*Apple, error) {
 	if location.Empty() {
 		w.IdentifierRegistry().Release(apple.id)
 
-		if err := w.DeleteObject(apple, location); err != nil {
+		err := w.DeleteObjectV2(world.DeleteV2Params{
+			Object:   apple,
+			Payload:  DeleteV2Payload{ID: apple.id},
+			Location: location,
+		})
+
+		if err != nil {
 			return nil, errCreateApple("no location located and cannot delete apple")
 		}
+
 		return nil, errCreateApple("no location located")
 	}
 
@@ -76,9 +83,17 @@ func (a *Apple) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 
 	if a.dot.Equals(dot) {
 		a.world.IdentifierRegistry().Release(a.id)
-		if err := a.world.DeleteObject(a, engine.Location{a.dot}); err != nil {
+
+		err := a.world.DeleteObjectV2(world.DeleteV2Params{
+			Object:   a,
+			Payload:  DeleteV2Payload{ID: a.id},
+			Location: engine.Location{a.dot},
+		})
+
+		if err != nil {
 			return 0, false, errAppleBite(err.Error())
 		}
+
 		return appleNutritionalValue, true, nil
 	}
 
@@ -99,4 +114,12 @@ type apple struct {
 	ID   world.Identifier `json:"id"`
 	Dot  engine.Dot       `json:"dot"`
 	Type string           `json:"type"`
+}
+
+type DeleteV2Payload struct {
+	ID world.Identifier
+}
+
+func (p DeleteV2Payload) MarshalJSON() ([]byte, error) {
+	return p.ID.MarshalJSON()
 }
