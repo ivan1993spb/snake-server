@@ -138,7 +138,16 @@ func (s *Snake) die() error {
 
 	s.world.IdentifierRegistry().Release(s.id)
 
-	if err := s.world.DeleteObject(s, s.location); err != nil {
+	err := s.world.DeleteObjectV2(world.DeleteV2Params{
+		Object: s,
+		Payload: DeleteV2{
+			ID:       s.id,
+			Location: s.location,
+		},
+		Location: s.location,
+	})
+
+	if err != nil {
 		return fmt.Errorf("die snake error: %s", err)
 	}
 
@@ -474,4 +483,13 @@ type UpdateV2OnlyAdd struct {
 type UpdateV2OnlyDel struct {
 	ID  world.Identifier `json:"id"`
 	Del engine.Dot       `json:"del"`
+}
+
+type DeleteV2 struct {
+	ID       world.Identifier
+	Location engine.Location
+}
+
+func (p DeleteV2) MarshalJSON() ([]byte, error) {
+	return p.ID.MarshalJSON()
 }
