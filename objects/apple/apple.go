@@ -27,33 +27,33 @@ func (e errCreateApple) Error() string {
 }
 
 // NewApple creates and locates new apple
-func NewApple(world world.Interface) (*Apple, error) {
+func NewApple(w world.Interface) (*Apple, error) {
 	apple := &Apple{
-		id:  world.IdentifierRegistry().Obtain(),
+		id:  w.IdentifierRegistry().Obtain(),
 		mux: &sync.RWMutex{},
 	}
 
 	apple.mux.Lock()
 	defer apple.mux.Unlock()
 
-	location, err := world.CreateObjectRandomDot(apple)
+	location, err := w.CreateObjectRandomDot(apple)
 	if err != nil {
-		world.IdentifierRegistry().Release(apple.id)
+		w.IdentifierRegistry().Release(apple.id)
 
 		return nil, errCreateApple(err.Error())
 	}
 
 	if location.Empty() {
-		world.IdentifierRegistry().Release(apple.id)
+		w.IdentifierRegistry().Release(apple.id)
 
-		if err := world.DeleteObject(apple, location); err != nil {
+		if err := w.DeleteObject(apple, location); err != nil {
 			return nil, errCreateApple("no location located and cannot delete apple")
 		}
 		return nil, errCreateApple("no location located")
 	}
 
 	apple.dot = location.Dot(0)
-	apple.world = world
+	apple.world = w
 
 	return apple, nil
 }
