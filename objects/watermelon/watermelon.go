@@ -104,7 +104,13 @@ func (w *Watermelon) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 
 		w.world.IdentifierRegistry().Release(w.id)
 
-		if err := w.world.DeleteObject(w, w.location); err != nil {
+		err := w.world.DeleteObjectV2(world.DeleteV2Params{
+			Object:   w,
+			Payload:  DeleteV2{ID: w.id},
+			Location: w.location,
+		})
+
+		if err != nil {
 			return 0, false, errWatermelonBite(err.Error())
 		}
 
@@ -135,4 +141,12 @@ type watermelon struct {
 type UpdateV2 struct {
 	ID  world.Identifier `json:"id"`
 	Del engine.Dot       `json:"del"`
+}
+
+type DeleteV2 struct {
+	ID world.Identifier
+}
+
+func (p DeleteV2) MarshalJSON() ([]byte, error) {
+	return p.ID.MarshalJSON()
 }
