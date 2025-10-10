@@ -263,6 +263,22 @@ func (w *World) DeleteObject(object engine.Object, location engine.Location) err
 	return nil
 }
 
+func (w *World) DeleteObjectV2(params DeleteV2Params) error {
+	err := w.pg.DeleteObject(params.Object, params.Location)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectDeleteV2,
+		Payload: params.Payload,
+	})
+	return nil
+}
+
 func (w *World) UpdateObject(object engine.Object, old, new engine.Location) error {
 	if err := w.pg.UpdateObject(object, old, new); err != nil {
 		w.event(Event{

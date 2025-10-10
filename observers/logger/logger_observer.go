@@ -41,7 +41,8 @@ func (lo *LoggerObserver) handleEvent(event world.Event) {
 		if err, ok := event.Payload.(error); ok {
 			lo.logger.WithError(err).Error("world error")
 		}
-	case world.EventTypeObjectCreate, world.EventTypeObjectDelete,
+	case world.EventTypeObjectCreate,
+		world.EventTypeObjectDelete, world.EventTypeObjectDeleteV2,
 		world.EventTypeObjectUpdate, world.EventTypeObjectUpdateV2,
 		world.EventTypeObjectChecked:
 		lo.logger.WithFields(logrus.Fields{
