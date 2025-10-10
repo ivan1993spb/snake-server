@@ -36,14 +36,14 @@ func (e errCreateCorpse) Error() string {
 }
 
 // Corpse are created when a snake dies
-func NewCorpse(world world.Interface, location engine.Location) (*Corpse, error) {
+func NewCorpse(w world.Interface, location engine.Location) (*Corpse, error) {
 	if location.Empty() {
 		return nil, errCreateCorpse("location is empty")
 	}
 
 	corpse := &Corpse{
-		id:      world.IdentifierRegistry().Obtain(),
-		world:   world,
+		id:      w.IdentifierRegistry().Obtain(),
+		world:   w,
 		mux:     &sync.RWMutex{},
 		stop:    make(chan struct{}),
 		stopper: &sync.Once{},
@@ -52,15 +52,15 @@ func NewCorpse(world world.Interface, location engine.Location) (*Corpse, error)
 	corpse.mux.Lock()
 	defer corpse.mux.Unlock()
 
-	location, err := world.CreateObjectAvailableDots(corpse, location)
+	location, err := w.CreateObjectAvailableDots(corpse, location)
 	if err != nil {
-		world.IdentifierRegistry().Release(corpse.id)
+		w.IdentifierRegistry().Release(corpse.id)
 		return nil, errCreateCorpse(err.Error())
 	}
 
 	if location.Empty() {
-		world.IdentifierRegistry().Release(corpse.id)
-		if err := world.DeleteObject(corpse, location); err != nil {
+		w.IdentifierRegistry().Release(corpse.id)
+		if err := w.DeleteObject(corpse, location); err != nil {
 			return nil, errCreateCorpse("no location located and cannot delete corpse")
 		}
 		return nil, errCreateCorpse("no location located")

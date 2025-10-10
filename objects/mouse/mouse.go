@@ -32,11 +32,11 @@ func (e errCreateMouse) Error() string {
 	return "cannot create mouse: " + string(e)
 }
 
-func NewMouse(world world.Interface) (*Mouse, error) {
+func NewMouse(w world.Interface) (*Mouse, error) {
 	mouse := &Mouse{
-		id: world.IdentifierRegistry().Obtain(),
+		id: w.IdentifierRegistry().Obtain(),
 
-		world: world,
+		world: w,
 		mux:   &sync.RWMutex{},
 
 		stop: make(chan struct{}),
@@ -45,17 +45,17 @@ func NewMouse(world world.Interface) (*Mouse, error) {
 	mouse.mux.Lock()
 	defer mouse.mux.Unlock()
 
-	location, err := world.CreateObjectRandomDot(mouse)
+	location, err := w.CreateObjectRandomDot(mouse)
 	if err != nil {
-		world.IdentifierRegistry().Release(mouse.id)
+		w.IdentifierRegistry().Release(mouse.id)
 
 		return nil, errCreateMouse(err.Error())
 	}
 
 	if location.Empty() {
-		world.IdentifierRegistry().Release(mouse.id)
+		w.IdentifierRegistry().Release(mouse.id)
 
-		if err := world.DeleteObject(mouse, location); err != nil {
+		if err := w.DeleteObject(mouse, location); err != nil {
 			return nil, errCreateMouse("no location located and cannot delete mouse")
 		}
 		return nil, errCreateMouse("no location located")
