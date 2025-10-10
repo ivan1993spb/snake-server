@@ -103,7 +103,13 @@ func (w *Wall) Break(dot engine.Dot, force float64) (success bool, err error) {
 		} else {
 			w.world.IdentifierRegistry().Release(w.id)
 
-			if err := w.world.DeleteObject(w, w.location); err != nil {
+			err := w.world.DeleteObjectV2(world.DeleteV2Params{
+				Object:   w,
+				Payload:  w.id,
+				Location: w.location,
+			})
+
+			if err != nil {
 				return false, errWallBreak(err.Error())
 			}
 
