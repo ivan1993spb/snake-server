@@ -14,6 +14,7 @@ type Interface interface {
 	playground.Playground
 
 	UpdateV2
+	DeleteV2
 }
 
 type UpdateV2Params struct {
@@ -26,4 +27,14 @@ type UpdateV2Params struct {
 type UpdateV2 interface {
 	UpdateObjectV2(params UpdateV2Params) error
 	UpdateObjectAvailableDotsV2(params UpdateV2Params) (engine.Location, error)
+}
+
+type DeleteV2Params struct {
+	Object   engine.Object
+	Payload  interface{}
+	Location engine.Location
+}
+
+type DeleteV2 interface {
+	DeleteObjectV2(params DeleteV2Params) error
 }
