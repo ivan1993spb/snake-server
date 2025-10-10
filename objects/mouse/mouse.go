@@ -55,9 +55,16 @@ func NewMouse(w world.Interface) (*Mouse, error) {
 	if location.Empty() {
 		w.IdentifierRegistry().Release(mouse.id)
 
-		if err := w.DeleteObject(mouse, location); err != nil {
+		err := w.DeleteObjectV2(world.DeleteV2Params{
+			Object:   mouse,
+			Payload:  DeleteV2{ID: mouse.id},
+			Location: location,
+		})
+
+		if err != nil {
 			return nil, errCreateMouse("no location located and cannot delete mouse")
 		}
+
 		return nil, errCreateMouse("no location located")
 	}
 
@@ -82,9 +89,16 @@ func (m *Mouse) Bite(dot engine.Dot) (nv uint16, success bool, err error) {
 	if m.dot.Equals(dot) {
 		m.die()
 
-		if err := m.world.DeleteObject(m, engine.Location{m.dot}); err != nil {
+		err := m.world.DeleteObjectV2(world.DeleteV2Params{
+			Object:   m,
+			Payload:  DeleteV2{ID: m.id},
+			Location: engine.Location{m.dot},
+		})
+
+		if err != nil {
 			return 0, false, errMouseBite(err.Error())
 		}
+
 		return mouseNutritionalValue, true, nil
 	}
 
@@ -204,4 +218,12 @@ func (m *Mouse) Run(stop <-chan struct{}) {
 type UpdateV2 struct {
 	ID  world.Identifier `json:"id"`
 	Dot engine.Dot       `json:"dot"`
+}
+
+type DeleteV2 struct {
+	ID world.Identifier
+}
+
+func (p DeleteV2) MarshalJSON() ([]byte, error) {
+	return p.ID.MarshalJSON()
 }
