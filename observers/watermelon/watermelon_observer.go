@@ -72,11 +72,14 @@ func (wo *WatermelonObserver) listen(stop <-chan struct{}) {
 }
 
 func (wo *WatermelonObserver) handleEvent(event world.Event) {
-	if event.Type != world.EventTypeObjectDelete {
+	if event.Type != world.EventTypeObjectDelete && event.Type != world.EventTypeObjectDeleteV2 {
 		return
 	}
 
-	if _, ok := event.Payload.(*watermelon.Watermelon); ok {
+	_, ok1 := event.Payload.(*watermelon.Watermelon)
+	_, ok2 := event.Payload.(watermelon.DeleteV2)
+
+	if ok1 || ok2 {
 		atomic.AddInt32(&wo.watermelonCount, -1)
 	}
 }

@@ -67,18 +67,18 @@ func (ao *AppleObserver) calcAppleCount() int {
 
 func (ao *AppleObserver) handleEvent(event world.Event) error {
 	// Event type is only delete
-	if event.Type != world.EventTypeObjectDelete {
+	if event.Type != world.EventTypeObjectDelete && event.Type != world.EventTypeObjectDeleteV2 {
 		return nil
 	}
 
-	// Object is only apple
-	if _, ok := event.Payload.(*apple.Apple); !ok {
-		return nil
-	}
-
-	// TODO: Create abstraction layer for adding of objects.
-	if _, err := apple.NewApple(ao.world); err != nil {
-		return fmt.Errorf("cannot create apple: %s", err)
+	_, ok1 := event.Payload.(*apple.Apple)
+	_, ok2 := event.Payload.(apple.DeleteV2)
+	if ok1 || ok2 {
+		// TODO: Create abstraction layer for adding of objects.
+		_, err := apple.NewApple(ao.world)
+		if err != nil {
+			return fmt.Errorf("cannot create apple: %s", err)
+		}
 	}
 
 	return nil
