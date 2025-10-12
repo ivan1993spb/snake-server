@@ -110,11 +110,14 @@ func (mo *MouseObserver) listen(stop <-chan struct{}) {
 }
 
 func (mo *MouseObserver) handleEvent(event world.Event) {
-	if event.Type != world.EventTypeObjectDelete {
+	if event.Type != world.EventTypeObjectDelete && event.Type != world.EventTypeObjectDeleteV2 {
 		return
 	}
 
-	if _, ok := event.Payload.(*mouse.Mouse); ok {
+	_, ok1 := event.Payload.(*mouse.Mouse)
+	_, ok2 := event.Payload.(mouse.DeleteV2Payload)
+
+	if ok1 || ok2 {
 		atomic.AddInt32(&mo.mouseNumber, -1)
 	}
 }
