@@ -19,6 +19,10 @@ func (i Identifier) String() string {
 	return strconv.FormatUint(uint64(i), 10)
 }
 
+func (i Identifier) MarshalJSON() ([]byte, error) {
+	return []byte(i.String()), nil
+}
+
 type IdentifierRegistry struct {
 	index               uint32
 	obtainedIdentifiers []Identifier
