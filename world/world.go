@@ -149,7 +149,10 @@ func (w *World) Events(stop <-chan struct{}, buffer uint) <-chan Event {
 }
 
 func (w *World) sendEvent(ch chan Event, event Event, stop <-chan struct{}) {
-	if event.Type == EventTypeObjectUpdate || event.Type == EventTypeObjectChecked {
+	if event.Type == EventTypeObjectUpdate || event.Type == EventTypeObjectUpdateV2 || event.Type == EventTypeObjectChecked {
+		// TODO: Test if it is a problem for partial updates.
+		// If partial updates are enabled, then this timeout can lead to lost
+		// updates.
 		w.sendEventTimeout(ch, event, stop, worldEventsSendTimeout)
 	} else {
 		w.sendEventStrict(ch, event, stop)
@@ -275,6 +278,22 @@ func (w *World) UpdateObject(object engine.Object, old, new engine.Location) err
 	return nil
 }
 
+func (w *World) UpdateObjectV2(params UpdateV2Params) error {
+	err := w.pg.UpdateObject(params.Object, params.Old, params.New)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectUpdateV2,
+		Payload: params.Payload,
+	})
+	return nil
+}
+
 func (w *World) UpdateObjectAvailableDots(object engine.Object, old, new engine.Location) (engine.Location, error) {
 	location, err := w.pg.UpdateObjectAvailableDots(object, old, new)
 	if err != nil {
@@ -287,6 +306,22 @@ func (w *World) UpdateObjectAvailableDots(object engine.Object, old, new engine.
 	w.event(Event{
 		Type:    EventTypeObjectUpdate,
 		Payload: object,
+	})
+	return location, nil
+}
+
+func (w *World) UpdateObjectAvailableDotsV2(params UpdateV2Params) (engine.Location, error) {
+	location, err := w.pg.UpdateObjectAvailableDots(params.Object, params.Old, params.New)
+	if err != nil {
+		w.event(Event{
+			Type:    EventTypeError,
+			Payload: err,
+		})
+		return nil, err
+	}
+	w.event(Event{
+		Type:    EventTypeObjectUpdateV2,
+		Payload: params.Payload,
 	})
 	return location, nil
 }
